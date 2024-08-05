@@ -3,8 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-
-public class TitleSceneController : MonoBehaviour
+public class SceneController : MonoBehaviour
 {
     // Start is called before the first frame update
     void Start()
@@ -18,9 +17,9 @@ public class TitleSceneController : MonoBehaviour
         
     }
 
-    // MainScene(Main_Test)‚É‘JˆÚ‚·‚é
-    public void ChangeToMainScene()
+    // TargetScene‚É‘JˆÚ‚·‚é
+    public void ChangeToTargetScene(string targetScene)
     {
-        SceneManager.LoadScene("Main_Test");
+        SceneManager.LoadScene(targetScene);
     }
 }
