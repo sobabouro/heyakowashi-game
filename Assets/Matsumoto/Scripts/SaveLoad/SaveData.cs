@@ -43,7 +43,7 @@ public class SaveData : object
         return objectString;
     }
 
-    // フィールド値をJSOn形式にした文字列を返す
+    // フィールド値をJSON形式にした文字列を返す
     public string GetJsonData()
     {
         return JsonUtility.ToJson(this);

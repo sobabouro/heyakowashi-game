@@ -21,6 +21,11 @@ public class ScoreData : MonoBehaviour
         this.userName = userName;
     }
 
+    public void SetScore(int score)
+    {
+        this.score = score;
+    }
+
     public string GetUserName()
     {
         return userName;
