@@ -51,9 +51,11 @@ public class ActSubdivide : MonoBehaviour {
         // var rightUVs = new List<Vector2>();
 
         // 切断対象のオブジェクトの情報操作用
-        List<int>      irrelevantTriangles = new List<int>();
-        List<Vector3>  newVerticesList     = new List<Vector3>();
-        List<AttIndex> subdivideAttLList   = new List<AttIndex>();
+        int targetVerticesLength = targetVertices.Length;
+        List<int>      irrelevantTriangles  = new List<int>();
+        List<Vector3>  newVerticesList      = new List<Vector3>();
+        List<int[]>    vertexSetLists       = new List<int[]>();
+        List<int>      newVertexSetList     = new List<int>();
         // 切断面左側のオブジェクトのメッシュ情報
         List<int>     leftTriangles = new List<int>();
         List<Vector3> leftVertices  = new List<Vector3>();
@@ -66,7 +68,6 @@ public class ActSubdivide : MonoBehaviour {
         List<Vector2> rightUVs       = new List<Vector2>();
 
         // 切断対象のオブジェクトの各ポリゴンの左右判定用
-        List<int> idnenxList       = new List<int>();
         List<int> numLeftVertices  = new List<int>();
         List<int> numRightVertices = new List<int>();
         bool vertexTruthValue1, vertexTruthValue2, vertexTruthValue3;
@@ -93,16 +94,78 @@ public class ActSubdivide : MonoBehaviour {
             }
             else {
                 (bool rtlf, int vertexIndex1, Vector3 lonelyVertex, int vertexIndex2, Vector3 startPairVertex, int vertexIndex3, Vector3 lastPairVertex) = SortIndex(targetTriangles[i], vertexTruthValue1, targetVertices[targetTriangles[i]], targetTriangles[i + 1], vertexTruthValue2, targetVertices[targetTriangles[i + 1]], targetTriangles[i + 1], vertexTruthValue3, targetVertices[targetTriangles[i + 2]]);
-                (Vector3 newStartPairVertex, Vector3 newLastPairVertex) = GenerateNewVertex(cutter, lonelyVertex, startPairVertex, lastPairVertex);
+                // 新メッシュ情報の生成
+                (Vector2 newRightUVs1, Vector2 newRightUVs2) = GenerateNewUV(targetUVs[vertexIndex1], targetUVs[vertexIndex2], targetUVs[vertexIndex3]);
+                (Vector3 newStartPairVertex, Vector3 newLastPairVertex) = GenerateNewVertex(cutter, rtlf, lonelyVertex, startPairVertex, lastPairVertex);
+                // 重複した頂点を削除する際，Vector3 で一致を探すよりも，インデックスの方が効率的なんじゃないかということ
+                (bool deltrueSV, int newVertexIndexSV) = InsertAndDeleteVertices(targetVerticesLength, newStartPairVertex, newVerticesList);
+                if (deltrueSV == false) {
+                    newVerticesList.Add(newStartPairVertex);
+                }
+                (bool deltrueLV, int newVertexIndexLV) = InsertAndDeleteVertices(targetVerticesLength, newLastPairVertex, newVerticesList);
+                if (deltrueLV == false) {
+                    newVerticesList.Add(newLastPairVertex);
+                }
+                // のちに頂点インデックスをもとに頂点グルーピングするので保存しておく
+                int [] vertexSet =  new int[] {newVertexIndexSV, newVertexIndexLV};
+                vertexSetLists.Add(vertexSet);
 
-                newVerticesList.Add(newStartPairVertex);
-                newVerticesList.Add(newLastPairVertex);
+                // Debug
+                // for (int m = 0; m < vertexSetLists.Count; m++) {
+                //     Debug.Log("index" + m + ": ");
+                //     for (int n = 0; n < vertexSetLists[m].Length; n++) {
+                //         Debug.Log(vertexSetLists[m][n]);
+                //     }
+                // }
 
-                AttIndex sal = new AttIndex();
-                sal.IndexList = new int[] { vertexIndex1, vertexIndex2, vertexIndex3 };
-                sal.VertexList = new Vector3[] { lonelyVertex, startPairVertex, lastPairVertex };
-                subdivideAttLList.Add(sal);
-
+                /* 孤独な頂点が無限平面の右側にある場合 */
+                if (rtlf == true) {
+                    // 切断ポリゴン右側を生成する処理
+                    rightUVs.Add(targetUVs[vertexIndex1]);
+                    rightUVs.Add(newRightUVs1);
+                    rightUVs.Add(newRightUVs2);
+                    rightTriangles.Add(vertexIndex1);
+                    rightTriangles.Add(newVertexIndexSV);
+                    rightTriangles.Add(newVertexIndexLV);
+                    // 切断ポリゴン左側一つ目を生成する処理
+                    rightUVs.Add(newRightUVs1);
+                    rightUVs.Add(targetUVs[vertexIndex2]);
+                    rightUVs.Add(targetUVs[vertexIndex3]);
+                    rightTriangles.Add(newVertexIndexSV);
+                    rightTriangles.Add(vertexIndex2);
+                    rightTriangles.Add(vertexIndex3);
+                    // 切断ポリゴン左側二つ目を生成する処理
+                    leftUVs.Add(targetUVs[vertexIndex3]);
+                    leftUVs.Add(newRightUVs2);
+                    leftUVs.Add(newRightUVs1);
+                    leftTriangles.Add(vertexIndex3);
+                    leftTriangles.Add(newVertexIndexLV);
+                    leftTriangles.Add(newVertexIndexSV);
+                }
+                /* 孤独な頂点が無限平面の左側にある場合 */
+                else {
+                    // 切断ポリゴン左側を生成する処理
+                    leftUVs.Add(targetUVs[vertexIndex1]);
+                    leftUVs.Add(newRightUVs2);
+                    leftUVs.Add(newRightUVs1);
+                    leftTriangles.Add(vertexIndex1);
+                    leftTriangles.Add(newVertexIndexLV);
+                    leftTriangles.Add(newVertexIndexSV);
+                    // 切断ポリゴン右側一つ目を生成する処理
+                    leftUVs.Add(newRightUVs2);
+                    leftUVs.Add(targetUVs[vertexIndex2]);
+                    leftUVs.Add(targetUVs[vertexIndex3]);
+                    leftTriangles.Add(newVertexIndexLV);
+                    leftTriangles.Add(vertexIndex2);
+                    leftTriangles.Add(vertexIndex3);
+                    // 切断ポリゴン右側二つ目を生成する処理
+                    rightUVs.Add(targetUVs[vertexIndex3]);
+                    rightUVs.Add(newRightUVs1);
+                    rightUVs.Add(newRightUVs2);
+                    rightTriangles.Add(vertexIndex3);
+                    rightTriangles.Add(newVertexIndexSV);
+                    rightTriangles.Add(newVertexIndexLV);
+                }
             }
             // taro
             // 対象の三角形ポリゴンの頂点すべてが右側にある場合
@@ -162,8 +225,15 @@ public class ActSubdivide : MonoBehaviour {
             //     }
             // }
         }
-        // 整理する中で作成した新頂点の重複を削除し
-        
+        /* 断面のメッシュを生成する */
+        // Debug
+        newVertexSetList = VertexGrouping(vertexSetLists, newVertexSetList);
+        for (int i = 0; i < vertexSetLists.Count; i++) {
+            Debug.Log("index" + i + ": ");
+            for (int j = 0; j < vertexSetLists[i].Length; j++) {
+                Debug.Log(vertexSetLists[i][j]);
+            }
+        }
 
         // Debug
         // for (int i = 0; i < rightTriangles.Count; i++) {
@@ -186,8 +256,8 @@ public class ActSubdivide : MonoBehaviour {
         //     Debug.Log("uv index " + i + ": " + leftUVs[i]);
         // }
 
-        CreateObject(leftVertices.ToArray(), leftUVs.ToArray(), leftTriangles.ToArray());
-        CreateObject(rightVertices.ToArray(), rightUVs.ToArray(), rightTriangles.ToArray());
+        // CreateObject(leftVertices.ToArray(), leftUVs.ToArray(), leftTriangles.ToArray());
+        // CreateObject(rightVertices.ToArray(), rightUVs.ToArray(), rightTriangles.ToArray());
     }
 
     // ポリゴンの頂点番号を，孤独な頂点を先頭に，表裏情報をもつ順番に並び替える
@@ -220,8 +290,8 @@ public class ActSubdivide : MonoBehaviour {
         }
     }
 
-    // ポリゴンの切断辺の両端に頂点を生成する
-    (Vector3 newStartPairVertex, Vector3 newLastPairVertex) GenerateNewVertex(Plane plane, Vector3 lonelyVertex, Vector3 startPairVertex, Vector3 lastPairVertex) {
+    // ポリゴンの切断辺の両端の頂点を，切断ポリゴンの法線・切断平面の法線とフレミングの左手の方向になるように生成する
+    (Vector3 newStartPairVertex, Vector3 newLastPairVertex) GenerateNewVertex(Plane plane, bool rtlf, Vector3 lonelyVertex, Vector3 startPairVertex, Vector3 lastPairVertex) {
         Ray ray1 = new Ray(lonelyVertex, startPairVertex - lonelyVertex);
         Ray ray2 = new Ray(lonelyVertex, lastPairVertex - lonelyVertex);
         float distance1 = 0.0f;
@@ -230,7 +300,81 @@ public class ActSubdivide : MonoBehaviour {
         float distance2 = 0.0f;
         plane.Raycast(ray2, out distance2);
         Vector3 newLastPairVertex = ray2.GetPoint(distance2);
-        return (newStartPairVertex, newLastPairVertex);
+        if (rtlf) {
+            return (newStartPairVertex, newLastPairVertex);
+        }
+        else {
+            return (newLastPairVertex, newStartPairVertex);
+        }
+    }
+
+    // 新頂点のUV座標を生成する
+    (Vector2 newUVs1, Vector2 newUVs2) GenerateNewUV(Vector2 uv1, Vector2 uv2, Vector2 uv3) {
+        Vector2 newUVs1 = (uv1 + uv2) / 2;
+        Vector2 newUVs2 = (uv1 + uv3) / 2;
+        return (newUVs1, newUVs2);
+    }
+
+    // 重複する頂点を削除する
+    (bool deltrue, int newVertexIndex) InsertAndDeleteVertices(int length, Vector3 newVertex, List<Vector3> verticesList) {
+        int listCount = verticesList.Count;
+        int newVertexIndex = 0;
+        bool deltrue = false;
+        if (listCount == 0) {
+            newVertexIndex = 0;
+        }
+        else if (listCount == 1) {
+            newVertexIndex = 1;
+        }
+        else {
+            for (int duplicateIndex = 0; duplicateIndex < listCount; duplicateIndex++) {
+                if (verticesList[duplicateIndex] == newVertex) {
+                    newVertexIndex = duplicateIndex;
+                    deltrue = true;
+                }
+                else {
+                    newVertexIndex = listCount;
+                }
+            }
+        }
+        return (deltrue, newVertexIndex + length);
+    }
+
+    // 新頂点リストから，ペア同士の探索を行い，頂点グループを生成する
+    private List<int> VertexGrouping(List<int[]> vertexSetLists, List<int> newVertexSetList) {
+        List<int[]> vertexSetListsCopy = new List<int[]>(vertexSetLists);
+        List<int[]> newVertexSetListsCopy = new List<int[]>(vertexSetLists);
+        int vertexSetCount = vertexSetLists.Count;
+        int removeProcessedCount = 0;
+        int serchCount = 0;
+        int start = vertexSetListsCopy[0][0];
+        int last = vertexSetListsCopy[0][1];
+
+        newVertexSetList.Add(start);
+        newVertexSetList.Add(last);
+        newVertexSetListsCopy.RemoveAt(0);
+        removeProcessedCount++;
+        while (start == last) {
+            serchCount = 0;
+            foreach (int[] vertexSet in vertexSetListsCopy) {
+                if (last == vertexSet[0]) {
+                    last = vertexSet[1];
+                    newVertexSetList.Add(last);
+                    newVertexSetListsCopy.RemoveAt(serchCount);
+                    removeProcessedCount++;
+                }
+                serchCount++;
+            }
+            vertexSetListsCopy.Clear();
+            vertexSetListsCopy.AddRange(newVertexSetListsCopy);
+        }
+        if (removeProcessedCount == vertexSetCount) {
+            return newVertexSetList;
+        }
+        else {
+            newVertexSetList.Add(-1);
+            return VertexGrouping(vertexSetListsCopy, newVertexSetList);
+        }
     }
 
     private void CreateObject(Vector3[] vertices, Vector2[] uvs, int[] triangles)
@@ -288,14 +432,19 @@ public class AttIndex
         get { return _uvList; }
         set { _uvList = value; }
     }
-    private int _indexListStartPair;
-    public int IndexListStartPair {
-        get { return _indexListStartPair; }
-        set { _indexListStartPair = value; }
+    private int[] _triangleList = new int[3];
+    public int[] TriangleList {
+        get { return _triangleList; }
+        set { _triangleList = value; }
     }
-    private int _indexListLastPair;
-    public int IndexListLastPair {
-        get { return _indexListLastPair; }
-        set { _indexListLastPair = value; }
+    private Vector3 _directionVectorSL;
+    public Vector3 DirectionVectorSL {
+        get { return _directionVectorSL; }
+        set { _directionVectorSL = value; }
+    }
+    private int[] _vertexSet = new int[2];
+    public int[] VertexSet {
+        get { return _vertexSet; }
+        set { _vertexSet = value; }
     }
 }
