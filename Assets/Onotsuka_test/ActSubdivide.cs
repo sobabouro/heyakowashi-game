@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using System.Linq;
 
 // 切断対象オブジェクトの参照
 
@@ -93,7 +94,7 @@ public class ActSubdivide : MonoBehaviour {
                 }
             }
             else {
-                (bool rtlf, int vertexIndex1, Vector3 lonelyVertex, int vertexIndex2, Vector3 startPairVertex, int vertexIndex3, Vector3 lastPairVertex) = SortIndex(targetTriangles[i], vertexTruthValue1, targetVertices[targetTriangles[i]], targetTriangles[i + 1], vertexTruthValue2, targetVertices[targetTriangles[i + 1]], targetTriangles[i + 1], vertexTruthValue3, targetVertices[targetTriangles[i + 2]]);
+                (bool rtlf, int vertexIndex1, Vector3 lonelyVertex, int vertexIndex2, Vector3 startPairVertex, int vertexIndex3, Vector3 lastPairVertex) = SortIndex(targetTriangles[i], vertexTruthValue1, targetVertices[targetTriangles[i]], targetTriangles[i + 1], vertexTruthValue2, targetVertices[targetTriangles[i + 1]], targetTriangles[i + 2], vertexTruthValue3, targetVertices[targetTriangles[i + 2]]);
                 // 新メッシュ情報の生成
                 (Vector2 newRightUVs1, Vector2 newRightUVs2) = GenerateNewUV(targetUVs[vertexIndex1], targetUVs[vertexIndex2], targetUVs[vertexIndex3]);
                 (Vector3 newStartPairVertex, Vector3 newLastPairVertex) = GenerateNewVertex(cutter, rtlf, lonelyVertex, startPairVertex, lastPairVertex);
@@ -109,14 +110,6 @@ public class ActSubdivide : MonoBehaviour {
                 // のちに頂点インデックスをもとに頂点グルーピングするので保存しておく
                 int [] vertexSet =  new int[] {newVertexIndexSV, newVertexIndexLV};
                 vertexSetLists.Add(vertexSet);
-
-                // Debug
-                // for (int m = 0; m < vertexSetLists.Count; m++) {
-                //     Debug.Log("index" + m + ": ");
-                //     for (int n = 0; n < vertexSetLists[m].Length; n++) {
-                //         Debug.Log(vertexSetLists[m][n]);
-                //     }
-                // }
 
                 /* 孤独な頂点が無限平面の右側にある場合 */
                 if (rtlf == true) {
@@ -226,38 +219,9 @@ public class ActSubdivide : MonoBehaviour {
             // }
         }
         /* 断面のメッシュを生成する */
-        // Debug
         newVertexSetList = VertexGrouping(vertexSetLists, newVertexSetList);
-        for (int i = 0; i < vertexSetLists.Count; i++) {
-            Debug.Log("index" + i + ": ");
-            for (int j = 0; j < vertexSetLists[i].Length; j++) {
-                Debug.Log(vertexSetLists[i][j]);
-            }
-        }
-
         // Debug
-        // for (int i = 0; i < rightTriangles.Count; i++) {
-        //     Debug.Log("Triangle index " + i + ": " + rightTriangles[i]);
-        // }
-        // for (int i = 0; i < rightVertices.Count; i++) {
-        //     Debug.Log("Vertex index " + i + ": " + (rightVertices[i] + new Vector3(0.5f,0.5f,0.5f)));
-        // }
-        // for (int i = 0; i < rightUVs.Count; i++) {
-        //     Debug.Log("uv index " + i + ": " + rightUVs[i] );
-        // }
-        // for (int i = 0; i < leftTriangles.Count; i++) {
-        //     Debug.Log("Triangle index " + i + ": " + leftTriangles[i]);
-        // }
-        // for (int i = 0; i < leftVertices.Count; i++) {
-        //     Debug.Log("Vertex index " + i + ": " + (leftVertices[i] + new Vector3(0.5f, 0.5f, 0.5f)));
-        // }
-        // for (int i = 0; i < leftUVs.Count; i++)
-        // {
-        //     Debug.Log("uv index " + i + ": " + leftUVs[i]);
-        // }
-
-        // CreateObject(leftVertices.ToArray(), leftUVs.ToArray(), leftTriangles.ToArray());
-        // CreateObject(rightVertices.ToArray(), rightUVs.ToArray(), rightTriangles.ToArray());
+        Debug.Log(string.Join(", ", newVertexSetList.Select(obj => obj.ToString())));
     }
 
     // ポリゴンの頂点番号を，孤独な頂点を先頭に，表裏情報をもつ順番に並び替える
@@ -318,23 +282,13 @@ public class ActSubdivide : MonoBehaviour {
     // 重複する頂点を削除する
     (bool deltrue, int newVertexIndex) InsertAndDeleteVertices(int length, Vector3 newVertex, List<Vector3> verticesList) {
         int listCount = verticesList.Count;
-        int newVertexIndex = 0;
+        int newVertexIndex = listCount;
         bool deltrue = false;
-        if (listCount == 0) {
-            newVertexIndex = 0;
-        }
-        else if (listCount == 1) {
-            newVertexIndex = 1;
-        }
-        else {
-            for (int duplicateIndex = 0; duplicateIndex < listCount; duplicateIndex++) {
-                if (verticesList[duplicateIndex] == newVertex) {
-                    newVertexIndex = duplicateIndex;
-                    deltrue = true;
-                }
-                else {
-                    newVertexIndex = listCount;
-                }
+        for (int duplicateIndex = 0; duplicateIndex < listCount; duplicateIndex++) {
+            if (verticesList[duplicateIndex] == newVertex) {
+                newVertexIndex = duplicateIndex;
+                deltrue = true;
+                break;
             }
         }
         return (deltrue, newVertexIndex + length);
