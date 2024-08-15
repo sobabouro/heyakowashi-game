@@ -361,28 +361,69 @@ public class ActSubdivide : MonoBehaviour {
         return assortVertexIndex;
     }
 
-    private List<> SetHorizontallyAdjacentEdges(int length, List<int[]> vertexSetList, Vector2[] verticesAry2D) {
-        for(int i =0; i < verticesAry2D.Length; i++){
-            double horizon = verticesAry2D[i].y;
-            List<int> leftHorizontallyAdjacentEdges = new List<int>();
-            foreach(int vertexSet in vertexSetList){
-                double startVertexY = verticesAry2D[vertexSet[0]].y;
-                double endVertexY = verticesAry2D[vertexSet[1]].y;
-                
-                if (startVertexY > horizon && endVertexY < horizon){
-                    // ここで何か処理を行う
-                    leftHorizontallyAdjacentEdges.Add()
-                }
-                else if (startVertexY < horizon && endVertexY > horizon){
-                    // ここで何か処理を行う
-                    leftHorizontallyAdjacentEdges.Add()
+    // すべての頂点に対して水平方向左に隣接する辺を求める．
+    private int[] SetHorizontallyAdjacentEdges(int length, List<int[]> vertexSetLists, Vector2[] verticesAry2D) {
+        // すべての頂点に対応する配列を作る．
+        int[] leftHorizontallyAdjacentEdges = new int[verticesAry2D.Length];
+        // 各頂点からの水平方向の直線と交差する辺を探索する
+        for(int i =0; i < verticesAry2D.Length; i++) {
+            // 現在の見ている頂点
+            Vector2 targetVertex = verticesAry2D[i];
+            // 各辺について水平線に交差しているかを判定する
+            foreach(int[] vertexSet in vertexSetLists) {
+                // 一番近い辺のx座標
+                float preCrossPointX = -Mathf.Infinity;
+                // 現在見ている辺の頂点
+                Vector2 startVertex = verticesAry2D[vertexSet[0]-length];
+                Vector2 endVertex = verticesAry2D[vertexSet[1]-length];
+
+                // startVertex と endVertex の間に targetVertex があるかどうか？ つまり交差してるってこと
+                if((startVertex.y <= targetVertex.y && endVertex.y > targetVertex.y) || (startVertex.y > targetVertex.y && endVertex.y <= targetVertex.y) ) {
+                    // 水平線と辺の交点を求める
+                    float y = targetVertex.y;
+                    //  x = (y - y1)(x2 - x1) / (y2 - y1) + x1;
+                    float x = (y - startVertex.y)(endVertex.x - startVertex.x) / (endVertex.y - startVertex.y) + startVertex.x;
+                    Vector2 crossPoint = new Vector2(x, y);
+                    // それは左ですか？しかも一番近いですか？
+                    if((crossPoint.x > preCrossPointX) && (crossPoint.x < targetVertex.x)) {
+                        leftHorizontallyAdjacentEdges[i] = vertexSet[0];
+                        preCrossPointX = crossPoint.x;
+                    }
                 }
             }
         }
+        return leftHorizontallyAdjacentEdges;
     }
+    
+    // 単純多角形を三角形に分割する
+    private void DivideSimpleGeometryToTriangle(){
 
+    }
+    // 図形を単純他t角形に分割する
+    
+    private void DivideComplexToSimpleGeometry(Plane cutter, int length, List<int[]> vertexSetLists, List<Vector3> vertices) {
+        Vector2[] vertices2D = ConvertTo2DCoordinates(cutter, vertices)
+        VertexGrouping(vertexSetLists, newVertexSetList);
+        AssortVertexIndex assortVertexIndex = DecomposeVertexSet(length, newVertexSetList, vertices2D);
+        int[] leftHorizontallyAdjacentEdges = SetHorizontallyAdjacentEdges(length, vertexSetLists, vertices2D);
 
+        int[] vertexIndexList = new int[vertices.Length];
+        for(int i = 0; i < vertices.Length; i++) {
+            vertexIndexList[i] = i;
+        }
+        // y座標をキーとして持つ配列を作成
+        float[] keys = new float[vertices2D.Length];
+        for (int i = 0; i < vertices2D.Length; i++) {
+            keys[i] = vertices2D[i].y; // 各頂点のy座標をキーにする
+        }
+        // y座標でソート
+        Array.Sort(keys, vertexIndexList);
 
+        // ここからが本番
+        foreach(int vertexIndex in vertexIndexList){
+        }
+    }
+    
 
     // 平面上の頂点を2D座標に変換する関数
     private Vector2[] ConvertTo2DCoordinates(Plane cutter, List<Vector3> vertices)
@@ -444,6 +485,37 @@ public class ActSubdivide : MonoBehaviour {
 }
 
 
+
+public class AttVertex {
+    private Vector2 _vertex;
+    public Vector2 Vertex {
+        get { return _vertex; }
+    }
+    private int _horizontalAdjacentEdge;
+
+    public int HorizontalAdjacentEdge {
+        get { return _horizontalAdjacentEdge; }
+    }
+    private List<int> _helperVertexIndex new List<int>();
+    public List<int> HelperVertexIndex {
+        get { return _helperVertexIndex; }
+    }
+
+    public AttVertex(Vector2 vertex, int horizontalAdjacentEdge, int helperVertexIndex) {
+        this._vertex = vertex;
+        this._horizontalAdjacentEdge = horizontalAdjacentEdge;
+        this._helperVertexIndex.Add(helperVertexIndex);
+    }
+    
+    public void AddHelperVertexIndex(int helperVertexIndex) {
+        this._helperVertexIndex.Add(helperVertexIndex);
+    }
+    public int PopHeloperVertexIndex() {
+        int helperVertexIndex = this._helperVertexIndex[0];
+        this._helperVertexIndex.RemoveAt(0);
+        return helperVertexIndex;
+    }
+}
 
 
 public class AssortVertexIndex {
