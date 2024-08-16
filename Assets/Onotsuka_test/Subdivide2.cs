@@ -1,7 +1,12 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using System;
 using System.Linq;
+using static RondomSubdivision;
+using TreeEditor;
+using Unity.VisualScripting;
+using System.Runtime.ConstrainedExecution;
 
 // 切断対象オブジェクトの参照
 
@@ -16,7 +21,7 @@ using System.Linq;
 // すべての頂点に対してポリゴンを形成する
 
 // 切断面の定義，新しいマテリアルの適用
-public class ActSubdivide : MonoBehaviour {
+public class Subdivide2 : MonoBehaviour {
 
     [SerializeField] private GameObject newGameObjectPrefab;
 
@@ -55,8 +60,7 @@ public class ActSubdivide : MonoBehaviour {
         int targetVerticesLength = targetVertices.Length;
         List<int>      irrelevantTriangles  = new List<int>();
         List<Vector3>  newVerticesList      = new List<Vector3>();
-        List<int[]>    vertexSetLists       = new List<int[]>();
-        List<int>      newVertexSetList     = new List<int>();
+        List<int[]>    vertexSetList       = new List<int[]>();
         // 切断面左側のオブジェクトのメッシュ情報
         List<int>     leftTriangles = new List<int>();
         List<Vector3> leftVertices  = new List<Vector3>();
@@ -109,7 +113,7 @@ public class ActSubdivide : MonoBehaviour {
                 }
                 // のちに頂点インデックスをもとに頂点グルーピングするので保存しておく
                 int [] vertexSet =  new int[] {newVertexIndexSV, newVertexIndexLV};
-                vertexSetLists.Add(vertexSet);
+                vertexSetList.Add(vertexSet);
 
                 /* 孤独な頂点が無限平面の右側にある場合 */
                 if (rtlf == true) {
@@ -162,9 +166,11 @@ public class ActSubdivide : MonoBehaviour {
             }
         }
         /* 断面のメッシュを生成する */
-        newVertexSetList = VertexGrouping(vertexSetLists, newVertexSetList);
+        // 座標を切断面で2次元化
+        Vector2[] verticesAry2D = ConvertTo2DCoordinates(cutter, newVerticesList);
+        DivideComplexToSimpleGeometry(vertexSetList, targetVerticesLength, verticesAry2D);
         // Debug
-        Debug.Log(string.Join(", ", newVertexSetList.Select(obj => obj.ToString())));
+        // Debug.Log(string.Join(", ", newVertexSetList.Select(obj => obj.ToString())));
     }
 
     // ポリゴンの頂点番号を，孤独な頂点を先頭に，表裏情報をもつ順番に並び替える
@@ -238,190 +244,256 @@ public class ActSubdivide : MonoBehaviour {
     }
 
     // 新頂点リストから，ペア同士の探索を行い，頂点グループを生成する
-    private List<int> VertexGrouping(List<int[]> vertexSetLists, List<int> newVertexSetList) {
-        List<int[]> vertexSetListsCopy = new List<int[]>(vertexSetLists);
-        List<int[]> newVertexSetListsCopy = new List<int[]>(vertexSetLists);
-        int vertexSetCount = vertexSetLists.Count;
-        int removeProcessedCount = 0;
-        int serchCount = 0;
-        int start = vertexSetListsCopy[0][0];
-        int last = vertexSetListsCopy[0][1];
-
-        newVertexSetList.Add(start);
-        newVertexSetList.Add(last);
-        newVertexSetListsCopy.RemoveAt(0);
-        removeProcessedCount++;
-        while (start == last) {
-            serchCount = 0;
-            foreach (int[] vertexSet in vertexSetListsCopy) {
-                if (last == vertexSet[0]) {
-                    last = vertexSet[1];
-                    newVertexSetList.Add(last);
-                    newVertexSetListsCopy.RemoveAt(serchCount);
-                    removeProcessedCount++;
-                }
-                serchCount++;
-            }
-            vertexSetListsCopy.Clear();
-            vertexSetListsCopy.AddRange(newVertexSetListsCopy);
-        }
-        if (removeProcessedCount == vertexSetCount) {
-            return newVertexSetList;
-        }
-        else {
-            newVertexSetList.Add(-1);
-            return VertexGrouping(vertexSetListsCopy, newVertexSetList);
-        }
-    }
-
-    // 新しく生成した頂点・辺の情報の詳細分類
-    private AssortVertexIndex DecomposeVertexSet(int length, List<int> newVertexSetList, Vector2[] verticesList2D) {
-        // データをいい感じに加工する
-        List<List<int>> vertexGroupList = new List<List<int>>();
-        foreach (int vertexIndex in newVertexSetList) {
-            if (vertexIndex == -1) {
-                vertexGroupList.Add(new List<int>());
-            }
-            else {
-                vertexGroupList[vertexGroupList.Count-1].Add(vertexIndex);
-            }
-        }
-        AssortVertexIndex assortVertexIndex = new AssortVertexIndex();
-        // ここからが本番
-        foreach (List<int> vertexGroup in vertexGroupList){
-            // 最初の部分
-            int preVertexIndex = vertexGroup[vertexGroup.Count-1];
-            int nowVertexIndex = vertexGroup[0];
-            int nextVertexIndex vertexGroup[1];
-            // 頂点座標の取得
-            Vector2 preVertex = verticesList2D[preVertexIndex-length];
-            Vector2 nowVertex = verticesList2D[nowVertexIndex-length];
-            Vector2 nextVertex = verticesList2D[nextVertexIndex-length];
-            // 外積
-            DoubleVector2 preToNow = new DoubleVector2(nowVertex - preVertex);
-            DoubleVector2 nowToNext = new DoubleVector2(nextVertex - nowVertex);
-            DoubleVector2 crossProduct = DoubleVector2.Cross(preToNow, nowToNext);
-            // 判別
-            if ((crossProduct < 0) && (nowVertex.y > preVertex.y ) && (nowVertex.y  > preVertex.y )){
-                assortVertexIndex.StartVertexList.Add(nowVertexIndex);
-            }else if ((crossProduct < 0) && (nowVertex.y  > preVertex.y ) && (nowVertex.y  > preVertex.y )){
-                assortVertexIndex.SplitVertexList.Add(nowVertexIndex);
-            }else if((crossProduct < 0) && (nowVertex.y  < preVertex.y ) && (nowVertex.y  < preVertex.y )){
-                assortVertexIndex.EndVertexList.Add(nowVertexIndex);
-            }else if((crossProduct > 0) && (nowVertex.y  < preVertex.y ) && (nowVertex.y  < preVertex.y )){
-                assortVertexIndex.MergeVertexList.Add(nowVertexIndex);
-            }
-            // 2つ目以降
-            for(int i = 0; i < vertexGroup.Count-1; i++){
-                int preVertex = vertexGroup[i];
-                int nowVertex = vertexGroup[i+1];
-                int nextVertex vertexGroup[i+2];
-                // 頂点座標の取得
-                Vector2 preVertex = verticesList2D[preVertexIndex-length];
-                Vector2 nowVertex = verticesList2D[nowVertexIndex-length];
-                Vector2 nextVertex = verticesList2D[nextVertexIndex-length];
-                // 外積
-                DoubleVector2 preToNow = new DoubleVector2(nowVertex - preVertex);
-                DoubleVector2 nowToNext = new DoubleVector2(nextVertex - nowVertex);
-                DoubleVector2 crossProduct = DoubleVector2.Cross(preToNow, nowToNext);
-                // 判別
-                if ((crossProduct < 0) && (nowVertex.y  > preVertex.y ) && (nowVertex.y  > preVertex.y )){
-                    assortVertexIndex.StartVertexList.Add(nowVertexIndex);
-                }else if ((crossProduct < 0) && (nowVertex.y  > preVertex.y ) && (nowVertex.y  > preVertex.y )){
-                    assortVertexIndex.SplitVertexList.Add(nowVertexIndex);
-                }else if((crossProduct < 0) && (nowVertex.y  < preVertex.y ) && (nowVertex.y  < preVertex.y )){
-                    assortVertexIndex.EndVertexList.Add(nowVertexIndex);
-                }else if((crossProduct > 0) && (nowVertex.y  < preVertex.y ) && (nowVertex.y  < preVertex.y )){
-                    assortVertexIndex.MergeVertexList.Add(nowVertexIndex);
+    private List<List<int>> VertexGrouping(List<int[]> vertexSetList, List<List<int>> vertexGroupsList) {
+        // コピーのリストを作成
+        List<int[]> remainingVertexSetList = new List<int[]>(vertexSetList);
+        // 頂点グループの最初のEdgeの開始点と終点を取得
+        int startVertex = remainingVertexSetList[0][0];
+        int endVertex = remainingVertexSetList[0][1];
+        // 最初のEdgeの頂点を追加し、削除
+        List<int> vertexGroup = new List<int>();
+        vertexGroup.Add(startVertex);
+        vertexGroup.Add(endVertex);
+        remainingVertexSetList.RemoveAt(0);
+        // 頂点が一周するまでループ
+        while (startVertex != endVertex){
+            // 残りの頂点リストから、前回の終点から始まるEdgeを探す
+            for (int i = 0; i < remainingVertexSetList.Count; i++){
+                if (endVertex == remainingVertexSetList[i][0]){
+                    // 終点を更新、頂点グループに追加し、削除
+                    endVertex = remainingVertexSetList[i][1];
+                    vertexGroup.Add(endVertex);
+                    remainingVertexSetList.RemoveAt(i);
+                    break;
                 }
             }
-            // 最後の部分
-            int preVertex = vertexGroup[vertexGroup.Count-2];
-            int nowVertex = vertexGroup[vertexGroup.Count-1];
-            int nextVertex vertexGroup[0];
-            // 頂点座標の取得
-            Vector2 preVertex = verticesList2D[preVertexIndex-length];
-            Vector2 nowVertex = verticesList2D[nowVertexIndex-length];
-            Vector2 nextVertex = verticesList2D[nextVertexIndex-length];
-            // 外積
-            DoubleVector2 preToNow = new DoubleVector2(nowVertex - preVertex);
-            DoubleVector2 nowToNext = new DoubleVector2(nextVertex - nowVertex);
-            DoubleVector2 crossProduct = DoubleVector2.Cross(preToNow, nowToNext);
-            // 判別
-            if ((crossProduct < 0) && (nowVertex.y  > preVertex.y ) && (nowVertex.y  > preVertex.y )){
-                assortVertexIndex.StartVertexList.Add(nowVertexIndex);
-            }else if ((crossProduct < 0) && (nowVertex.y  > preVertex.y ) && (nowVertex.y  > preVertex.y )){
-                assortVertexIndex.SplitVertexList.Add(nowVertexIndex);
-            }else if((crossProduct < 0) && (nowVertex.y  < preVertex.y ) && (nowVertex.y  < preVertex.y )){
-                assortVertexIndex.EndVertexList.Add(nowVertexIndex);
-            }else if((crossProduct > 0) && (nowVertex.y  < preVertex.y ) && (nowVertex.y  < preVertex.y )){
-                assortVertexIndex.MergeVertexList.Add(nowVertexIndex);
-            }
         }
-        return assortVertexIndex;
+        // まだ処理されていない頂点が残っている場合、再帰的にグループ化を続ける
+        if (remainingVertexSetList.Count > 0){
+            vertexGroupsList.Add(vertexGroup);
+            return VertexGrouping(remainingVertexSetList, vertexGroupsList);
+        }
+        // 全ての頂点ペアが処理された場合、結果を返す
+        return vertexGroupsList;
     }
 
-    // すべての頂点に対して水平方向左に隣接する辺を求める．
-    private int[] SetHorizontallyAdjacentEdges(int length, List<int[]> vertexSetLists, Vector2[] verticesAry2D) {
-        // すべての頂点に対応する配列を作る．
-        int[] leftHorizontallyAdjacentEdges = new int[verticesAry2D.Length];
-        // 各頂点からの水平方向の直線と交差する辺を探索する
-        for(int i =0; i < verticesAry2D.Length; i++) {
-            // 現在の見ている頂点
-            Vector2 targetVertex = verticesAry2D[i];
-            // 各辺について水平線に交差しているかを判定する
-            foreach(int[] vertexSet in vertexSetLists) {
-                // 一番近い辺のx座標
-                float preCrossPointX = -Mathf.Infinity;
-                // 現在見ている辺の頂点
-                Vector2 startVertex = verticesAry2D[vertexSet[0]-length];
-                Vector2 endVertex = verticesAry2D[vertexSet[1]-length];
 
-                // startVertex と endVertex の間に targetVertex があるかどうか？ つまり交差してるってこと
-                if((startVertex.y <= targetVertex.y && endVertex.y > targetVertex.y) || (startVertex.y > targetVertex.y && endVertex.y <= targetVertex.y) ) {
-                    // 水平線と辺の交点を求める
-                    float y = targetVertex.y;
-                    //  x = (y - y1)(x2 - x1) / (y2 - y1) + x1;
-                    float x = (y - startVertex.y)(endVertex.x - startVertex.x) / (endVertex.y - startVertex.y) + startVertex.x;
-                    Vector2 crossPoint = new Vector2(x, y);
-                    // それは左ですか？しかも一番近いですか？
-                    if((crossPoint.x > preCrossPointX) && (crossPoint.x < targetVertex.x)) {
-                        leftHorizontallyAdjacentEdges[i] = vertexSet[0];
-                        preCrossPointX = crossPoint.x;
+    // 頂点の情報の詳細分類 0:一般のVertex 1:StartVertex, 2:EndVertexList, 3:SplitVertex, 4:MergeVertexList
+    private int DecomposeVertex(int preVertexIndex, int nowVertexIndex, int nextVertexIndex, int offsetVertexIndex, Vector2[] verticesAry2D) {
+        // 頂点座標の取得
+        Vector2 preVertex = verticesAry2D[preVertexIndex - offsetVertexIndex];
+        Vector2 nowVertex = verticesAry2D[nowVertexIndex - offsetVertexIndex];
+        Vector2 nextVertex = verticesAry2D[nextVertexIndex - offsetVertexIndex];
+        // 外積
+        DoubleVector2 preToNow = new DoubleVector2(nowVertex - preVertex);
+        DoubleVector2 nowToNext = new DoubleVector2(nextVertex - nowVertex);
+        double crossProduct = DoubleVector2.Cross(preToNow, nowToNext);
+        // 判別
+        int assortVertex = 0; // 0:一般のVertex 1:StartVertex, 2:EndVertexList, 3:SplitVertex, 4:MergeVertexList
+        if ((crossProduct < 0) && (nowVertex.y > preVertex.y) && (nowVertex.y > preVertex.y)) {
+            assortVertex = 1; // StartVertex
+        } else if ((crossProduct < 0) && (nowVertex.y < preVertex.y) && (nowVertex.y < preVertex.y)) {
+            assortVertex = 2; // EndVertexList
+        } else if ((crossProduct < 0) && (nowVertex.y > preVertex.y) && (nowVertex.y > preVertex.y)) {
+            assortVertex = 3; // SplitVertex 
+        } else if ((crossProduct > 0) && (nowVertex.y < preVertex.y) && (nowVertex.y < preVertex.y)) {
+            assortVertex = 4; // MergeVertexList
+        } else {
+            assortVertex = 0; // 一般のVertex
+        }
+        return assortVertex;
+    }
+
+    // ある頂点に対して水平方向右に隣接する辺を求める．
+    private int SearchHorizontallyAdjacentEdgeStartVertexIndex(int vertexIndex, int offsetVertexIndex, List<int[]> vertexSetList, Vector2[] verticesAry2D) {
+        int horizontallyAdjacentEdgeStartVertexIndex = 0;
+        // 現在の見ている頂点
+        Vector2 targetVertex = verticesAry2D[vertexIndex - offsetVertexIndex];
+        // 各辺について水平線に交差しているかを判定する
+        foreach (int[] vertexSet in vertexSetList) {
+            // 一番近い辺のx座標を初期化
+            float nearestCrossPointX = -Mathf.Infinity;
+            // 現在見ている辺の頂点
+            Vector2 startVertex = verticesAry2D[vertexSet[0] - offsetVertexIndex];
+            Vector2 endVertex = verticesAry2D[vertexSet[1] - offsetVertexIndex];
+            // startVertex と endVertex の間に targetVertex があるかどうか？ つまり交差してるかってこと
+            if ((startVertex.y <= targetVertex.y && endVertex.y > targetVertex.y) || (startVertex.y > targetVertex.y && endVertex.y <= targetVertex.y)) {
+                // 水平線と辺の交点を求める
+                float y = targetVertex.y;
+                //  x = (y - y1)(x2 - x1) / (y2 - y1) + x1;
+                float x = (y - startVertex.y) * (endVertex.x - startVertex.x) / (endVertex.y - startVertex.y) + startVertex.x;
+                Vector2 crossPoint = new Vector2(x, y);
+                // それは右ですか？しかも一番近いですか？
+                if ((crossPoint.x < nearestCrossPointX) && (crossPoint.x > targetVertex.x)) {
+                    horizontallyAdjacentEdgeStartVertexIndex = vertexSet[0];
+                    nearestCrossPointX = crossPoint.x;
+                }
+            }
+        }
+        return horizontallyAdjacentEdgeStartVertexIndex;
+    }
+
+    // ある頂点を始点とする辺に対して、始点と終点のうちY座標の大きい方を補助頂点として設定する。
+    private int InitializeHelperVertexIndex(int startVertexIndex, int endVertexIndex, int offsetVertexIndex, Vector2[] verticesAry2D) {
+        int helperVertexIndex = 0;
+        // 頂点座標の取得
+        Vector2 startVertex = verticesAry2D[startVertexIndex - offsetVertexIndex];
+        Vector2 endVertex = verticesAry2D[endVertexIndex - offsetVertexIndex];
+        if (startVertex.y > endVertex.y) {
+            helperVertexIndex = startVertexIndex;
+        } else {
+            helperVertexIndex = endVertexIndex;
+        }
+        return helperVertexIndex;
+    }
+
+
+    // 単純多角形を三角形に分割する
+    private void DivideSimpleGeometryToTriangle() {
+
+}
+
+    // 図形を単純多角形に分割する
+
+    private void DivideComplexToSimpleGeometry(List<int[]> vertexSetList, int offsetVertexIndex, Vector2[] verticesAry2D) {
+        // 頂点グループを生成
+        List<List<int>> vertexGroupsList = new List<List<int>>();
+        VertexGrouping(vertexSetList, vertexGroupsList);
+        // 各頂点に必要な情報の作成　隣接辺　ヘルパー頂点　一つ後ろの頂点 分類
+        int[] horizontallyAdjacentEdgesAry = new int[verticesAry2D.Length];  // 水平右側隣接辺配列
+        List<int>[] helperVertexIndexListAry = new List<int>[verticesAry2D.Length];  // ヘルパー頂点リストの配列
+        int[] VertexAssortAry = new int[verticesAry2D.Length];  // 頂点
+
+        foreach (List<int> vertexGroup in vertexGroupsList) {
+            for (int i = 0; i < vertexGroup.Count-1; i++) {
+                int vertexIndex = vertexGroup[i];
+                // 水平右側隣接辺を取得
+                horizontallyAdjacentEdgesAry[vertexIndex] = SearchHorizontallyAdjacentEdgeStartVertexIndex(vertexIndex, offsetVertexIndex, vertexSetList, verticesAry2D);
+                // ヘルパー頂点を初期化
+                int startVertexIndex = vertexGroup[i];
+                int endVertexIndex = vertexGroup[i+1];
+                int helperVertexIndex = InitializeHelperVertexIndex(startVertexIndex, endVertexIndex, offsetVertexIndex, verticesAry2D);
+                helperVertexIndexListAry[startVertexIndex] = new List<int>() { helperVertexIndex };
+                // 頂点を分類
+                int preVertexIndex = vertexGroup[i];
+                int nowVertexIndex = vertexGroup[i+1];
+                int nextVertexIndex;
+                if (i + 2 < vertexGroup.Count) {
+                    nextVertexIndex = vertexGroup[i + 2];
+                } else {
+                    nextVertexIndex = vertexGroup[0];
+                }
+                VertexAssortAry[nowVertexIndex] = DecomposeVertex(offsetVertexIndex, preVertexIndex, nowVertexIndex, nextVertexIndex, verticesAry2D);
+            }
+        }
+
+        // 単純多角形に分割するための辺を追加した辺リスト
+        List<int[]> newVertexSetList = new List<int[]>(vertexSetList);
+
+        // endVertexのY座標でソートした辺リストを作成する
+        List<int[]> sortedVertexSetList = new List<int[]>(vertexSetList);
+        sortedVertexSetList.Sort((a, b) => Math.Sign(verticesAry2D[a[1]].y - verticesAry2D[b[1]].y));
+
+        // y座標が一番大きい頂点から順に処理
+        foreach (int[] vertexSet in sortedVertexSetList) {
+            int preVertexIndex = vertexSet[0];
+            int vertexIndex = vertexSet[1];
+            // 頂点の分類  0:一般のVertex 1:StartVertex, 2:EndVertexList, 3:SplitVertex, 4:MergeVertexList
+            if (VertexAssortAry[vertexIndex] == 0) {
+                // 頂点が一般点の場合
+                // その点のヘルパー頂点を見る。
+                List<int> helperVertexIndexList = helperVertexIndexListAry[vertexIndex];
+                int helperVertexIndex = helperVertexIndexList[helperVertexIndexList.Count - 1];
+                // Y座標がヘルパー頂点より小さい場合は上向き向き
+                if (verticesAry2D[vertexIndex].y > verticesAry2D[helperVertexIndex].y) {
+                    // 上向きの場合は左側（X軸方向正）が内部となる。
+                    // 水平隣接辺のヘルパー頂点を調べる。
+                    int hEdgeIndex = horizontallyAdjacentEdgesAry[vertexIndex];
+                    helperVertexIndexList = helperVertexIndexListAry[hEdgeIndex];
+                    helperVertexIndex = helperVertexIndexList[helperVertexIndexList.Count - 1];
+                    // 統合点なら対角線を引き、ヘルパー頂点を消す。
+                    if (VertexAssortAry[helperVertexIndex] == 4) {
+                        // 対角線を結ぶ
+                        int[] newEdge = new int[] { vertexIndex, helperVertexIndex };
+                        int[] newEdgeR = new int[] { helperVertexIndex, vertexIndex };
+                        newVertexSetList.Add(newEdge);
+                        newVertexSetList.Add(newEdgeR);
+                        helperVertexIndexList.RemoveAt(helperVertexIndexList.Count - 1);
+                    }
+                } else {
+                    // 下向きの場合は左側（X軸方向負）が内部となる。
+                    // ひとつ前の辺のヘルパー頂点を調べる。
+                    helperVertexIndexList = helperVertexIndexListAry[preVertexIndex];
+                    helperVertexIndex = helperVertexIndexList[helperVertexIndexList.Count - 1];
+                    // 統合点なら対角線を引き、ヘルパー頂点を消す。
+                    if (VertexAssortAry[helperVertexIndex] == 4) {
+                        // 対角線を結ぶ
+                        int[] newEdge = new int[] { vertexIndex, helperVertexIndex };
+                        int[] newEdgeR = new int[] { helperVertexIndex, vertexIndex };
+                        newVertexSetList.Add(newEdge);
+                        newVertexSetList.Add(newEdgeR);
+                        helperVertexIndexList.RemoveAt(helperVertexIndexList.Count - 1);
                     }
                 }
+
+            } else if (VertexAssortAry[vertexIndex] == 1) {
+                // 頂点が出発点の場合 必ず下向き
+                // ひとつ前の辺のヘルパー頂点を調べる。
+                List<int> helperVertexIndexList = helperVertexIndexListAry[preVertexIndex];
+                int helperVertexIndex = helperVertexIndexList[helperVertexIndexList.Count - 1];
+                // 統合点なら対角線を引き、ヘルパー頂点を消す。
+                if (VertexAssortAry[helperVertexIndex] == 4) {
+                    // 対角線を結ぶ
+                    int[] newEdge = new int[] { vertexIndex, helperVertexIndex };
+                    int[] newEdgeR = new int[] { helperVertexIndex, vertexIndex };
+                    newVertexSetList.Add(newEdge);
+                    newVertexSetList.Add(newEdgeR);
+                    helperVertexIndexList.RemoveAt(helperVertexIndexList.Count - 1);
+                }
+            } else if (VertexAssortAry[vertexIndex] == 2) {
+                // 頂点が最終点の場合　必ず上向き
+                // 水平隣接辺のヘルパー頂点を調べる。
+                int hEdgeIndex = horizontallyAdjacentEdgesAry[vertexIndex];
+                List<int> helperVertexIndexList = helperVertexIndexListAry[hEdgeIndex];
+                int helperVertexIndex = helperVertexIndexList[helperVertexIndexList.Count - 1];
+                // 統合点なら対角線を引き、ヘルパー頂点を消す。
+                if (VertexAssortAry[helperVertexIndex] == 4) {
+                    // 対角線を結ぶ
+                    int[] newEdge = new int[] { vertexIndex, helperVertexIndex };
+                    int[] newEdgeR = new int[] { helperVertexIndex, vertexIndex };
+                    newVertexSetList.Add(newEdge);
+                    newVertexSetList.Add(newEdgeR);
+                    helperVertexIndexList.RemoveAt(helperVertexIndexList.Count - 1);
+                }
+            } else if (VertexAssortAry[vertexIndex] == 3) {
+                // 頂点が分割点の場合
+                // 水平方向の隣接辺を見る。。
+                int hEdgeIndex = horizontallyAdjacentEdgesAry[vertexIndex];
+                // その辺のヘルパー頂点を見る。
+                List<int> helperVertexIndexList = helperVertexIndexListAry[hEdgeIndex];
+                int helperVertexIndex = helperVertexIndexList[helperVertexIndexList.Count - 1];
+                // ヘルパー頂点と対角線を結ぶ
+                int[] newEdge = new int[] { vertexIndex, helperVertexIndex };
+                int[] newEdgeR = new int[] { helperVertexIndex, vertexIndex };
+                newVertexSetList.Add(newEdge);
+                newVertexSetList.Add(newEdgeR);
+                // ヘルパー頂点が統合点なら消す。
+                if (VertexAssortAry[helperVertexIndex] == 4) {
+                    helperVertexIndexList.RemoveAt(helperVertexIndexList.Count - 1);
+                }
+
+            } else if (VertexAssortAry[vertexIndex] == 4) {
+                // 頂点が統合点の場合
+                // 水平方向の隣接辺を見る。その辺のヘルパー頂点リストに、自分を追加
+                int hEdgeIndex = horizontallyAdjacentEdgesAry[vertexIndex];
+                 helperVertexIndexListAry[hEdgeIndex].Add(vertexIndex);
             }
-        }
-        return leftHorizontallyAdjacentEdges;
-    }
-    
-    // 単純多角形を三角形に分割する
-    private void DivideSimpleGeometryToTriangle(){
+            
 
-    }
-    // 図形を単純他t角形に分割する
-    
-    private void DivideComplexToSimpleGeometry(Plane cutter, int length, List<int[]> vertexSetLists, List<Vector3> vertices) {
-        Vector2[] vertices2D = ConvertTo2DCoordinates(cutter, vertices)
-        VertexGrouping(vertexSetLists, newVertexSetList);
-        AssortVertexIndex assortVertexIndex = DecomposeVertexSet(length, newVertexSetList, vertices2D);
-        int[] leftHorizontallyAdjacentEdges = SetHorizontallyAdjacentEdges(length, vertexSetLists, vertices2D);
-
-        int[] vertexIndexList = new int[vertices.Length];
-        for(int i = 0; i < vertices.Length; i++) {
-            vertexIndexList[i] = i;
         }
-        // y座標をキーとして持つ配列を作成
-        float[] keys = new float[vertices2D.Length];
-        for (int i = 0; i < vertices2D.Length; i++) {
-            keys[i] = vertices2D[i].y; // 各頂点のy座標をキーにする
-        }
-        // y座標でソート
-        Array.Sort(keys, vertexIndexList);
-
-        // ここからが本番
-        foreach(int vertexIndex in vertexIndexList){
-        }
+        // 頂点グループを生成
+        List<List<int>> newVertexGroupsList = new List<List<int>>();
+        VertexGrouping(newVertexSetList, newVertexGroupsList);
     }
     
 
@@ -485,24 +557,37 @@ public class ActSubdivide : MonoBehaviour {
 }
 
 
-
 public class AttVertex {
+
     private Vector2 _vertex;
     public Vector2 Vertex {
         get { return _vertex; }
     }
-    private int _horizontalAdjacentEdge;
 
+    private int _preVertexIndex;
+    public int PreVertexIndex {
+        get { return _preVertexIndex; }
+    }
+
+    private List<int> _nextVertexIndex = new List<int>();
+    public List<int> NextVertexIndex {
+        get { return _nextVertexIndex; }
+    }
+
+    private int _horizontalAdjacentEdge;
     public int HorizontalAdjacentEdge {
         get { return _horizontalAdjacentEdge; }
     }
-    private List<int> _helperVertexIndex new List<int>();
+
+    private List<int> _helperVertexIndex = new List<int>();
     public List<int> HelperVertexIndex {
         get { return _helperVertexIndex; }
     }
 
-    public AttVertex(Vector2 vertex, int horizontalAdjacentEdge, int helperVertexIndex) {
+    public AttVertex(Vector2 vertex, int preVertexIndex, int nextVertexIndex, int horizontalAdjacentEdge, int helperVertexIndex) {
         this._vertex = vertex;
+        this._preVertexIndex = preVertexIndex;
+        this._nextVertexIndex.Add(nextVertexIndex);
         this._horizontalAdjacentEdge = horizontalAdjacentEdge;
         this._helperVertexIndex.Add(helperVertexIndex);
     }
@@ -515,28 +600,42 @@ public class AttVertex {
         this._helperVertexIndex.RemoveAt(0);
         return helperVertexIndex;
     }
+
+    public void AddNextVertexIndex(int nextVertexIndex) {
+        this._nextVertexIndex.Add(nextVertexIndex);
+    }
 }
 
 
-public class AssortVertexIndex {
-    private List<int> _startVertexList = new List<int>();
-    public List<int> StartVertexList {
-        get { return _startVertexList; }
-        set { _startVertexList = value; }
+
+
+
+
+
+
+/*
+main(){
+    for v in List{
+        二次元化(v);
     }
-    private List<int> _splitVertexList = new List<int>();
-    public List<int> SplitVertexList {
-        get { return _splitVertexList; }
-        set { _splitVertexList = value; }
+    for v in List{
+        隣接辺探索(x);
     }
-    private List<int> _endVertexList = new List<int>();
-    public List<int> EndVertexList {
-        get { return _endVertexList; }
-        set { _endVertexList = value; }
-    }
-    private List<int> _mergeVertexList = new List<int>();
-    public List<int> MergeVertexList {
-        get { return _mergeVertexList; }
-        set { _mergeVertexList = value; }
+    for v in List{
+        ヘルパー頂点設定(v);
     }
 }
+
+#######################################
+
+main(){
+    for v in List{
+        二次元化(v);
+        隣接辺探索(x);
+        ヘルパー頂点設定(v);
+    }
+}
+二次元化(v){}
+隣接辺探索(v){}
+ヘルパー頂点設定(v){}
+*/
