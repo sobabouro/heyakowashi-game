@@ -70,7 +70,7 @@ public class DoubleVector2 : MonoBehaviour
         return new DoubleVector2(a.x - b.x, a.y - b.y);
     }
     public static DoubleVector2 operator *(DoubleVector2 a, double d) {
-        return new DoubleVector2(a.x * d, a.y * d;
+        return new DoubleVector2(a.x * d, a.y * d);
     }
     public static DoubleVector2 operator /(DoubleVector2 a, double d) {
         return new DoubleVector2(a.x / d, a.y / d);
