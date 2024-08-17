@@ -2,13 +2,13 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class DoubleVector2 : MonoBehaviour
+public class DoubleVector2
 {
     public double x, y;
 
     public DoubleVector2(Vector2 v) {
-        this.x = (double)x;
-        this.y = (double)y;
+        this.x = (double)v.x;
+        this.y = (double)v.y;
     }
     public DoubleVector2(double x, double y) {
         this.x = x;
