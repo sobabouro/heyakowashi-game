@@ -8,17 +8,17 @@ public class ScoreData : MonoBehaviour
     [SerializeField]
     private int score;
     [SerializeField]
-    private string userName;
+    private string userComment;
 
-    public ScoreData(int score, string userName)
+    public ScoreData(int score, string userComment)
     {
         this.score = score;
-        this.userName = userName;
+        this.userComment = userComment;
     }
 
-    public void SetUserName(string userName)
+    public void SetuserComment(string userComment)
     {
-        this.userName = userName;
+        this.userComment = userComment;
     }
 
     public void SetScore(int score)
@@ -26,13 +26,13 @@ public class ScoreData : MonoBehaviour
         this.score = score;
     }
 
-    public string GetUserName()
+    public string GetUserComment()
     {
-        return userName;
+        return userComment;
     }
 
-    public string GetScore()
+    public int GetScore()
     {
-        return userName;
+        return score;
     }
 }

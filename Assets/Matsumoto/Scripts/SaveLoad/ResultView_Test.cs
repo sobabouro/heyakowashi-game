@@ -6,75 +6,87 @@ using TMPro;
 
 public class ResultView_Test : MonoBehaviour
 {
-    // データ表示用テキスト
+    // debug用のデータ表示用テキスト
     [SerializeField]
-    private TMPro.TMP_Text dataText;
+    private TMPro.TMP_Text debugText;
+
+    // プレイヤーのスコア表示用テキスト
+    [SerializeField]
+    private TMPro.TMP_Text playerScore;
+
+    // ランキングのスコアを表示用テキストリスト
+    [SerializeField]
+    private List<TMPro.TMP_Text> rankingScoreList;
+
 
     // データを保持しているスクリプト
     [SerializeField]
     private CreateNewData createNewData;
 
-    // データ表示のテキストを空にする
-    public void ResetText()
+    void Start()
     {
-        dataText.SetText("");
+        ShowScore();
     }
 
-    // 現在保存しているユーザー名とスコアを表示する
-    public void ShowScoreData()
+    // 現在保存しているスコアを表示する
+    private void ShowScore()
     {
-        ResetText();
-        dataText.SetText(createNewData.GetSaveData().GetScoreData());
+        playerScore.SetText(createNewData.GetSaveData().GetScoreData().GetScore().ToString());
     }
 
     // 現在保存しているのJSONデータを表示する
     public void ShowJsonData()
     {
-        ResetText();
-        dataText.SetText(createNewData.GetSaveData().GetJsonData());
+        debugText.SetText(createNewData.GetSaveData().GetJsonData());
+        Debug.Log(createNewData.GetSaveData().GetJsonData());
     }
 
     // 今回のスコアデータを含めたデータをセーブする
     public void Save()
     {
-        ResetText();
+        
         PlayerPrefs.SetString("PlayerData", createNewData.GetSaveData().GetJsonData());
     }
 
-    // 今回のプレイのuserNameを設定する
-    public void SetUserName(string userName)
+    // 今回のプレイのuserCommentを設定する
+    public void SetuserComment(string userComment)
     {
-        createNewData.GetSaveData().SetUserName(userName);
+        createNewData.GetSaveData().SetUserComment(userComment);
     }
 
     // PlayerPrefsから取得したデータをSaveDataのデータに上書きする
     public void LoadFromJsonOverwrite()
     {
-        ResetText();
+        
         if (PlayerPrefs.HasKey("PlayerData"))
         {
             var data = PlayerPrefs.GetString("PlayerData");
             JsonUtility.FromJsonOverwrite(data, createNewData.GetSaveData());
-            dataText.SetText(createNewData.GetSaveData().GetJsonData());
+            debugText.SetText(createNewData.GetSaveData().GetJsonData());
         }
     }
 
     // 保存しているセーブデータをそのまま表示
     public void ShowSaveData()
     {
-        ResetText();
+        
         if (PlayerPrefs.HasKey("PlayerData"))
         {
             var data = PlayerPrefs.GetString("PlayerData");
             SaveData otherSaveData = JsonUtility.FromJson<SaveData>(data);
-            dataText.SetText(otherSaveData.GetJsonData());
+            debugText.SetText(otherSaveData.GetJsonData());
         }
     }
 
     // データを削除する
     private void DeleteData()
     {
-        ResetText();
+        
         PlayerPrefs.DeleteKey("PlayerData");
+    }
+
+    private void ResetDebugText()
+    {
+        debugText.SetText("");
     }
 }

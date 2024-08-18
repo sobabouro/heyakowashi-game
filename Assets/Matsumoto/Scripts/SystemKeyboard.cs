@@ -16,7 +16,7 @@ public class SystemKeyboard : MonoBehaviour
     [SerializeField]
     private KeyboardPreview mixedRealityKeyboardPreview = null;
 
-    private void Start()
+    void Start()
     {
         // Initially hide the preview.
         if (mixedRealityKeyboardPreview != null)

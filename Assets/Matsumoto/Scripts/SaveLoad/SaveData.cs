@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using System;
 
 [System.Serializable]
 public class SaveData : object
@@ -10,9 +11,22 @@ public class SaveData : object
 
     private ScoreData scoreData;
 
-    public void SetScoreData(int score, string userName)
+    void start()
     {
-        scoreData = new ScoreData(score, userName);
+        InitializeScoreData();
+    }
+
+    // ScoreDataの初期化
+    private void InitializeScoreData()
+    {
+        int score = PlayerPrefs.GetInt("Score");
+        string userComment = "";
+        scoreData = new ScoreData(score, userComment);
+    }
+
+    public void SetScoreData(int score, string userComment)
+    {
+        scoreData = new ScoreData(score, userComment);
     }
 
     public void SetScoreDataList(List<ScoreData> scoreDataList)
@@ -25,22 +39,21 @@ public class SaveData : object
         return scoreDataList;
     }
 
-    // ユーザー名のみを変更する
-    public void SetUserName(string userName)
+    // ユーザーコメントのみを変更する
+    public void SetUserComment(string userComment)
     {
-        scoreData.SetUserName(userName);
+        scoreData.SetuserComment(userComment);
     }
 
-    // 全てのスコアデータのユーザー名とスコアを返す
-    public string GetScoreData()
+    public string GetUserComment()
     {
-        string objectString = "";
-        foreach (ScoreData scoreData in scoreDataList)
-        {
-            objectString += "UserName: " + scoreData.GetUserName() + " Score" + scoreData.GetScore() + "\n";
-        }
+        return scoreData.GetUserComment();
+    }
 
-        return objectString;
+    // 現在のスコアデータを返す
+    public ScoreData GetScoreData()
+    {
+        return scoreData;
     }
 
     // フィールド値をJSON形式にした文字列を返す
@@ -49,4 +62,16 @@ public class SaveData : object
         return JsonUtility.ToJson(this);
     }
 
+    // ランキングをスコアが大きい順にソートする
+    public void SortScoreDataList()
+    {
+        var c = new Comparison<ScoreData>(Compare);
+        scoreDataList.Sort(c);
+    }
+
+
+    static int Compare(ScoreData a, ScoreData b)
+    {
+        return b.GetScore() - a.GetScore();
+    }
 }
