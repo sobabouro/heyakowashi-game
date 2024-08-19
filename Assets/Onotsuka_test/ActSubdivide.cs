@@ -195,7 +195,6 @@ public class ActSubdivide : MonoBehaviour {
 
         Vector2[] verticesAry2D = ConvertTo2DCoordinates(cutter, newVerticesList);
         DivideComplexGeometryToTriangle(vertexSetList, targetVerticesLength, verticesAry2D);
-        // Debug
     }
 
     // ポリゴンの頂点番号を，孤独な頂点を先頭に，表裏情報をもつ順番に並び替える
@@ -408,7 +407,7 @@ public class ActSubdivide : MonoBehaviour {
             Vector2 startVertex = verticesAry2D[vertexSet[0] - offsetVertexIndex];
             Vector2 endVertex = verticesAry2D[vertexSet[1] - offsetVertexIndex];
             // startVertex と endVertex の間に targetVertex があるかどうか？ つまり交差してるかってこと
-            if ((startVertex.y <= targetVertex.y && endVertex.y > targetVertex.y) || (startVertex.y > targetVertex.y && endVertex.y <= targetVertex.y)) {
+            if ((startVertex.y < targetVertex.y && endVertex.y >= targetVertex.y) || (startVertex.y >= targetVertex.y && endVertex.y < targetVertex.y)) {
                 // 水平線と辺の交点を求める
                 float y = targetVertex.y;
                 //  x = (y - y1)(x2 - x1) / (y2 - y1) + x1;
