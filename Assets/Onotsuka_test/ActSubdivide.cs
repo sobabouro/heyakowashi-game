@@ -167,34 +167,34 @@ public class ActSubdivide : MonoBehaviour {
         // 座標を切断面で2次元化
         // Debug.Log(string.Join(", ", newVerticesList.Select(obj => obj.ToString())));
 
-
-        newVerticesList = new List<Vector3>{
-        new Vector3(0, 2, 0),
-        new Vector3(0, 0.618f, 1.902f),
-        new Vector3(0, -1.618f, 1.176f),
-        new Vector3(0, -1.618f, -1.176f),
-        new Vector3(0, 0.618f, -1.902f),
-        new Vector3(0, 1, 0),
-        new Vector3(0, 0.309f, 0.951f),
-        new Vector3(0, -0.809f, 0.588f),
-        new Vector3(0, -0.809f, -0.588f),
-        new Vector3(0, 0.309f, -0.951f)
-        };
-        vertexSetList = new List<int[]>{
-            new int[]{ targetVerticesLength+0, targetVerticesLength + 1 },
-            new int[]{ targetVerticesLength + 1,targetVerticesLength + 2 },
-            new int[]{ targetVerticesLength + 2,targetVerticesLength + 3 },
-            new int[]{ targetVerticesLength + 3,targetVerticesLength + 4 },
-            new int[]{ targetVerticesLength + 4,targetVerticesLength + 0 },
-            new int[]{ targetVerticesLength + 9,targetVerticesLength + 8 },
-            new int[]{ targetVerticesLength + 8,targetVerticesLength + 7 },
-            new int[]{ targetVerticesLength + 7,targetVerticesLength + 6 },
-            new int[]{ targetVerticesLength + 6,targetVerticesLength + 5 },
-            new int[]{ targetVerticesLength + 5,targetVerticesLength + 9 }
-        };
+        //　五角系In五角系のテストケース
+        //newVerticesList = new List<Vector3>{
+        //new Vector3(0, 2, 0),
+        //new Vector3(0, 0.618f, 1.902f),
+        //new Vector3(0, -1.618f, 1.176f),
+        //new Vector3(0, -1.618f, -1.176f),
+        //new Vector3(0, 0.618f, -1.902f),
+        //new Vector3(0, 1, 0),
+        //new Vector3(0, 0.309f, 0.951f),
+        //new Vector3(0, -0.809f, 0.588f),
+        //new Vector3(0, -0.809f, -0.588f),
+        //new Vector3(0, 0.309f, -0.951f)
+        //};
+        //vertexSetList = new List<int[]>{
+        //    new int[]{ targetVerticesLength+0, targetVerticesLength + 1 },
+        //    new int[]{ targetVerticesLength + 1,targetVerticesLength + 2 },
+        //    new int[]{ targetVerticesLength + 2,targetVerticesLength + 3 },
+        //    new int[]{ targetVerticesLength + 3,targetVerticesLength + 4 },
+        //    new int[]{ targetVerticesLength + 4,targetVerticesLength + 0 },
+        //    new int[]{ targetVerticesLength + 9,targetVerticesLength + 8 },
+        //    new int[]{ targetVerticesLength + 8,targetVerticesLength + 7 },
+        //    new int[]{ targetVerticesLength + 7,targetVerticesLength + 6 },
+        //    new int[]{ targetVerticesLength + 6,targetVerticesLength + 5 },
+        //    new int[]{ targetVerticesLength + 5,targetVerticesLength + 9 }
+        //};
 
         Vector2[] verticesAry2D = ConvertTo2DCoordinates(cutter, newVerticesList);
-        DivideComplexToSimpleGeometry(vertexSetList, targetVerticesLength, verticesAry2D);
+        DivideComplexGeometryToTriangle(vertexSetList, targetVerticesLength, verticesAry2D);
         // Debug
     }
 
@@ -296,7 +296,6 @@ public class ActSubdivide : MonoBehaviour {
         // 全ての頂点ペアが処理された場合、結果を返す
         return vertexGroupsList;
     }
-
 
     // 対角線を追加した頂点セットリストから，ペア同士の探索を行い，頂点グループを生成する
     private List<List<int>> ReVertexGrouping(List<int[]> vertexSetList, List<List<int>> vertexGroupsList, int offsetVertexIndex, Vector2[] verticesAry2D) {
@@ -452,13 +451,82 @@ public class ActSubdivide : MonoBehaviour {
     }
 
     // 単純多角形を三角形に分割する
-    private void DivideSimpleGeometryToTriangle() {
+    private List<int[]> DivideSimpleGeometryToTriangle(List<int> simpleGeometryVertexGroup, int offsetVertexIndex, Vector2[] verticesAry2D) {
+        int[][] vertexSetAry = new int[verticesAry2D.Length][];
 
+        // Y座標でソートした頂点番号リストを作成する
+        int[] sortedVertxIndexAry = new int[simpleGeometryVertexGroup.Count-1];
+        float[] keys = new float[simpleGeometryVertexGroup.Count - 1];
+
+        for (int i = 0; i < simpleGeometryVertexGroup.Count - 1; i++) {
+            int preVertexIndex = (i - 1 >= 0 ? simpleGeometryVertexGroup[i - 1] : simpleGeometryVertexGroup[simpleGeometryVertexGroup.Count - 2]);
+            int nowVertexIndex = simpleGeometryVertexGroup[i];
+            int nextVertexIndex = simpleGeometryVertexGroup[i + 1];
+            vertexSetAry[nowVertexIndex - offsetVertexIndex] = new int[] { preVertexIndex, nowVertexIndex, nextVertexIndex };
+
+            sortedVertxIndexAry[i] = nowVertexIndex;
+            // 注意点: 1_000_000 は適当なスケーリングファクターで、Y軸の値がX軸の値よりも影響力を持つようにしています。Y軸とX軸の値の範囲に応じて調整が必要です。
+            keys[i] = verticesAry2D[nowVertexIndex - offsetVertexIndex].y * 1_000_000 + verticesAry2D[i].x; ; // nowVertexIndexのY座標
+        }
+
+        Array.Sort(keys, sortedVertxIndexAry);
+
+        // CompareToでソート
+        // Array.Sort(sortedVertxIndexAry, (a, b) => {
+        //     if (verticesAry2D[a].y != verticesAry2D[b].y)
+        //         return verticesAry2D[b].y.CompareTo(verticesAry2D[a].y); // Yの降順
+        //     return verticesAry2D[b].x.CompareTo(verticesAry2D[a].x);     // Xの降順
+        // });
+
+        List<int[]> triangleList = new List<int[]>();
+        // y座標が一番大きい頂点から順に処理
+        List<int[]> vertexSetStack = new List<int[]>();
+        for (int i = 0; i < sortedVertxIndexAry.Length-2; i++) {
+            // 一番上の頂点、次に高い頂点、その次に高い頂点
+            int[] vertexSet1 = vertexSetAry[sortedVertxIndexAry[i] - offsetVertexIndex];
+            int[] vertexSet2 = vertexSetAry[sortedVertxIndexAry[i + 1] - offsetVertexIndex];
+            int[] vertexSet3 = vertexSetAry[sortedVertxIndexAry[i + 2] - offsetVertexIndex];
+            // Debug.Log("vertexSet: " + string.Join(", ", targetVertexSet.Select(a => a.ToString())));
+            // それぞれのY座標が等しかったら一直線なので三角形を作成しない。そうでないなら三角形を作成する。
+            float y1 = verticesAry2D[vertexSet1[1] - offsetVertexIndex].y;
+            float y2 = verticesAry2D[vertexSet2[1] - offsetVertexIndex].y;
+            float y3 = verticesAry2D[vertexSet3[1] - offsetVertexIndex].y;
+            // Debug.Log(y1.ToString() + y2.ToString() + y3.ToString() + (y1 != y2 || y2 != y3 || y3 != y1).ToString());
+            if (y1 != y2 || y2 != y3 || y3 != y1) {
+                triangleList.Add(new int[] { vertexSet1[1], vertexSet2[1], vertexSet3[1] });
+            }
+
+            // 頂点をカットして、前後の頂点を辺でつなぎなおす。
+            int[] cutVertexSet = null;
+            // カットする頂点の場合分け （２番目に高い点と３番目に高い点がつながっているかどうか）
+            int vertexSet2PreIndex = vertexSet2[0];
+            int vertexSet2NextIndex = vertexSet2[2];
+            int vertexSet3Index = vertexSet3[1];
+            if (vertexSet2PreIndex == vertexSet3Index || vertexSet2NextIndex == vertexSet3Index) {
+                //　２番目に高い点と３番目に高い点がつながっている場合、２番目に高い点をカット
+                cutVertexSet = vertexSet2;
+                // 次ループでみる一番高い頂点は変わらない。
+                sortedVertxIndexAry[i + 1] = sortedVertxIndexAry[i];
+            } else {
+                //　２番目に高い点と３番目に高い点がつながっていない場合、１番目に高い点をカット
+                cutVertexSet = vertexSet1;
+
+            }
+            int[] preVertexSet = vertexSetAry[cutVertexSet[0] - offsetVertexIndex];
+            preVertexSet[2] = cutVertexSet[2];
+            // Debug.Log("preVertexSet: " + string.Join(", ", preVertexSet.Select(a => a.ToString())));
+            int[] nextVertexSet = vertexSetAry[cutVertexSet[2] - offsetVertexIndex];
+            nextVertexSet[0] = cutVertexSet[0];
+            // Debug.Log("nextVertexSet: " + string.Join(", ", nextVertexSet.Select(a => a.ToString())));
+        }
+        Debug.Log("triangleList: " + string.Join(", ", triangleList.Select(a => "(" + string.Join(", ", a.Select(b => b.ToString())) + ")")));
+
+        return triangleList;
     }
 
     // 図形を単純多角形に分割する
 
-    private void DivideComplexToSimpleGeometry(List<int[]> vertexSetList, int offsetVertexIndex, Vector2[] verticesAry2D) {
+    private List<List<int>> DivideComplexToSimpleGeometry(List<int[]> vertexSetList, int offsetVertexIndex, Vector2[] verticesAry2D) {
 
         // Debug.Log(string.Join(", ", verticesAry2D.Select(obj => obj.ToString())));
         // (0.00, 0.50, 0.50), (0.00, 0.00, 0.50), (0.00, -0.50, 0.50), (0.00, 0.50, -0.50), (0.00, 0.50, 0.00), (0.00, -0.50, -0.50), (0.00, 0.00, -0.50), (0.00, -0.50, 0.00)
@@ -479,23 +547,15 @@ public class ActSubdivide : MonoBehaviour {
 
         foreach (List<int> vertexGroup in vertexGroupsList) {
             for (int i = 0; i < vertexGroup.Count - 1; i++) {
-                int vertexIndex = vertexGroup[i];
+                int preVertexIndex = (i-1 > 0 ? vertexGroup[i - 1] : vertexGroup[vertexGroup.Count - 2]);
+                int nowVertexIndex = vertexGroup[i];
+                int nextVertexIndex = vertexGroup[i + 1];
                 // 水平右側隣接辺を取得
-                horizontallyAdjacentEdgesAry[vertexIndex - offsetVertexIndex] = SearchHorizontallyAdjacentEdgeStartVertexIndex(vertexIndex, offsetVertexIndex, vertexSetList, verticesAry2D);
+                horizontallyAdjacentEdgesAry[nowVertexIndex - offsetVertexIndex] = SearchHorizontallyAdjacentEdgeStartVertexIndex(nowVertexIndex, offsetVertexIndex, vertexSetList, verticesAry2D);
                 // ヘルパー頂点を初期化
-                int startVertexIndex = vertexGroup[i];
-                int endVertexIndex = vertexGroup[i + 1];
-                int helperVertexIndex = InitializeHelperVertexIndex(startVertexIndex, endVertexIndex, offsetVertexIndex, verticesAry2D);
-                helperVertexIndexListAry[startVertexIndex - offsetVertexIndex] = new List<int>() { helperVertexIndex };
+                int helperVertexIndex = InitializeHelperVertexIndex(nowVertexIndex, nextVertexIndex, offsetVertexIndex, verticesAry2D);
+                helperVertexIndexListAry[nowVertexIndex - offsetVertexIndex] = new List<int>() { helperVertexIndex };
                 // 頂点を分類
-                int preVertexIndex = vertexGroup[i];
-                int nowVertexIndex = vertexGroup[i + 1];
-                int nextVertexIndex;
-                if (i + 2 < vertexGroup.Count) {
-                    nextVertexIndex = vertexGroup[i + 2];
-                } else {
-                    nextVertexIndex = vertexGroup[1];
-                }
                 VertexAssortAry[nowVertexIndex - offsetVertexIndex] = DecomposeVertex(preVertexIndex, nowVertexIndex, nextVertexIndex, offsetVertexIndex, verticesAry2D);
             }
         }
@@ -513,7 +573,19 @@ public class ActSubdivide : MonoBehaviour {
         // endVertexのY座標でソートした辺リストを作成する
         List<int[]> sortedVertexSetList = new List<int[]>(vertexSetList);
 
-        sortedVertexSetList.Sort((a, b) => Math.Sign(verticesAry2D[b[1] - offsetVertexIndex].y - verticesAry2D[a[1] - offsetVertexIndex].y));
+        // sortedVertexSetList.Sort((a, b) => Math.Sign(verticesAry2D[b[1] - offsetVertexIndex].y - verticesAry2D[a[1] - offsetVertexIndex].y));
+
+        // CompareToでソート
+        sortedVertexSetList.Sort((a, b) => {
+            float a_x = verticesAry2D[a[1] - offsetVertexIndex].x;
+            float a_y = verticesAry2D[a[1] - offsetVertexIndex].y;
+            float b_x = verticesAry2D[b[1] - offsetVertexIndex].x;
+            float b_y = verticesAry2D[b[1] - offsetVertexIndex].y;
+            if (a_y != b_y)
+                return b_y.CompareTo(a_y); // Yの降順
+            return b_x.CompareTo(a_x);     // Xの降順
+        });
+
 
         // ここからが本番
         // y座標が一番大きい頂点から順に処理
@@ -603,11 +675,25 @@ public class ActSubdivide : MonoBehaviour {
         foreach (List<int> vertexGroup in newVertexGroupsList) {
             Debug.Log("Out vertexGroup " + string.Join(", ", vertexGroup.Select(obj => obj.ToString())));
         }
+        return newVertexGroupsList;
     }
 
 
-    // 平面上の頂点を2D座標に変換する関数
-    private Vector2[] ConvertTo2DCoordinates(Plane cutter, List<Vector3> vertices) {
+    private List<int[]> DivideComplexGeometryToTriangle(List<int[]> vertexSetList, int offsetVertexIndex, Vector2[] verticesAry2D) {
+        List<int[]> allTriangleList = new List<int[]>();
+        List<List<int>> newVertexGroupsList = DivideComplexToSimpleGeometry(vertexSetList, offsetVertexIndex, verticesAry2D);
+        foreach (List<int> vertexGroup in newVertexGroupsList) {
+            List<int[]> triangleList = DivideSimpleGeometryToTriangle(vertexGroup, offsetVertexIndex, verticesAry2D);
+            allTriangleList.AddRange(triangleList);
+        }
+        Debug.Log("allTriangleList: " + string.Join(", ", allTriangleList.Select(a => "(" + string.Join(", ", a.Select(b => b.ToString())) + ")")));
+
+        return allTriangleList;
+    }
+
+
+        // 平面上の頂点を2D座標に変換する関数
+        private Vector2[] ConvertTo2DCoordinates(Plane cutter, List<Vector3> vertices) {
         Vector2[] result = new Vector2[vertices.Count];
         Vector3 planeNormal = cutter.normal;
         Vector3 planePoint = planeNormal * cutter.distance;

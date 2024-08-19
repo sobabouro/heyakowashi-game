@@ -21,6 +21,10 @@ public class DoubleVector2
         }
     }
 
+    public override string ToString() {
+        return $"({x}, {y})";
+    }
+
     public double sqrMagnitude {
         get{
             return x * x + y * y;
