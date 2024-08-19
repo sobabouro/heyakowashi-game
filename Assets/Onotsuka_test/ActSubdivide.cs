@@ -339,7 +339,7 @@ public class ActSubdivide : MonoBehaviour {
                     angle += 180;
                     // Debug.Log("Angle = " + angle);
                     // 角度が最小のベクトルを記録
-                    if (angle < minAngle) {
+                    if (angle > 0 && angle < minAngle) {
                         minAngle = angle;
                         minVertexSet = remainingVertexSetList[i];
                         minAngleIndex = i;
