@@ -440,14 +440,12 @@ public class ActSubdivide : MonoBehaviour {
         return helperVertexIndex;
     }
 
-    private bool EdgeDirectionUPorDown(int targetVertexIndex, int offsetVertexIndex,  List<int>[] helperVertexIndexListAry, Vector2[] verticesAry2D) {
-        // その点の最新のヘルパー頂点を見る。
-        List<int> tvHelperVertexIndexList = helperVertexIndexListAry[targetVertexIndex - offsetVertexIndex];
-        int tvHelperVertexIndex = tvHelperVertexIndexList[tvHelperVertexIndexList.Count - 1];
-        // Y座標がヘルパー頂点より小さい場合は上向き
+    private bool EdgeDirectionUPorDown(int targetVertexIndex, int preVertexIndex, int offsetVertexIndex,  Vector2[] verticesAry2D) {
+        // 前のY座標より大きい場合は上向き
         // Debug.Log("targetVertexIndex " + verticesAry2D[targetVertexIndex - offsetVertexIndex].y.ToString());
-        // Debug.Log("tvHelperVertexIndex " + verticesAry2D[tvHelperVertexIndex - offsetVertexIndex].y.ToString());
-        return verticesAry2D[targetVertexIndex - offsetVertexIndex].y < verticesAry2D[tvHelperVertexIndex - offsetVertexIndex].y;
+        // Debug.Log("preVertexIndex " + verticesAry2D[preVertexIndex - offsetVertexIndex].y.ToString());
+        // Debug.Log("UP=T, Down=F " + (verticesAry2D[targetVertexIndex - offsetVertexIndex].y > verticesAry2D[preVertexIndex - offsetVertexIndex].y).ToString());
+        return verticesAry2D[targetVertexIndex - offsetVertexIndex].y > verticesAry2D[preVertexIndex - offsetVertexIndex].y;
     }
 
     // 単純多角形を三角形に分割する
@@ -599,7 +597,7 @@ public class ActSubdivide : MonoBehaviour {
             // 頂点の分類  0:一般のVertex 1:StartVertex, 2:EndVertexList, 3:SplitVertex, 4:MergeVertexList
             int targetVertexAssort = VertexAssortAry[targetVertexIndex_offset];
             // Debug.Log("VertexAssort: " + VertexAssortAry[targetVertexIndex_offset].ToString());
-            if (((targetVertexAssort == 0) && !(EdgeDirectionUPorDown(targetVertexIndex, offsetVertexIndex, helperVertexIndexListAry, verticesAry2D)))) {
+            if (((targetVertexAssort == 0) && !(EdgeDirectionUPorDown(targetVertexIndex, preVertexIndex, offsetVertexIndex, verticesAry2D)))) {
                 // 頂点が出発点の場合（必ず下向き） or 一般点かつ下向き　の場合
                 // Debug.Log("下向き");
                 // 頂点から伸びる辺が下向きの場合は右側（X軸方向負）が内部となる。
@@ -619,7 +617,7 @@ public class ActSubdivide : MonoBehaviour {
                     newVertexSetList.Add(newEdgeR);
                     pvHelperVertexIndexList.RemoveAt(pvHelperVertexIndexList.Count - 1);
                 }
-            } else if (((targetVertexAssort == 0) && (EdgeDirectionUPorDown(targetVertexIndex, offsetVertexIndex, helperVertexIndexListAry, verticesAry2D)))) {
+            } else if (((targetVertexAssort == 0) && (EdgeDirectionUPorDown(targetVertexIndex, preVertexIndex, offsetVertexIndex, verticesAry2D)))) {
                 // 頂点が最終点の場合（必ず上向き） or 一般点かつ上向き　の場合
                 /// Debug.Log("上向き");
                 // 頂点から伸びる辺が上向きの場合は左側（X軸方向正）が内部となる。
