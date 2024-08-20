@@ -6,17 +6,17 @@ using TMPro;
 
 public class ResultView_Test : MonoBehaviour
 {
-    // debug用のデータ表示用テキスト
-    [SerializeField]
-    private TMPro.TMP_Text debugText;
-
     // プレイヤーのスコア表示用テキスト
     [SerializeField]
     private TMPro.TMP_Text playerScore;
 
     // ランキングのスコアを表示用テキストリスト
     [SerializeField]
-    private List<TMPro.TMP_Text> rankingScoreList;
+    private List<TMPro.TMP_Text> rankingScoreList = new List<TMP_Text>();
+
+    // プレイヤーのコメント用テキスト
+    [SerializeField]
+    private TMPro.TMP_Text playerComment; 
 
 
     // データを保持しているスクリプト
@@ -25,19 +25,22 @@ public class ResultView_Test : MonoBehaviour
 
     void Start()
     {
+        playerScore.SetText("");
+        playerComment.SetText("");
         ShowScore();
     }
 
     // 現在保存しているスコアを表示する
     private void ShowScore()
     {
+        Debug.Log(createNewData.GetSaveData().GetScoreData());
         playerScore.SetText(createNewData.GetSaveData().GetScoreData().GetScore().ToString());
+        
     }
 
     // 現在保存しているのJSONデータを表示する
     public void ShowJsonData()
     {
-        debugText.SetText(createNewData.GetSaveData().GetJsonData());
         Debug.Log(createNewData.GetSaveData().GetJsonData());
     }
 
@@ -62,7 +65,7 @@ public class ResultView_Test : MonoBehaviour
         {
             var data = PlayerPrefs.GetString("PlayerData");
             JsonUtility.FromJsonOverwrite(data, createNewData.GetSaveData());
-            debugText.SetText(createNewData.GetSaveData().GetJsonData());
+            Debug.Log(createNewData.GetSaveData().GetJsonData());
         }
     }
 
@@ -74,7 +77,7 @@ public class ResultView_Test : MonoBehaviour
         {
             var data = PlayerPrefs.GetString("PlayerData");
             SaveData otherSaveData = JsonUtility.FromJson<SaveData>(data);
-            debugText.SetText(otherSaveData.GetJsonData());
+            Debug.Log(otherSaveData.GetJsonData());
         }
     }
 
@@ -83,10 +86,5 @@ public class ResultView_Test : MonoBehaviour
     {
         
         PlayerPrefs.DeleteKey("PlayerData");
-    }
-
-    private void ResetDebugText()
-    {
-        debugText.SetText("");
     }
 }

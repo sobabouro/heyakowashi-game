@@ -11,10 +11,15 @@ public class SystemKeyboard : MonoBehaviour
     private TouchScreenKeyboard keyboard;
 
     [SerializeField]
+    private ResultView_Test resultView_Test;
+
+    [SerializeField]
     private TextMeshPro debugMessage = null;
 
     [SerializeField]
     private KeyboardPreview mixedRealityKeyboardPreview = null;
+
+    private string keyboardText;
 
     void Start()
     {
@@ -25,17 +30,34 @@ public class SystemKeyboard : MonoBehaviour
         }
     }
 
+    // キーボードを呼び出す
     public void OpenSystemKeyboard()
     {
-        keyboard = TouchScreenKeyboard.Open("", TouchScreenKeyboardType.Default, false, false, false, false);
+        if (keyboard == null)
+        {
+            keyboard = TouchScreenKeyboard.Open("", TouchScreenKeyboardType.Default, false, false, false, false);
+        }
+        else
+        {
+            keyboard.active = true;
+        }
         Debug.Log("OpenSystemKeyboard");
+    }
+
+    // キーボードをしまう
+    public void CloseSystemKeyboard()
+    {
+        if(keyboard != null)
+        {
+            keyboard.active = false;
+        }
     }
 
     private void Update()
     {
         if (keyboard != null)
         {
-            string keyboardText = keyboard.text;
+            keyboardText = keyboard.text;
             // Do stuff with keyboardText
 
             if (TouchScreenKeyboard.visible)
@@ -54,6 +76,5 @@ public class SystemKeyboard : MonoBehaviour
 
                 keyboard = null;
             }
-        }
-    }
+        }    }
 }

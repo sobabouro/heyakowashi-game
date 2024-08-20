@@ -4,13 +4,7 @@ using UnityEngine;
 
 public class CreateNewData : MonoBehaviour
 {
-    private SaveData saveData;
-
-    // Start is called before the first frame update
-    void Start()
-    {
-        saveData = new SaveData();
-    }
+    private SaveData saveData = new SaveData();
 
     public SaveData GetSaveData()
     {
