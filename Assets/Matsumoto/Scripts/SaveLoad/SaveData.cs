@@ -11,24 +11,13 @@ public class SaveData : object
 
     private ScoreData scoreData;
 
-    
-    void awake()
-    {
-        int score = PlayerPrefs.GetInt("Score", 0);
-        string userComment = "";
-        scoreData = new ScoreData(score, userComment);
-        // InitializeScoreData();
-    }
-
-    /*
     // ScoreDataÇÃèâä˙âª
-    private void InitializeScoreData()
+    public void InitializeScoreData()
     {
         int score = PlayerPrefs.GetInt("Score", 0);
         string userComment = "";
-        scoreData = new ScoreData(score, userComment);
+        SetScoreData(score, userComment);
     }
-    */
 
     public void SetScoreData(int score, string userComment)
     {

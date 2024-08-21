@@ -33,7 +33,6 @@ public class ResultView_Test : MonoBehaviour
     // 現在保存しているスコアを表示する
     private void ShowScore()
     {
-        Debug.Log(createNewData.GetSaveData().GetScoreData());
         playerScore.SetText(createNewData.GetSaveData().GetScoreData().GetScore().ToString());
         
     }
@@ -54,6 +53,7 @@ public class ResultView_Test : MonoBehaviour
     // 今回のプレイのuserCommentを設定する
     public void SetuserComment(string userComment)
     {
+        playerComment.SetText(userComment);
         createNewData.GetSaveData().SetUserComment(userComment);
     }
 

@@ -28,6 +28,7 @@ public class SystemKeyboard : MonoBehaviour
         {
             mixedRealityKeyboardPreview.gameObject.SetActive(false);
         }
+        keyboardText = "";
     }
 
     // キーボードを呼び出す
@@ -35,7 +36,7 @@ public class SystemKeyboard : MonoBehaviour
     {
         if (keyboard == null)
         {
-            keyboard = TouchScreenKeyboard.Open("", TouchScreenKeyboardType.Default, false, false, false, false);
+            keyboard = TouchScreenKeyboard.Open(keyboardText, TouchScreenKeyboardType.Default);
         }
         else
         {
@@ -53,6 +54,12 @@ public class SystemKeyboard : MonoBehaviour
         }
     }
 
+    // キーボードで打ったテキストをユーザーコメントに代入する
+    public void SetCoomment()
+    {
+        resultView_Test.SetuserComment(keyboardText);
+    }
+
     private void Update()
     {
         if (keyboard != null)
@@ -64,17 +71,18 @@ public class SystemKeyboard : MonoBehaviour
             {
                 if (debugMessage != null)
                 {
-                    debugMessage.text = "typing... " + keyboardText;
+                    debugMessage.text = "typing... : " + keyboardText;
                 }
             }
             else
             {
                 if (debugMessage != null)
                 {
-                    debugMessage.text = "typed " + keyboardText;
+                    debugMessage.text = "typed : " + keyboardText;
                 }
 
                 keyboard = null;
             }
-        }    }
+        }    
+    }
 }
