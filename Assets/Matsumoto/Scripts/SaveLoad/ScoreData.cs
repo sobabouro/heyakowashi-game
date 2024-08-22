@@ -16,7 +16,7 @@ public class ScoreData : MonoBehaviour
         this.userComment = userComment;
     }
 
-    public void SetuserComment(string userComment)
+    public void SetUserComment(string userComment)
     {
         this.userComment = userComment;
     }
