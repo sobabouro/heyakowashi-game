@@ -28,15 +28,20 @@ public class ResultView_Test : MonoBehaviour
 
     private ScoreData scoreData;
 
+    private int playerRankingIndex;
+
     void Start()
     {
+        DeleteData();
         playerScore.SetText("");
         playerComment.SetText("");
         InitializeScoreData();
         ShowScore();
         scoreDataList = createNewData.GetSaveData().GetScoreDataList();        
         scoreDataList.Add(scoreData);
-        SortScoreDataList();
+        ShowRanking3Score();
+        playerRankingIndex = GetPlayerRanking();
+        Save();
     }
 
     // 現在保存しているスコアを表示する
@@ -55,15 +60,17 @@ public class ResultView_Test : MonoBehaviour
     // 今回のスコアデータを含めたデータをセーブする
     public void Save()
     {
-        
+        createNewData.GetSaveData().SetScoreDataList(scoreDataList);
         PlayerPrefs.SetString("PlayerData", createNewData.GetSaveData().GetJsonData());
     }
 
     // 今回のプレイのuserCommentを設定する
-    public void SetuserComment(string userComment)
+    public void SetUserComment(string userComment)
     {
         playerComment.SetText(userComment);
         scoreData.SetUserComment(userComment);
+        scoreDataList[playerRankingIndex] = scoreData;
+        Save();
     }
 
     // PlayerPrefsから取得したデータをSaveDataのデータに上書きする
@@ -110,6 +117,22 @@ public class ResultView_Test : MonoBehaviour
     {
         var c = new Comparison<ScoreData>(Compare);
         scoreDataList.Sort(c);
+    }
+
+    // プレイヤーのランキング-1を返す
+    private int GetPlayerRanking()
+    {
+        return scoreDataList.IndexOf(scoreData);
+    }
+
+    // ランキングのトップ3のスコアを表示する
+    private void ShowRanking3Score()
+    {
+        SortScoreDataList();
+        for (int i = 0; i < 3; i++)
+        {
+            rankingScoreList[i].SetText(scoreDataList[i].GetScore().ToString());
+        }
     }
 
 
