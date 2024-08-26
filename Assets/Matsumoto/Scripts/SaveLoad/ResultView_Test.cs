@@ -17,8 +17,11 @@ public class ResultView_Test : MonoBehaviour
 
     // プレイヤーのコメント用テキスト
     [SerializeField]
-    private TMPro.TMP_Text playerComment; 
+    private TMPro.TMP_Text playerComment;
 
+    // 今までのコメントを表示するコンポーネント
+    [SerializeField]
+    private ReceivedCommentController receivedCommentController;
 
     // データを保持しているスクリプト
     [SerializeField]
@@ -37,7 +40,8 @@ public class ResultView_Test : MonoBehaviour
         playerComment.SetText("");
         InitializeScoreData();
         ShowScore();
-        scoreDataList = createNewData.GetSaveData().GetScoreDataList();        
+        scoreDataList = createNewData.GetSaveData().GetScoreDataList();
+        receivedCommentController.CreateReceivedComment(scoreDataList);
         scoreDataList.Add(scoreData);
         ShowRanking3Score();
         playerRankingIndex = GetPlayerRanking();
@@ -62,6 +66,8 @@ public class ResultView_Test : MonoBehaviour
     {
         createNewData.GetSaveData().SetScoreDataList(scoreDataList);
         PlayerPrefs.SetString("PlayerData", createNewData.GetSaveData().GetJsonData());
+        Debug.Log("JsonData: " + createNewData.GetSaveData().GetJsonData());
+        Debug.Log("PlayerPrefsData: " + PlayerPrefs.GetString("PlayerData")) ;
     }
 
     // 今回のプレイのuserCommentを設定する
