@@ -10,6 +10,9 @@ public class CreateNewData : MonoBehaviour
     {
         // Debug用データ
         CreateDebugSaveData();
+
+        // 正規実行用データ
+        // CreateSaveData();
     }
 
     public SaveData GetSaveData()
@@ -30,5 +33,16 @@ public class CreateNewData : MonoBehaviour
         debugScoreDataList.Add(scoreData3);
         debugScoreDataList.Add(scoreData4);
         saveData.SetScoreDataList(debugScoreDataList);
+    }
+
+    // PlayerPrefsから取得したデータをSaveDataのデータに上書きする
+    private void CreateSaveData()
+    {
+        if (PlayerPrefs.HasKey("PlayerData"))
+        {
+            var data = PlayerPrefs.GetString("PlayerData");
+            JsonUtility.FromJsonOverwrite(data, saveData);
+            Debug.Log(saveData.GetJsonData());
+        }
     }
 }

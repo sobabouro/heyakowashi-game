@@ -79,18 +79,6 @@ public class ResultView_Test : MonoBehaviour
         Save();
     }
 
-    // PlayerPrefsから取得したデータをSaveDataのデータに上書きする
-    public void LoadFromJsonOverwrite()
-    {
-        
-        if (PlayerPrefs.HasKey("PlayerData"))
-        {
-            var data = PlayerPrefs.GetString("PlayerData");
-            JsonUtility.FromJsonOverwrite(data, createNewData.GetSaveData());
-            Debug.Log(createNewData.GetSaveData().GetJsonData());
-        }
-    }
-
     // 保存しているセーブデータをそのまま表示
     public void ShowSaveData()
     {

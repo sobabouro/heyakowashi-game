@@ -55,7 +55,7 @@ public class SystemKeyboard : MonoBehaviour
     }
 
     // キーボードで打ったテキストをユーザーコメントに代入する
-    public void SetCoomment()
+    public void SetComment()
     {
         resultView_Test.SetUserComment(keyboardText);
     }
