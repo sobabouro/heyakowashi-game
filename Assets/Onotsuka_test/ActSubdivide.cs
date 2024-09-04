@@ -491,45 +491,79 @@ public class ActSubdivide : MonoBehaviour {
     }
 
     // 処理図形ごとの頂点ペアのリストを生成する
-    private static List<List<int[]>> EdgeForMakeMonotone(List<List<int>> nonConvexGeometryList) {
-        
+    private static int[][][] EdgeForMakeMonotone(List<List<int>> nonConvexGeometryList, List<List<int>> joinedVertexGroupList) {
+        /*
+        *   List<List<int>> A {
+        *       List<int> [0] {0, 1, 3},
+        *       List<int> [1] {4, 2}
+        *   }
+        *   List<List<int>> B {
+        *       List<int> [0] {24, 25, 26, 27, 24},             // 処理図形グループ 1
+        *       List<int> [1] {28, 29, 30, 31, 32, 28},         // 処理図形グループ 2
+        *       List<int> [2] {33, 34, 35, 36, 37, 33},         // 処理図形グループ 1
+        *       List<int> [3] {38, 39, 40, 38}                  // 処理図形グループ 1
+        *       List<int> [4] {41, 42, 43, 44, 45, 46, 47, 41}  // 処理図形グループ 2
+        *   }
+        *   // この二つから，各処理図形ごとの辺リストを生成する
+        *   int[][][] C = new int[A.Count][][] {
+        *       int[0] = new int[ for (i = A[0].Count)(j = A[i].Count) {B[A[i][j]].Count - 1} sum+= ][2] {
+        *           {24, 25}, {25, 26}, {26, 27}, {27, 24}, 
+        *           {28, 29}, {29, 30}, {30, 31}, {31, 32}, {32, 28}, 
+        *           {38, 39}, {39, 40}, {40, 38}
+        *       },
+        *       int[1] = new int[ for (i = A[1].Count)(j = A[i].Count) {B[A[i][j]].Count - 1} sum+= ][2] {
+        *           {41, 42}, {42, 43}, {43, 44}, {44, 45}, {45, 46}, {46, 47}, {47, 41}, 
+        *           {33, 34}, {34, 35}, {35, 36}, {36, 37}, {37, 33}
+        *       }
+        *   }
+        */
+        int[][][] nonConvexGeometryEdgeList = new int[nonConvexGeometryList.Count][][];
+        for (int i = 0; i < nonConvexGeometryList.Count; i++) {
+            int elements = new int nonConvexGeometryList[i].Count
+            nonConvexGeometryEdgeList[i] = new int[elements][];
+            for (int j = 0; j < nonConvexGeometryList[i].Count; j++) {
+                nonConvexGeometryEdgeList[i][j] = new int[2];
+                nonConvexGeometryEdgeList[i][j][0] = joinedVertexGroupList[nonConvexGeometryList[i][j]][0];
+                nonConvexGeometryEdgeList[i][j][1] = joinedVertexGroupList[nonConvexGeometryList[i][j]][joinedVertexGroupList[nonConvexGeometryList[i][j]].Count - 1];
+            }
+        }
     }
 
     // 頂点の種類を判別して，各頂点にラベルを付与する
-    private string[] ClusteringVertexType(Vector2[] new2DVerticesArray, List<List<int>> JoinedVertexGroupList, List<List<int>> joinedVertexGroupList, ) {
+    private string[] ClusteringVertexType(Vector2[] new2DVerticesArray, List<List<int>> joinedVertexGroupList) {
         // 頂点の種類を格納する配列を新頂点の数と同じ大きさで用意する
         string[] vertexType = new string[new2DVerticesArray.Length];
         // GroupingForDetermineGeometry() で特定された図形ごとに頂点ラベル処理を行う
-        for (int i = 0; i < JoinedVertexGroupList.Count; i++) {
-            for (int j = 0; j < JoinedVertexGroupList[i].Count - 1; j++) {
-                Vector2 internalVertex = new2DVerticesArray[JoinedVertexGroupList[i][j]];
-                Vector2 terminalVertex = new2DVerticesArray[JoinedVertexGroupList[i][j + 1]];
-                Vector2 point = j == 0 ? new2DVerticesArray[JoinedVertexGroupList[i].Count - 2] : new2DVerticesArray[JoinedVertexGroupList[i][j - 1]];
+        for (int i = 0; i < joinedVertexGroupList.Count; i++) {
+            for (int j = 0; j < joinedVertexGroupList[i].Count - 1; j++) {
+                Vector2 internalVertex = new2DVerticesArray[joinedVertexGroupList[i][j]];
+                Vector2 terminalVertex = new2DVerticesArray[joinedVertexGroupList[i][j + 1]];
+                Vector2 point = j == 0 ? new2DVerticesArray[joinedVertexGroupList[i].Count - 2] : new2DVerticesArray[joinedVertexGroupList[i][j - 1]];
                 // y座標が前後の頂点と比較して対象の点が大きいとき
                 if (internalVertex.y >= point.y && internalVertex.y > terminalVertex.y) {
                     // 部分最大の場合: 出発点
                     if (IsRight(internalVertex, terminalVertex, point)) {
-                        vertexType[JoinedVertexGroupList[i][j]] = "start";
+                        vertexType[joinedVertexGroupList[i][j]] = "start";
                     }
                     // 部分極大の場合: 分離点
                     else {
-                        vertexType[JoinedVertexGroupList[i][j]] = "split";
+                        vertexType[joinedVertexGroupList[i][j]] = "split";
                     }
                 }
                 // y座標が前後の頂点と比較して対象の点が小さいとき
                 else if (internalVertex.y <= point.y && internalVertex.y < terminalVertex.y) {
                     // 部分最小の場合: 最終点
                     if (IsRight(internalVertex, terminalVertex, point)) {
-                        vertexType[JoinedVertexGroupList[i][j]] = "end";
+                        vertexType[joinedVertexGroupList[i][j]] = "end";
                     }
                     // 部分極小の場合: 統合点
                     else {
-                        vertexType[JoinedVertexGroupList[i][j]] = "merge";
+                        vertexType[joinedVertexGroupList[i][j]] = "merge";
                     }
                 }
                 // それ以外の場合: 通常の点
                 else {
-                    vertexType[JoinedVertexGroupList[i][j]] = "regular";
+                    vertexType[joinedVertexGroupList[i][j]] = "regular";
                 }
             }
         }
