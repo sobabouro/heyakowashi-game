@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class ScoreOfMainScene : MonoBehaviour
+public class MainSceneController : MonoBehaviour
 {
     [SerializeField]
     private int score;
