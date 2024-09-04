@@ -225,8 +225,9 @@ public class ActSubdivide : MonoBehaviour {
         vertexType = ClusteringVertexType(new2DVerticesArray, joinedVertexGroupList);
         // 最も外郭となる処理図形 (内包図形の有無に関わらない) ごとにグループ化する
         List<List<int>> nonConvexGeometryList = GroupingForPartitionMonotoneGeometry(new2DVerticesArray, joinedVertexGroupList);
-        // 各処理図形グループをもとに，処理図形ごとの辺リストを生成する
-
+        // 処理図形グループをもとに，処理図形ごとの辺リストを生成する
+        int[][][] nonConvexGeometryEdgeList = EdgeForMakeMonotone(nonConvexGeometryList, joinedVertexGroupList);
+        // 各処理図形を単調多角形に分割する
     }
 
     // ポリゴンの頂点番号を，孤独な頂点を先頭に，表裏情報をもつ順番に並び替える
@@ -493,6 +494,8 @@ public class ActSubdivide : MonoBehaviour {
     // 処理図形ごとの頂点ペアのリストを生成する
     private static int[][][] EdgeForMakeMonotone(List<List<int>> nonConvexGeometryList, List<List<int>> joinedVertexGroupList) {
         /*
+        *   jointedVertexGroupList の返却型をはじめから List<List<int[]>> にする方法とどちらが良いかは感覚でこちらにした．
+        *
         *   List<List<int>> A {
         *       List<int> [0] {0, 1, 3},
         *       List<int> [1] {4, 2}
@@ -519,14 +522,25 @@ public class ActSubdivide : MonoBehaviour {
         */
         int[][][] nonConvexGeometryEdgeList = new int[nonConvexGeometryList.Count][][];
         for (int i = 0; i < nonConvexGeometryList.Count; i++) {
-            int elements = new int nonConvexGeometryList[i].Count
-            nonConvexGeometryEdgeList[i] = new int[elements][];
+            // グループに必要な総エッジ数を計算する
+            int totalEdges = 0;
             for (int j = 0; j < nonConvexGeometryList[i].Count; j++) {
-                nonConvexGeometryEdgeList[i][j] = new int[2];
-                nonConvexGeometryEdgeList[i][j][0] = joinedVertexGroupList[nonConvexGeometryList[i][j]][0];
-                nonConvexGeometryEdgeList[i][j][1] = joinedVertexGroupList[nonConvexGeometryList[i][j]][joinedVertexGroupList[nonConvexGeometryList[i][j]].Count - 1];
+                totalEdges += joinedVertexGroupList[nonConvexGeometryList[i][j]].Count - 1;
+            }
+            // グループのエッジリストを初期化する
+            nonConvexGeometryEdgeList[i] = new int[totalEdges][];
+            int edgeIndex = 0;
+            for (int j = 0; j < nonConvexGeometryList[i].Count; j++) {
+                List<int> vertexIndices = joinedVertexGroupList[nonConvexGeometryList[i][j]];
+                for (int k = 0; k < vertexIndices.Count - 1; k++) {
+                    nonConvexGeometryEdgeList[i][edgeIndex] = new int[2];
+                    nonConvexGeometryEdgeList[i][edgeIndex][0] = vertexIndices[k];
+                    nonConvexGeometryEdgeList[i][edgeIndex][1] = vertexIndices[k + 1];
+                    edgeIndex++;
+                }
             }
         }
+        return nonConvexGeometryEdgeList;
     }
 
     // 頂点の種類を判別して，各頂点にラベルを付与する
