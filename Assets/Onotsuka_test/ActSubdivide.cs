@@ -20,9 +20,9 @@ public class ActSubdivide : MonoBehaviour {
 
     [SerializeField] private GameObject newGameObjectPrefab;
 
+    private int[] targetTriangles;
     private Vector3[] targetVertices;
     private Vector3[] targetNormals;
-    private int[] targetTriangles;
     private Vector2[] targetUVs;
 
     private void Start() {
@@ -33,23 +33,11 @@ public class ActSubdivide : MonoBehaviour {
 
     public void Subdivide(Plane cutter) {
         // 切断対象のオブジェクトのメッシュ情報
-
         Mesh targetMesh = this.GetComponent<MeshFilter>().mesh;
         targetTriangles = targetMesh.triangles;
         targetVertices  = targetMesh.vertices;
         targetNormals   = targetMesh.normals;
         targetUVs       = targetMesh.uv;
-
-        // // 切断面左側のオブジェクトのメッシュ情報
-        // var leftTriangles = new List<int>();
-        // var leftVertices = new List<Vector3>();
-        // var leftNormals = new List<Vector3>();
-        // var leftUVs = new List<Vector2>();
-        // // 切断面右側のオブジェクトのメッシュ情報
-        // var rightTriangles = new List<int>();
-        // var rightVertices = new List<Vector3>();
-        // var rightNormals = new List<Vector3>();
-        // var rightUVs = new List<Vector2>();
 
         // 切断対象のオブジェクトの情報操作用
         int             targetVerticesLength  = targetVertices.Length;
@@ -60,6 +48,7 @@ public class ActSubdivide : MonoBehaviour {
         List<List<int>> joinedVertexGroupList = new List<List<int>>();
         Vector2[]       new2DVerticesArray;
         string[]        vertexType;
+
         // 切断面左側のオブジェクトのメッシュ情報
         List<int>     leftTriangles = new List<int>();
         List<Vector3> leftVertices  = new List<Vector3>();
@@ -70,10 +59,7 @@ public class ActSubdivide : MonoBehaviour {
         List<Vector3> rightVertices  = new List<Vector3>();
         List<Vector3> rightNormals   = new List<Vector3>();
         List<Vector2> rightUVs       = new List<Vector2>();
-
         // 切断対象のオブジェクトの各ポリゴンの左右判定用
-        List<int> numLeftVertices  = new List<int>();
-        List<int> numRightVertices = new List<int>();
         bool vertexTruthValue1, vertexTruthValue2, vertexTruthValue3;
 
         // 既存メッシュ情報の整理
@@ -83,132 +69,43 @@ public class ActSubdivide : MonoBehaviour {
             vertexTruthValue3 = cutter.GetSide(targetVertices[targetTriangles[i + 2]]);
             //対象の三角形ポリゴンの頂点すべてが右側にある場合
             if (vertexTruthValue1 && vertexTruthValue2 && vertexTruthValue3) {
-                for (int k = 0; k < 3; k++) {
-                    // もし仮動作でテクスチャの様子が何やらおかしければ，ここが原因かもしれない
-                    rightUVs.Add(targetUVs[targetTriangles[i + k]]);
-                    rightTriangles.Add(targetTriangles[i + k]);
-                }
+                AddToRightSide(
+                    i, 
+                    targetTriangles, 
+                    targetUVs, 
+                    rightTriangles, 
+                    rightUVs
+                );
             }
             // 対象の三角形ポリゴンの頂点すべてが左側にある場合
             else if (!vertexTruthValue1 && !vertexTruthValue2 && !vertexTruthValue3) {
-                for (int k = 0; k < 3; k++) {
-                    leftUVs.Add(targetUVs[targetTriangles[i + k]]);
-                    leftTriangles.Add(targetTriangles[i + k]);
-                }
+                AddToLeftSide(
+                    i, 
+                    targetTriangles, 
+                    targetUVs, 
+                    leftTriangles, 
+                    leftUVs
+                );
             }
+            // 対象の三角形ポリゴンの頂点が左右に分かれている場合
             else {
-                ( // ポリゴンの頂点情報を扱いやすいように整理する
-                    bool rtlf, 
-                    int vertexIndex1, Vector3 lonelyVertex, 
-                    int vertexIndex2, Vector3 startPairVertex, 
-                    int vertexIndex3, Vector3 lastPairVertex
-                ) = SortIndex (
-                    targetTriangles[i], vertexTruthValue1, targetVertices[targetTriangles[i]], 
-                    targetTriangles[i + 1], vertexTruthValue2, targetVertices[targetTriangles[i + 1]], 
-                    targetTriangles[i + 2], vertexTruthValue3, targetVertices[targetTriangles[i + 2]]
+                ProcessMixedTriangle(
+                    i, 
+                    cutter,
+                    vertexTruthValue1,
+                    vertexTruthValue2,
+                    vertexTruthValue3,
+                    targetTriangles,
+                    targetVertices,
+                    targetUVs,
+                    targetVerticesList,
+                    newVerticesList,
+                    vertexPairList,
+                    rightUVs,
+                    leftUVs,
+                    rightTriangles,
+                    leftTriangles
                 );
-                ( // 新しい頂点を生成する
-                    Vector3 newStartPairVertex, 
-                    Vector3 newLastPairVertex, 
-                    float ratio_LonelyAsStart, 
-                    float ratio_LonelyAsLast
-                ) = GenerateNewVertex (
-                    cutter, 
-                    rtlf, 
-                    lonelyVertex, 
-                    startPairVertex, 
-                    lastPairVertex
-                );
-                ( // 新しいUV座標を生成する
-                    Vector2 newUV1, 
-                    Vector2 newUV2
-                ) = GenerateNewUV (
-                    ratio_LonelyAsStart, 
-                    ratio_LonelyAsLast,
-                    targetUVs[vertexIndex1], 
-                    targetUVs[vertexIndex2], 
-                    targetUVs[vertexIndex3]
-                );
-                ( // 重複頂点の処理を行う (辺の始点)
-                    bool deltrueSV, 
-                    int newVertexIndexSV
-                ) = InsertAndDeleteVertices (
-                    targetVerticesLength, 
-                    newStartPairVertex, 
-                    newVerticesList
-                );
-                if (deltrueSV == false) {
-                    newVerticesList.Add(newStartPairVertex);
-                    targetVerticesList.Add(newStartPairVertex);
-                }
-                ( // 重複頂点の処理を行う (辺の終点)
-                    bool deltrueLV, 
-                    int newVertexIndexLV
-                ) = InsertAndDeleteVertices (
-                    targetVerticesLength, 
-                    newLastPairVertex, 
-                    newVerticesList
-                );
-                if (deltrueLV == false) {
-                    newVerticesList.Add(newLastPairVertex);
-                    targetVerticesList.Add(newLastPairVertex);
-                }
-                // のちに頂点インデックスをもとに，こいつはこいつで頂点グルーピングするので保存しておく
-                int [] newVertexSet =  new int[] {newVertexIndexSV - targetVerticesLength, newVertexIndexLV - targetVerticesLength};
-                vertexPairList.Add(newVertexSet);
-
-                /* ==================================== */
-                /* 孤独な頂点が無限平面の右側にある場合 */
-                /* ==================================== */
-                if (rtlf) {
-                    // 切断ポリゴン右側を生成する処理
-                    rightUVs.Add(targetUVs[vertexIndex1]);
-                    rightUVs.Add(newUV1);
-                    rightUVs.Add(newUV2);
-                    rightTriangles.Add(vertexIndex1);
-                    rightTriangles.Add(newVertexIndexSV);
-                    rightTriangles.Add(newVertexIndexLV);
-                    // 切断ポリゴン左側一つ目を生成する処理
-                    leftUVs.Add(newUV1);
-                    leftUVs.Add(targetUVs[vertexIndex2]);
-                    leftUVs.Add(targetUVs[vertexIndex3]);
-                    leftTriangles.Add(newVertexIndexSV);
-                    leftTriangles.Add(vertexIndex2);
-                    leftTriangles.Add(vertexIndex3);
-                    // 切断ポリゴン左側二つ目を生成する処理
-                    leftUVs.Add(targetUVs[vertexIndex3]);
-                    leftUVs.Add(newUV2);
-                    leftUVs.Add(newUV1);
-                    leftTriangles.Add(vertexIndex3);
-                    leftTriangles.Add(newVertexIndexLV);
-                    leftTriangles.Add(newVertexIndexSV);
-                }
-                /* ==================================== */
-                /* 孤独な頂点が無限平面の左側にある場合 */
-                /* ==================================== */
-                else {
-                    // 切断ポリゴン左側を生成する処理
-                    leftUVs.Add(targetUVs[vertexIndex1]);
-                    leftUVs.Add(newUV1);
-                    leftUVs.Add(newUV2);
-                    leftTriangles.Add(vertexIndex1);
-                    leftTriangles.Add(newVertexIndexLV);
-                    leftTriangles.Add(newVertexIndexSV);
-                    // 切断ポリゴン右側一つ目を生成する処理
-                    rightUVs.Add(newUV1);
-                    rightUVs.Add(targetUVs[vertexIndex2]);
-                    rightUVs.Add(targetUVs[vertexIndex3]);
-                    rightTriangles.Add(newVertexIndexLV);
-                    rightTriangles.Add(vertexIndex2);
-                    rightTriangles.Add(vertexIndex3);
-                    // 切断ポリゴン右側二つ目を生成する処理
-                    rightUVs.Add(targetUVs[vertexIndex3]);
-                    rightUVs.Add(newUV2);
-                    rightUVs.Add(newUV1);
-                    rightTriangles.Add(vertexIndex3);
-                    rightTriangles.Add(newVertexIndexSV);
-                    rightTriangles.Add(newVertexIndexLV);
-                }
             }
         }
         /* ======================== */
@@ -217,53 +114,174 @@ public class ActSubdivide : MonoBehaviour {
         
         // 新頂点の二次元座標変換する
         new2DVerticesArray = new Vector2[newVerticesList.Count];
-        new2DVerticesArray = ConvertCoordinates3DTo2D(cutter, newVerticesList);
+        new2DVerticesArray = GeometryUtils.ConvertCoordinates3DTo2D(cutter, newVerticesList);
         // ひとつなぎの辺で形成されるすべての図形をリストアップする
-        joinedVertexGroupList = GroupingForDetermineGeometry(vertexPairList, joinedVertexGroupList);
+        joinedVertexGroupList = GeometryUtils.GroupingForDetermineGeometry(vertexPairList, joinedVertexGroupList);
+        // 最も外郭となる処理図形 (内包図形の有無に関わらない) ごとにグループ化する
+        List<List<int>> nonConvexGeometryList = GeometryUtils.GroupingForSegmentNonMonotoneGeometry(new2DVerticesArray, joinedVertexGroupList);
         // 新頂点を種類ごとに分類する
         vertexType = new string[newVerticesList.Count];
-        vertexType = ClusteringVertexType(new2DVerticesArray, joinedVertexGroupList);
-        // 最も外郭となる処理図形 (内包図形の有無に関わらない) ごとにグループ化する
-        List<List<int>> nonConvexGeometryList = GroupingForPartitionMonotoneGeometry(new2DVerticesArray, joinedVertexGroupList);
+        vertexType = GeometryUtils.ClusteringVertexType(new2DVerticesArray, joinedVertexGroupList);
         // 処理図形グループをもとに，処理図形ごとの辺リストを生成する
-        int[][][] nonConvexGeometryEdgeList = EdgeForMakeMonotone(nonConvexGeometryList, joinedVertexGroupList);
+        int[][][] nonConvexGeometryEdgeList = GeometryUtils.EdgeForMakeMonotone(nonConvexGeometryList, joinedVertexGroupList);
         // 各処理図形を単調多角形に分割する
     }
-    private void AddToRightSide(int i, int[] targetTriangles, Vector2[] targetUVs, List<Vector2> rightUVs, List<int> rightTriangles) {
+    private void AddToRightSide(
+        int i, 
+        int[]         targetTriangles, 
+        Vector2[]     targetUVs, 
+        List<int>     rightTriangles, 
+        List<Vector2> rightUVs
+    ) {
         for (int k = 0; k < 3; k++) {
             rightUVs.Add(targetUVs[targetTriangles[i + k]]);
             rightTriangles.Add(targetTriangles[i + k]);
         }
     }
-    private void AddToLeftSide(int i, int[] targetTriangles, Vector2[] targetUVs, List<Vector2> leftUVs, List<int> leftTriangles) {
+    private void AddToLeftSide(
+        int i, 
+        int[]         targetTriangles, 
+        Vector2[]     targetUVs, 
+        List<int>     leftTriangles, 
+        List<Vector2> leftUVs
+    ) {
         for (int k = 0; k < 3; k++) {
             leftUVs.Add(targetUVs[targetTriangles[i + k]]);
             leftTriangles.Add(targetTriangles[i + k]);
         }
     }
-    private void ProcessMixedTriangle(int i, Cutter cutter, Vector3[] targetVertices, int[] targetTriangles, bool vertexTruthValue1, bool vertexTruthValue2, bool vertexTruthValue3) {
-        (
+    private void ProcessMixedTriangle(
+        int i, 
+        Cutter cutter, 
+        bool vertexTruthValue1, 
+        bool vertexTruthValue2, 
+        bool vertexTruthValue3, 
+        int[]         targetTriangles, 
+        Vector3[]     targetVertices, 
+        Vector2[]     targetUVs, 
+        List<Vector3> targetVerticesList, 
+        List<Vector3> newVerticesList, 
+        List<int[]>   vertexPairList, 
+        List<Vector2> rightUVs, 
+        List<Vector2> leftUVs,
+        List<int>     rightTriangles,
+        List<int>     leftTriangles
+    ) {
+        ( // ポリゴンの頂点情報を扱いやすいように整理する
             bool rtlf, 
             int vertexIndex1, Vector3 lonelyVertex, 
             int vertexIndex2, Vector3 startPairVertex, 
             int vertexIndex3, Vector3 lastPairVertex
-        ) = SortIndex(
+        ) = SegmentedPolygonsUtils.SortIndex(
             targetTriangles[i], vertexTruthValue1, targetVertices[targetTriangles[i]],
             targetTriangles[i + 1], vertexTruthValue2, targetVertices[targetTriangles[i + 1]],
             targetTriangles[i + 2], vertexTruthValue3, targetVertices[targetTriangles[i + 2]]
         );
-        (
+        ( // 新しい頂点を生成する
             Vector3 newStartPairVertex, 
             Vector3 newLastPairVertex, 
             float ratio_LonelyAsStart, 
             float ratio_LonelyAsLast
-        ) = GenerateNewVertex(
+        ) = SegmentedPolygonsUtils.GenerateNewVertex(
             cutter, rtlf, lonelyVertex, startPairVertex, lastPairVertex
         );
-    }
+        ( // 新しいUV座標を生成する
+            Vector2 newUV1, 
+            Vector2 newUV2
+        ) = SegmentedPolygonsUtils.GenerateNewUV (
+            ratio_LonelyAsStart, 
+            ratio_LonelyAsLast,
+            targetUVs[vertexIndex1], 
+            targetUVs[vertexIndex2], 
+            targetUVs[vertexIndex3]
+        );
+        ( // 重複頂点の処理を行う (辺の始点)
+            bool deltrueSV, 
+            int newVertexIndexSV
+        ) = SegmentedPolygonsUtils.InsertAndDeleteVertices (
+            targetVerticesLength, 
+            newStartPairVertex, 
+            newVerticesList
+        );
+        if (deltrueSV == false) {
+            newVerticesList.Add(newStartPairVertex);
+            targetVerticesList.Add(newStartPairVertex);
+        }
+        ( // 重複頂点の処理を行う (辺の終点)
+            bool deltrueLV, 
+            int newVertexIndexLV
+        ) = SegmentedPolygonsUtils.InsertAndDeleteVertices (
+            targetVerticesLength, 
+            newLastPairVertex, 
+            newVerticesList
+        );
+        if (deltrueLV == false) {
+            newVerticesList.Add(newLastPairVertex);
+            targetVerticesList.Add(newLastPairVertex);
+        }
+        // のちに頂点インデックスをもとに，こいつはこいつで頂点グルーピングするので保存しておく
+        int [] newVertexSet =  new int[] {newVertexIndexSV - targetVerticesLength, newVertexIndexLV - targetVerticesLength};
+        vertexPairList.Add(newVertexSet);
 
+        /* ==================================== */
+        /* 孤独な頂点が無限平面の右側にある場合 */
+        /* ==================================== */
+        if (rtlf) {
+            // 切断ポリゴン右側を生成する処理
+            rightUVs.Add(targetUVs[vertexIndex1]);
+            rightUVs.Add(newUV1);
+            rightUVs.Add(newUV2);
+            rightTriangles.Add(vertexIndex1);
+            rightTriangles.Add(newVertexIndexSV);
+            rightTriangles.Add(newVertexIndexLV);
+            // 切断ポリゴン左側一つ目を生成する処理
+            leftUVs.Add(newUV1);
+            leftUVs.Add(targetUVs[vertexIndex2]);
+            leftUVs.Add(targetUVs[vertexIndex3]);
+            leftTriangles.Add(newVertexIndexSV);
+            leftTriangles.Add(vertexIndex2);
+            leftTriangles.Add(vertexIndex3);
+            // 切断ポリゴン左側二つ目を生成する処理
+            leftUVs.Add(targetUVs[vertexIndex3]);
+            leftUVs.Add(newUV2);
+            leftUVs.Add(newUV1);
+            leftTriangles.Add(vertexIndex3);
+            leftTriangles.Add(newVertexIndexLV);
+            leftTriangles.Add(newVertexIndexSV);
+        }
+        /* ==================================== */
+        /* 孤独な頂点が無限平面の左側にある場合 */
+        /* ==================================== */
+        else {
+            // 切断ポリゴン左側を生成する処理
+            leftUVs.Add(targetUVs[vertexIndex1]);
+            leftUVs.Add(newUV1);
+            leftUVs.Add(newUV2);
+            leftTriangles.Add(vertexIndex1);
+            leftTriangles.Add(newVertexIndexLV);
+            leftTriangles.Add(newVertexIndexSV);
+            // 切断ポリゴン右側一つ目を生成する処理
+            rightUVs.Add(newUV1);
+            rightUVs.Add(targetUVs[vertexIndex2]);
+            rightUVs.Add(targetUVs[vertexIndex3]);
+            rightTriangles.Add(newVertexIndexLV);
+            rightTriangles.Add(vertexIndex2);
+            rightTriangles.Add(vertexIndex3);
+            // 切断ポリゴン右側二つ目を生成する処理
+            rightUVs.Add(targetUVs[vertexIndex3]);
+            rightUVs.Add(newUV2);
+            rightUVs.Add(newUV1);
+            rightTriangles.Add(vertexIndex3);
+            rightTriangles.Add(newVertexIndexSV);
+            rightTriangles.Add(newVertexIndexLV);
+        }
+    }
+}
+
+// 分断ポリゴンに対する処理系
+public static class SegmentedPolygonsUtils {
     // ポリゴンの頂点番号を，孤独な頂点を先頭に，表裏情報をもつ順番に並び替える
-    (
+    public static (
         bool rtlf, 
         int newIndex1, Vector3 lonelyVertex, 
         int newIndex2, Vector3 startPairVertex, 
@@ -302,7 +320,7 @@ public class ActSubdivide : MonoBehaviour {
     }
 
     // ポリゴンの切断辺の両端の頂点を，切断ポリゴンの法線・切断平面の法線とフレミングの左手の方向になるように生成する
-    (
+    public static (
         Vector3 newStartPairVertex, 
         Vector3 newLastPairVertex,
         float ratio_LonelyStart,
@@ -335,7 +353,7 @@ public class ActSubdivide : MonoBehaviour {
     }
 
     // 新頂点のUV座標を生成する
-    (
+    public static (
         Vector2 newUV1, 
         Vector2 newUV2
     ) GenerateNewUV(
@@ -355,7 +373,7 @@ public class ActSubdivide : MonoBehaviour {
     }
 
     // 重複する頂点を削除する
-    (
+    public static (
         bool deltrue, 
         int newVertexIndex
     ) InsertAndDeleteVertices(
@@ -376,24 +394,12 @@ public class ActSubdivide : MonoBehaviour {
         }
         return (deltrue, newVertexIndex + targetVerticesLength);
     }
+}
 
-    // 平面上の頂点3D座標を2D座標に変換する関数
-    private Vector2 TransformCoordinates3DTo2D(Plane cutter, Vector3 point) {
-        Vector3 planeNormal = cutter.normal;
-        Vector3 planePoint = planeNormal * cutter.distance;
-        Vector3 u = Vector3.Cross(planeNormal, Vector3.up).normalized;
-        if (u.magnitude < 0.001f) {
-            u = Vector3.Cross(planeNormal, Vector3.right).normalized;
-        }
-        Vector3 v = Vector3.Cross(planeNormal, u);
-        Vector3 pointOnPlane = point - planePoint;
-        float x = Vector3.Dot(pointOnPlane, u);
-        float y = Vector3.Dot(pointOnPlane, v);
-        return new Vector2(x, y);
-    }
-
+// 切断平面上の頂点と，それらが構成する図形に対する処理系
+public static class GeometryUtils {
     // 新頂点リストから，ペア同士の探索を行い，頂点グループを生成する
-    private List<List<int>> GroupingForDetermineGeometry(List<int[]> vertexPairList, List<List<int>> joinedVertexGroupList) {
+    public static List<List<int>> GroupingForDetermineGeometry(List<int[]> vertexPairList, List<List<int>> joinedVertexGroupList) {
          // コピーのリストを作成
         List<int[]> remainingVertexPairList = new List<int[]>(vertexPairList);
         // 最初のEdgeの開始点と終点を取得
@@ -423,140 +429,8 @@ public class ActSubdivide : MonoBehaviour {
         return joinedVertexGroupList;
     }
 
-    // 平面上の頂点を2D座標に変換する関数
-    private Vector2[] ConvertCoordinates3DTo2D(Plane cutter, List<Vector3> vertices) {
-        Vector2[] result = new Vector2[vertices.Count];
-        Vector3 planeNormal = cutter.normal;
-        Vector3 planePoint = planeNormal * cutter.distance;
-
-        // 法線に垂直なベクトルuを生成
-        Vector3 u = Vector3.Cross(planeNormal, Vector3.up).normalized;
-        if (u.magnitude < 0.001f) {
-            u = Vector3.Cross(planeNormal, Vector3.right).normalized;
-        }
-        // ベクトルuに垂直なベクトルvを生成
-        Vector3 v = Vector3.Cross(planeNormal, u);
-
-        // u, v による座標変換
-        for (int i = 0; i < vertices.Count; i++) {
-            Vector3 pointOnPlane = vertices[i] - planePoint;
-            float x = Vector3.Dot(pointOnPlane, u);
-            float y = Vector3.Dot(pointOnPlane, v);
-            result[i] = new Vector2(x, y);
-        }
-
-        return result;
-    }
-
-    // 処理図形ごとの頂点ペアのリストを生成する
-    private static int[][][] EdgeForMakeMonotone(List<List<int>> nonConvexGeometryList, List<List<int>> joinedVertexGroupList) {
-        /*
-        *   jointedVertexGroupList の返却型をはじめから List<List<int[]>> にする方法とどちらが良いかは感覚でこちらにした．
-        *
-        *   List<List<int>> A {
-        *       List<int> [0] {0, 1, 3},
-        *       List<int> [1] {4, 2}
-        *   }
-        *   List<List<int>> B {
-        *       List<int> [0] {24, 25, 26, 27, 24},             // 処理図形グループ 1
-        *       List<int> [1] {28, 29, 30, 31, 32, 28},         // 処理図形グループ 2
-        *       List<int> [2] {33, 34, 35, 36, 37, 33},         // 処理図形グループ 1
-        *       List<int> [3] {38, 39, 40, 38}                  // 処理図形グループ 1
-        *       List<int> [4] {41, 42, 43, 44, 45, 46, 47, 41}  // 処理図形グループ 2
-        *   }
-        *   // この二つから，各処理図形ごとの辺リストを生成する
-        *   int[][][] C = new int[A.Count][][] {
-        *       int[0] = new int[ for (i = A[0].Count)(j = A[i].Count) {B[A[i][j]].Count - 1} sum+= ][2] {
-        *           {24, 25}, {25, 26}, {26, 27}, {27, 24}, 
-        *           {28, 29}, {29, 30}, {30, 31}, {31, 32}, {32, 28}, 
-        *           {38, 39}, {39, 40}, {40, 38}
-        *       },
-        *       int[1] = new int[ for (i = A[1].Count)(j = A[i].Count) {B[A[i][j]].Count - 1} sum+= ][2] {
-        *           {41, 42}, {42, 43}, {43, 44}, {44, 45}, {45, 46}, {46, 47}, {47, 41}, 
-        *           {33, 34}, {34, 35}, {35, 36}, {36, 37}, {37, 33}
-        *       }
-        *   }
-        */
-        int[][][] nonConvexGeometryEdgeList = new int[nonConvexGeometryList.Count][][];
-        for (int i = 0; i < nonConvexGeometryList.Count; i++) {
-            // グループに必要な総エッジ数を計算する
-            int totalEdges = 0;
-            for (int j = 0; j < nonConvexGeometryList[i].Count; j++) {
-                totalEdges += joinedVertexGroupList[nonConvexGeometryList[i][j]].Count - 1;
-            }
-            // グループのエッジリストを初期化する
-            nonConvexGeometryEdgeList[i] = new int[totalEdges][];
-            int edgeIndex = 0;
-            for (int j = 0; j < nonConvexGeometryList[i].Count; j++) {
-                List<int> vertexIndices = joinedVertexGroupList[nonConvexGeometryList[i][j]];
-                for (int k = 0; k < vertexIndices.Count - 1; k++) {
-                    nonConvexGeometryEdgeList[i][edgeIndex] = new int[2];
-                    nonConvexGeometryEdgeList[i][edgeIndex][0] = vertexIndices[k];
-                    nonConvexGeometryEdgeList[i][edgeIndex][1] = vertexIndices[k + 1];
-                    edgeIndex++;
-                }
-            }
-        }
-        return nonConvexGeometryEdgeList;
-    }
-
-    // 頂点の種類を判別して，各頂点にラベルを付与する
-    private string[] ClusteringVertexType(Vector2[] new2DVerticesArray, List<List<int>> joinedVertexGroupList) {
-        // 頂点の種類を格納する配列を新頂点の数と同じ大きさで用意する
-        string[] vertexType = new string[new2DVerticesArray.Length];
-        // GroupingForDetermineGeometry() で特定された図形ごとに頂点ラベル処理を行う
-        for (int i = 0; i < joinedVertexGroupList.Count; i++) {
-            for (int j = 0; j < joinedVertexGroupList[i].Count - 1; j++) {
-                Vector2 internalVertex = new2DVerticesArray[joinedVertexGroupList[i][j]];
-                Vector2 terminalVertex = new2DVerticesArray[joinedVertexGroupList[i][j + 1]];
-                Vector2 point = j == 0 ? new2DVerticesArray[joinedVertexGroupList[i].Count - 2] : new2DVerticesArray[joinedVertexGroupList[i][j - 1]];
-                // y座標が前後の頂点と比較して対象の点が大きいとき
-                if (internalVertex.y >= point.y && internalVertex.y > terminalVertex.y) {
-                    // 部分最大の場合: 出発点
-                    if (IsRight(internalVertex, terminalVertex, point)) {
-                        vertexType[joinedVertexGroupList[i][j]] = "start";
-                    }
-                    // 部分極大の場合: 分離点
-                    else {
-                        vertexType[joinedVertexGroupList[i][j]] = "split";
-                    }
-                }
-                // y座標が前後の頂点と比較して対象の点が小さいとき
-                else if (internalVertex.y <= point.y && internalVertex.y < terminalVertex.y) {
-                    // 部分最小の場合: 最終点
-                    if (IsRight(internalVertex, terminalVertex, point)) {
-                        vertexType[joinedVertexGroupList[i][j]] = "end";
-                    }
-                    // 部分極小の場合: 統合点
-                    else {
-                        vertexType[joinedVertexGroupList[i][j]] = "merge";
-                    }
-                }
-                // それ以外の場合: 通常の点
-                else {
-                    vertexType[joinedVertexGroupList[i][j]] = "regular";
-                }
-            }
-        }
-        return vertexType;
-    }
-
-    // 対象の頂点が統合点である場合の処理
-    private void HandleMergeVertex(int newVertexIndex) {
-        // 左の辺のヘルパに自身のインデックスを設定する
-
-    }
-
-    // 対象の頂点が分離点である場合の処理
-    private void HandleSplitVertex(int newVertexIndex) {
-        // 右の辺のヘルパにある頂点のインデックスが
-
-    }
-}
-
-public static class GeometryUtils {
     // 図形同士の内外判定を巻き数法 (Winding Number Algorithm) で行い，処理図形ごとにグループ化する
-    public static List<List<int>> GroupingForPartitionMonotoneGeometry(Vector2[] new2DVerticesArray, List<List<int>> joinedVertexGroupList) {
+    public static List<List<int>> GroupingForSegmentNonMonotoneGeometry(Vector2[] new2DVerticesArray, List<List<int>> joinedVertexGroupList) {
         int groupCount = joinedVertexGroupList.Count;
         Vector2 point = new Vector2 (0, 0);
         // 各図形の内外判定を行うための配列
@@ -613,7 +487,7 @@ public static class GeometryUtils {
         return windingNumber != 0;
     }
 
-    // GroupingForPartitionMonotoneGeometry() の処理図形をグルーピングする補助関数
+    // GroupingForSegmentNonMonotoneGeometry() の処理図形をグルーピングする補助関数
     private static void FindOutermostGeometry (bool[][] isInsides, int index, List<int> group, bool[] visited) {
         // すでにグルーピングした図形は無視する
         if (visited[index]) return;
@@ -634,8 +508,150 @@ public static class GeometryUtils {
             }
         }
     }
+
+    // 平面上の頂点を2D座標に変換する関数
+    public static Vector2[] ConvertCoordinates3DTo2D(Plane cutter, List<Vector3> vertices) {
+        Vector2[] result = new Vector2[vertices.Count];
+        Vector3 planeNormal = cutter.normal;
+        Vector3 planePoint = planeNormal * cutter.distance;
+
+        // 法線に垂直なベクトルuを生成
+        Vector3 u = Vector3.Cross(planeNormal, Vector3.up).normalized;
+        if (u.magnitude < 0.001f) {
+            u = Vector3.Cross(planeNormal, Vector3.right).normalized;
+        }
+        // ベクトルuに垂直なベクトルvを生成
+        Vector3 v = Vector3.Cross(planeNormal, u);
+
+        // u, v による座標変換
+        for (int i = 0; i < vertices.Count; i++) {
+            Vector3 pointOnPlane = vertices[i] - planePoint;
+            float x = Vector3.Dot(pointOnPlane, u);
+            float y = Vector3.Dot(pointOnPlane, v);
+            result[i] = new Vector2(x, y);
+        }
+
+        return result;
+    }
+
+        // 処理図形ごとの頂点ペアのリストを生成する
+    public static int[][][] EdgeForMakeMonotone(List<List<int>> nonConvexGeometryList, List<List<int>> joinedVertexGroupList) {
+        /*
+        *   jointedVertexGroupList の返却型をはじめから List<List<int[]>> にする方法とどちらが良いかは感覚でこちらにした．
+        *
+        *   List<List<int>> A {
+        *       List<int> [0] {0, 1, 3},
+        *       List<int> [1] {4, 2}
+        *   }
+        *   List<List<int>> B {
+        *       List<int> [0] {24, 25, 26, 27, 24},             // 処理図形グループ 1
+        *       List<int> [1] {28, 29, 30, 31, 32, 28},         // 処理図形グループ 2
+        *       List<int> [2] {33, 34, 35, 36, 37, 33},         // 処理図形グループ 1
+        *       List<int> [3] {38, 39, 40, 38}                  // 処理図形グループ 1
+        *       List<int> [4] {41, 42, 43, 44, 45, 46, 47, 41}  // 処理図形グループ 2
+        *   }
+        *   // この二つから，各処理図形ごとの辺リストを生成する
+        *   int[][][] C = new int[A.Count][][] {
+        *       int[0] = new int[ for (i = A[0].Count)(j = A[i].Count) {B[A[i][j]].Count - 1} sum+= ][2] {
+        *           {24, 25}, {25, 26}, {26, 27}, {27, 24}, 
+        *           {28, 29}, {29, 30}, {30, 31}, {31, 32}, {32, 28}, 
+        *           {38, 39}, {39, 40}, {40, 38}
+        *       },
+        *       int[1] = new int[ for (i = A[1].Count)(j = A[i].Count) {B[A[i][j]].Count - 1} sum+= ][2] {
+        *           {41, 42}, {42, 43}, {43, 44}, {44, 45}, {45, 46}, {46, 47}, {47, 41}, 
+        *           {33, 34}, {34, 35}, {35, 36}, {36, 37}, {37, 33}
+        *       }
+        *   }
+        */
+        int[][][] nonConvexGeometryEdgeList = new int[nonConvexGeometryList.Count][][];
+        for (int i = 0; i < nonConvexGeometryList.Count; i++) {
+            // グループに必要な総エッジ数を計算する
+            int totalEdges = 0;
+            for (int j = 0; j < nonConvexGeometryList[i].Count; j++) {
+                totalEdges += joinedVertexGroupList[nonConvexGeometryList[i][j]].Count - 1;
+            }
+            // グループのエッジリストを初期化する
+            nonConvexGeometryEdgeList[i] = new int[totalEdges][];
+            int edgeIndex = 0;
+            for (int j = 0; j < nonConvexGeometryList[i].Count; j++) {
+                List<int> vertexIndices = joinedVertexGroupList[nonConvexGeometryList[i][j]];
+                for (int k = 0; k < vertexIndices.Count - 1; k++) {
+                    nonConvexGeometryEdgeList[i][edgeIndex] = new int[2];
+                    nonConvexGeometryEdgeList[i][edgeIndex][0] = vertexIndices[k];
+                    nonConvexGeometryEdgeList[i][edgeIndex][1] = vertexIndices[k + 1];
+                    edgeIndex++;
+                }
+            }
+        }
+        return nonConvexGeometryEdgeList;
+    }
+
+    // 頂点の種類を判別して，各頂点にラベルを付与する
+    public string[] ClusteringVertexType(Vector2[] new2DVerticesArray, List<List<int>> joinedVertexGroupList) {
+        // 頂点の種類を格納する配列を新頂点の数と同じ大きさで用意する
+        string[] vertexType = new string[new2DVerticesArray.Length];
+        // GroupingForDetermineGeometry() で特定された図形ごとに頂点ラベル処理を行う
+        for (int i = 0; i < joinedVertexGroupList.Count; i++) {
+            for (int j = 0; j < joinedVertexGroupList[i].Count - 1; j++) {
+                Vector2 internalVertex = new2DVerticesArray[joinedVertexGroupList[i][j]];
+                Vector2 terminalVertex = new2DVerticesArray[joinedVertexGroupList[i][j + 1]];
+                Vector2 point = j == 0 ? new2DVerticesArray[joinedVertexGroupList[i].Count - 2] : new2DVerticesArray[joinedVertexGroupList[i][j - 1]];
+                // y座標が前後の頂点と比較して対象の点が大きいとき
+                if (internalVertex.y >= point.y && internalVertex.y > terminalVertex.y) {
+                    // 部分最大の場合: 出発点
+                    if (IsRight(internalVertex, terminalVertex, point)) {
+                        vertexType[joinedVertexGroupList[i][j]] = "start";
+                    }
+                    // 部分極大の場合: 分離点
+                    else {
+                        vertexType[joinedVertexGroupList[i][j]] = "split";
+                    }
+                }
+                // y座標が前後の頂点と比較して対象の点が小さいとき
+                else if (internalVertex.y <= point.y && internalVertex.y < terminalVertex.y) {
+                    // 部分最小の場合: 最終点
+                    if (IsRight(internalVertex, terminalVertex, point)) {
+                        vertexType[joinedVertexGroupList[i][j]] = "end";
+                    }
+                    // 部分極小の場合: 統合点
+                    else {
+                        vertexType[joinedVertexGroupList[i][j]] = "merge";
+                    }
+                }
+                // それ以外の場合: 通常の点
+                else {
+                    vertexType[joinedVertexGroupList[i][j]] = "regular";
+                }
+            }
+        }
+        return vertexType;
+    }
 }
 
+// 単調多角形分割と，多角形の三角形分割に関する処理系
+public static class ComputationalGeometryAlgorithm {
+/*
+* [参考文献]
+* コンピュータ・ジオメトリ (計算幾何学: アルゴリズムと応用) ：近代科学社
+* M. ドバーグ, M. ファン・クリベルド, M. オーバマーズ, O. シュワルツコップ 共著
+* 浅野 哲夫 訳
+*/
+    // 
+
+    // 対象の頂点が統合点である場合の処理
+    private void HandleMergeVertex(int newVertexIndex) {
+        // 左の辺のヘルパに自身のインデックスを設定する
+
+    }
+
+    // 対象の頂点が分離点である場合の処理
+    private void HandleSplitVertex(int newVertexIndex) {
+        // 右の辺のヘルパにある頂点のインデックスが
+
+    }
+}
+
+// 計算に関する処理系
 public static class MathUtils {
     // 2つのベクトルの外積を計算する
     public static float CrossProduct(Vector2 internalVertex, Vector2 terminalVertex, Vector2 point) {
@@ -655,6 +671,7 @@ public static class MathUtils {
     }
 }
 
+// Debug用の処理系
 public static class MyDebug {
     public void CreateObject(Vector3[] vertices, Vector2[] uvs, int[] triangles) {
         GameObject newObject = Instantiate(newGameObjectPrefab);
