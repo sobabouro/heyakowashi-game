@@ -217,7 +217,7 @@ public class ActSubdivide : MonoBehaviour {
         
         // 新頂点の二次元座標変換する
         new2DVerticesArray = new Vector2[newVerticesList.Count];
-        new2DVerticesArray = ConvertCoordinates3DTo2D(cutter, newVerticesList.ToArray());
+        new2DVerticesArray = ConvertCoordinates3DTo2D(cutter, newVerticesList);
         // ひとつなぎの辺で形成されるすべての図形をリストアップする
         joinedVertexGroupList = GroupingForDetermineGeometry(vertexPairList, joinedVertexGroupList);
         // 新頂点を種類ごとに分類する
@@ -229,6 +229,38 @@ public class ActSubdivide : MonoBehaviour {
         int[][][] nonConvexGeometryEdgeList = EdgeForMakeMonotone(nonConvexGeometryList, joinedVertexGroupList);
         // 各処理図形を単調多角形に分割する
     }
+    private void AddToRightSide(int i, int[] targetTriangles, Vector2[] targetUVs, List<Vector2> rightUVs, List<int> rightTriangles) {
+        for (int k = 0; k < 3; k++) {
+            rightUVs.Add(targetUVs[targetTriangles[i + k]]);
+            rightTriangles.Add(targetTriangles[i + k]);
+        }
+    }
+    private void AddToLeftSide(int i, int[] targetTriangles, Vector2[] targetUVs, List<Vector2> leftUVs, List<int> leftTriangles) {
+        for (int k = 0; k < 3; k++) {
+            leftUVs.Add(targetUVs[targetTriangles[i + k]]);
+            leftTriangles.Add(targetTriangles[i + k]);
+        }
+    }
+    private void ProcessMixedTriangle(int i, Cutter cutter, Vector3[] targetVertices, int[] targetTriangles, bool vertexTruthValue1, bool vertexTruthValue2, bool vertexTruthValue3) {
+        (
+            bool rtlf, 
+            int vertexIndex1, Vector3 lonelyVertex, 
+            int vertexIndex2, Vector3 startPairVertex, 
+            int vertexIndex3, Vector3 lastPairVertex
+        ) = SortIndex(
+            targetTriangles[i], vertexTruthValue1, targetVertices[targetTriangles[i]],
+            targetTriangles[i + 1], vertexTruthValue2, targetVertices[targetTriangles[i + 1]],
+            targetTriangles[i + 2], vertexTruthValue3, targetVertices[targetTriangles[i + 2]]
+        );
+        (
+            Vector3 newStartPairVertex, 
+            Vector3 newLastPairVertex, 
+            float ratio_LonelyAsStart, 
+            float ratio_LonelyAsLast
+        ) = GenerateNewVertex(
+            cutter, rtlf, lonelyVertex, startPairVertex, lastPairVertex
+        );
+    }
 
     // ポリゴンの頂点番号を，孤独な頂点を先頭に，表裏情報をもつ順番に並び替える
     (
@@ -236,7 +268,7 @@ public class ActSubdivide : MonoBehaviour {
         int newIndex1, Vector3 lonelyVertex, 
         int newIndex2, Vector3 startPairVertex, 
         int newIndex3, Vector3 lastPairVertex
-    ) SortIndex (
+    ) SortIndex(
         int index1, bool vertexTruthValue1, Vector3 vertex1, 
         int index2, bool vertexTruthValue2, Vector3 vertex2, 
         int index3, bool vertexTruthValue3, Vector3 vertex3
@@ -275,7 +307,7 @@ public class ActSubdivide : MonoBehaviour {
         Vector3 newLastPairVertex,
         float ratio_LonelyStart,
         float ratio_LonelyLast
-    ) GenerateNewVertex (
+    ) GenerateNewVertex(
         Plane plane, 
         bool rtlf, 
         Vector3 lonelyVertex, 
@@ -291,8 +323,8 @@ public class ActSubdivide : MonoBehaviour {
         plane.Raycast(ray2, out distance2);
         Vector3 newLastPairVertex = ray2.GetPoint(distance2);
 
-        float ratio_LonelyStart = distance1 / DoubleVector3.Distance(lonelyVertex, startPairVertex);
-        float ratio_LonelyLast = distance2 / DoubleVector3.Distance(lonelyVertex, lastPairVertex);
+        float ratio_LonelyStart = distance1 / Vector3.Distance(lonelyVertex, startPairVertex);
+        float ratio_LonelyLast = distance2 / Vector3.Distance(lonelyVertex, lastPairVertex);
 
         if (rtlf) {
             return (newStartPairVertex, newLastPairVertex, ratio_LonelyStart, ratio_LonelyLast);
@@ -306,7 +338,7 @@ public class ActSubdivide : MonoBehaviour {
     (
         Vector2 newUV1, 
         Vector2 newUV2
-    ) GenerateNewUV (
+    ) GenerateNewUV(
         float ratio_LonelyAsStart, 
         float ratio_LonelyAsLast, 
         Vector2 uv1, Vector2 uv2, Vector2 uv3
@@ -326,8 +358,10 @@ public class ActSubdivide : MonoBehaviour {
     (
         bool deltrue, 
         int newVertexIndex
-    ) InsertAndDeleteVertices (
-        Vector3 newVertex, List<Vector3> verticesList
+    ) InsertAndDeleteVertices(
+        int targetVerticesLength,
+        Vector3 newVertex, 
+        List<Vector3> verticesList
     ) {
         int listCount = verticesList.Count;
         int newVertexIndex = listCount;
@@ -353,8 +387,8 @@ public class ActSubdivide : MonoBehaviour {
         }
         Vector3 v = Vector3.Cross(planeNormal, u);
         Vector3 pointOnPlane = point - planePoint;
-        double x = Vector3.Dot(pointOnPlane, u);
-        double y = Vector3.Dot(pointOnPlane, v);
+        float x = Vector3.Dot(pointOnPlane, u);
+        float y = Vector3.Dot(pointOnPlane, v);
         return new Vector2(x, y);
     }
 
@@ -366,7 +400,7 @@ public class ActSubdivide : MonoBehaviour {
         int startVertex = remainingVertexPairList[0][0];
         int endVertex = remainingVertexPairList[0][1];
         // 最初のEdgeの頂点を追加し、削除
-        joinedVertexGroupList[0].Add(remainingVertexPairList[0]);
+        joinedVertexGroupList[0].Add(startVertex);
         remainingVertexPairList.RemoveAt(0);
         // 頂点が一周するまでループ
         while (startVertex != endVertex) {
@@ -375,7 +409,7 @@ public class ActSubdivide : MonoBehaviour {
                 if (endVertex == remainingVertexPairList[i][0]) {
                     // 終点を更新、頂点グループに追加し、削除
                     endVertex = remainingVertexPairList[i][1];
-                    joinedVertexGroupList[i].Add(remainingVertexPairList[i]);
+                    joinedVertexGroupList[i].Add(endVertex);
                     remainingVertexPairList.RemoveAt(i);
                     break;
                 }
@@ -412,83 +446,6 @@ public class ActSubdivide : MonoBehaviour {
         }
 
         return result;
-    }
-
-    // 図形同士の内外判定を巻き数法 (Winding Number Algorithm) で行い，処理図形ごとにグループ化する
-    private static List<List<int>> GroupingForPartitionMonotoneGeometry(Vector2[] new2DVerticesArray, List<List<int>> joinedVertexGroupList) {
-        int groupCount = joinedVertexGroupList.Count;
-        Vector2 point = {0, 0};
-        // 各図形の内外判定を行うための配列
-        bool[][] isInsides = new bool[groupCount][groupCount];
-        bool[] visited = new bool[groupCount];
-        // 処理図形グループリストに各図形を組み分けするためのリスト
-        List<List<int>> nonConvexGeometryList = new List<List<int>>();
-        // GroupingForDetermineGeometry で特定された図形の総当たり
-        for (int i = 0; i < groupCount; i++) {
-            for (int j = 0; j < groupCount; j++) {
-                // 自分自身は無視して，他の図形との内外判定を巻き数法で行う
-                if (i == j) continue;
-                point = new2DVerticesArray[joinedVertexGroupList[j][0]];
-                isInsides[i][j] = WindingNumberAlgorithm(new2DVerticesArray, point, joinedVertexGroupList[i]);
-            }
-        }
-        // 図形iが他の図形を内包するしないにかかわらず，非被内包(笑)(処理図形)の場合は，内包図形とともにリストに追加する
-        for (int i = 0; i < groupCount; i++) {
-            if (visited[i]) continue;
-            List<int> group = new List<int>();
-            FindOutermostGeometry(isInsides, i, group, visited);
-            nonConvexGeometryList.Add(group);
-        }
-        return nonConvexGeometryList;
-    }
-
-    // Winding Number Algorithm の実装
-    private bool WindingNumberAlgorithm(Vector2[] new2DVerticesArray, Vector2 point, List<int> toCompareGeometry) {
-        // 外郭の辺リストが右回りであることを前提とする
-        // 辺の右側が図形の内部になる
-        int windingNumber = 0;
-        int vertexQuantity = toCompareGeometry.Count;
-        for (int i = 0; i < vertexQuantity - 1; i++) {
-            Vector2 internalVertex = new2DVerticesArray[toCompareGeometry[i]];
-            Vector2 terminalVertex = new2DVerticesArray[toCompareGeometry[i + 1]];
-
-            if (internalVertex.y <= point.y) {
-                // 辺の始点が点よりも下・辺の終点が点よりも上・辺の※右側に点がある場合
-                if (terminalVertex.y > point.y && IsRight(internalVertex, terminalVertex, point)) {
-                    windingNumber--;
-                }
-            }
-            else {
-                // 辺の始点が点よりも上・辺の終点が点よりも下・辺の※左側に点がある場合
-                if (terminalVertex.y <= point.y && IsLeft(internalVertex, terminalVertex, point)) {
-                    windingNumber++;
-                }
-            }
-        }
-        // 0 でない場合は内部にある => true
-        return windingNumber != 0;
-    }
-
-    // GroupingForPartitionMonotoneGeometry() の処理図形をグルーピングする補助関数
-    private static void FindOutermostGeometry (bool[][] isInsides, int index, List<int> group, bool[] visited) {
-        // すでにグルーピングした図形は無視する
-        if (visited[index]) return;
-
-        visited[index] = true;
-        group.Add(index);
-
-        for (int i = 0; i < isInsides.Length; i++) {
-            // 図形 i が index に内包されている場合
-            if (isInsides[index][i]) {
-                FindOutermostGeometry(isInsides, i, group, visited);
-            }
-            // 図形 index が図形 i に内包されている場合
-            else if (isInsides[i][index]) {
-                group.Clear();
-                FindOutermostGeometry(isInsides, i, group, visited);
-                break;
-            }
-        }
     }
 
     // 処理図形ごとの頂点ペアのリストを生成する
@@ -595,25 +552,111 @@ public class ActSubdivide : MonoBehaviour {
         // 右の辺のヘルパにある頂点のインデックスが
 
     }
+}
 
-    // 頂点が右回りであることが前提
-    private bool IsRight(Vector2 internalVertex, Vector2 terminalVertex, Vector2 point) {
-        return CrossProduct(internalVertex, terminalVertex, point) < 0;
+public static class GeometryUtils {
+    // 図形同士の内外判定を巻き数法 (Winding Number Algorithm) で行い，処理図形ごとにグループ化する
+    public static List<List<int>> GroupingForPartitionMonotoneGeometry(Vector2[] new2DVerticesArray, List<List<int>> joinedVertexGroupList) {
+        int groupCount = joinedVertexGroupList.Count;
+        Vector2 point = new Vector2 (0, 0);
+        // 各図形の内外判定を行うための配列
+        bool[][] isInsides = new bool[groupCount][];
+        for (int i = 0; i < groupCount; i++) {
+            isInsides[i] = new bool[groupCount];
+        }
+        bool[] visited = new bool[groupCount];
+        // 処理図形グループリストに各図形を組み分けするためのリスト
+        List<List<int>> nonConvexGeometryList = new List<List<int>>();
+        // GroupingForDetermineGeometry で特定された図形の総当たり
+        for (int i = 0; i < groupCount; i++) {
+            for (int j = 0; j < groupCount; j++) {
+                // 自分自身は無視して，他の図形との内外判定を巻き数法で行う
+                if (i == j) continue;
+                point = new2DVerticesArray[joinedVertexGroupList[j][0]];
+                isInsides[i][j] = WindingNumberAlgorithm(new2DVerticesArray, point, joinedVertexGroupList[i]);
+            }
+        }
+        // 図形iが他の図形を内包するしないにかかわらず，非被内包(笑)(処理図形)の場合は，内包図形とともにリストに追加する
+        for (int i = 0; i < groupCount; i++) {
+            if (visited[i]) continue;
+            List<int> group = new List<int>();
+            FindOutermostGeometry(isInsides, i, group, visited);
+            nonConvexGeometryList.Add(group);
+        }
+        return nonConvexGeometryList;
     }
 
-    // 頂点が右回りであることが前提
-    private bool IsLeft(Vector2 internalVertex, Vector2 terminalVertex, Vector2 point) {
-        return CrossProduct(internalVertex, terminalVertex, point) > 0;
+    // Winding Number Algorithm の実装
+    private static bool WindingNumberAlgorithm(Vector2[] new2DVerticesArray, Vector2 point, List<int> toCompareGeometry) {
+        // 外郭の辺リストが右回りであることを前提とする
+        // 辺の右側が図形の内部になる
+        int windingNumber = 0;
+        int vertexQuantity = toCompareGeometry.Count;
+        for (int i = 0; i < vertexQuantity - 1; i++) {
+            Vector2 internalVertex = new2DVerticesArray[toCompareGeometry[i]];
+            Vector2 terminalVertex = new2DVerticesArray[toCompareGeometry[i + 1]];
+
+            if (internalVertex.y <= point.y) {
+                // 辺の始点が点よりも下・辺の終点が点よりも上・辺の※右側に点がある場合
+                if (terminalVertex.y > point.y && IsRight(internalVertex, terminalVertex, point)) {
+                    windingNumber--;
+                }
+            }
+            else {
+                // 辺の始点が点よりも上・辺の終点が点よりも下・辺の※左側に点がある場合
+                if (terminalVertex.y <= point.y && IsLeft(internalVertex, terminalVertex, point)) {
+                    windingNumber++;
+                }
+            }
+        }
+        // 0 でない場合は内部にある => true
+        return windingNumber != 0;
     }
 
-    // 外積を計算する
-    private float CrossProduct(Vector2 internalVertex, Vector2 terminalVertex, Vector2 point) {
+    // GroupingForPartitionMonotoneGeometry() の処理図形をグルーピングする補助関数
+    private static void FindOutermostGeometry (bool[][] isInsides, int index, List<int> group, bool[] visited) {
+        // すでにグルーピングした図形は無視する
+        if (visited[index]) return;
+
+        visited[index] = true;
+        group.Add(index);
+
+        for (int i = 0; i < isInsides.Length; i++) {
+            // 図形 i が index に内包されている場合
+            if (isInsides[index][i]) {
+                FindOutermostGeometry(isInsides, i, group, visited);
+            }
+            // 図形 index が図形 i に内包されている場合
+            else if (isInsides[i][index]) {
+                group.Clear();
+                FindOutermostGeometry(isInsides, i, group, visited);
+                break;
+            }
+        }
+    }
+}
+
+public static class MathUtils {
+    // 2つのベクトルの外積を計算する
+    public static float CrossProduct(Vector2 internalVertex, Vector2 terminalVertex, Vector2 point) {
         Vector2 v1 = terminalVertex - internalVertex;
         Vector2 v2 = point - internalVertex;
         return v1.x * v2.y - v1.y * v2.x;
     }
 
-    private void CreateObject(Vector3[] vertices, Vector2[] uvs, int[] triangles) {
+    // 頂点が右回りであることが前提
+    public static bool IsRight(Vector2 internalVertex, Vector2 terminalVertex, Vector2 point) {
+        return CrossProduct(internalVertex, terminalVertex, point) < 0;
+    }
+
+    // 頂点が右回りであることが前提
+    public static bool IsLeft(Vector2 internalVertex, Vector2 terminalVertex, Vector2 point) {
+        return CrossProduct(internalVertex, terminalVertex, point) > 0;
+    }
+}
+
+public static class MyDebug {
+    public void CreateObject(Vector3[] vertices, Vector2[] uvs, int[] triangles) {
         GameObject newObject = Instantiate(newGameObjectPrefab);
         newObject.AddComponent<MeshFilter>();
         newObject.AddComponent<MeshRenderer>();
@@ -627,8 +670,7 @@ public class ActSubdivide : MonoBehaviour {
         mesh.Optimize();
     }
 
-    private void CreateRigidObject(Vector3[] vertices, Vector2[] uvs, int[] triangles)
-    {
+    public void CreateRigidObject(Vector3[] vertices, Vector2[] uvs, int[] triangles) {
         GameObject newObject = Instantiate(newGameObjectPrefab);
         newObject.AddComponent<MeshFilter>();
         newObject.AddComponent<MeshRenderer>();
@@ -642,51 +684,5 @@ public class ActSubdivide : MonoBehaviour {
         mesh.RecalculateNormals();
         mesh.RecalculateBounds();
         mesh.Optimize();
-    }
-}
-
-public class AssortVertexIndex {
-    private List<int> _startVertexList = new List<int>();
-    public List<int> StartVertexList {
-        get { return _startVertexList; }
-        set { _startVertexList = value; }
-    }
-    private List<int> _splitVertexList = new List<int>();
-    public List<int> SplitVertexList {
-        get { return _splitVertexList; }
-        set { _splitVertexList = value; }
-    }
-    private List<int> _endVertexList = new List<int>();
-    public List<int> EndVertexList {
-        get { return _endVertexList; }
-        set { _endVertexList = value; }
-    }
-    private List<int> _mergeVertexList = new List<int>();
-    public List<int> MergeVertexList {
-        get { return _mergeVertexList; }
-        set { _mergeVertexList = value; }
-    }
-}
-public class BiconnectedEdgeList {
-    private int _internalVertexIndex = null;
-    public int InternalVertexIndex {
-        get { return _internalVertexIndex; }
-        set { _internalVertexIndex = value; }
-    }
-    private int _terminalVertexIndex = null;
-    public int TerminalVertexIndex {
-        get { return _terminalVertexIndex; }
-        set { _terminalVertexIndex = value; }
-    }
-    private int _helperVertexIndex = null;
-    public int HelperVertexIndex {
-        get { return _helperVertexIndex; }
-        set { _helperVertexIndex = value; }
-    }
-    private string _edgeType = "regular";
-    // regular, start, end, split, merge の五種類
-    public string EdgeType {
-        get { return _edgeType; }
-        set { _edgeType = value; }
     }
 }
