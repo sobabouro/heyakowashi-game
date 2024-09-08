@@ -557,11 +557,11 @@ public static class GeometryUtils {
         *   jointedVertexGroupList の返却型をはじめから
         *   List<List<int[]>> にする方法とどちらが良いかは感覚でこちらにした．
         *
-        *   List<List<int>> A {
+        *   List<List<int>> A { // nonConvexGeometryList
         *       List<int> [0] {0, 1, 3},
         *       List<int> [1] {4, 2}
         *   }
-        *   List<List<int>> B {
+        *   List<List<int>> B { // joinedVertexGroupList
         *       List<int> [0] {24, 25, 26, 27, 24},             // 処理図形グループ 1
         *       List<int> [1] {28, 29, 30, 31, 32, 28},         // 処理図形グループ 2
         *       List<int> [2] {33, 34, 35, 36, 37, 33},         // 処理図形グループ 1
@@ -608,6 +608,96 @@ public static class GeometryUtils {
         return (nonConvexGeometryVerticesJagAry, nonConvexGeometryEdgesJagAry);
     }
 
+    // jointedVertexGroupList の各要素の中で，対象の頂点が図形を構成する頂点配列の先頭ならば，図形を構成する頂点の末尾を返す
+    public static int HeadJudge(List<List<int>> joinedVertexGroupList, int setIndex, int processedTargetVertex) {
+        if (joinedVertexGroupList[setIndex][0] == processedTargetVertex) {
+            return joinedVertexGroupList[setIndex][joinedVertexGroupList[setIndex].Count - 2];
+        }
+        // そうでなければ，processedTargetVertex の該当する要素の，次の要素を返す
+        else {
+            return joinedVertexGroupList[setIndex][joinedVertexGroupList[setIndex].IndexOf(processedTargetVertex) + 1];
+        }
+        else {
+            return processedTargetVertex;
+        }
+    }
+}
+
+// 単調多角形分割と，多角形の三角形分割に関する処理系
+public static class ComputationalGeometryAlgorithm {
+/* ****************************************************************************** /
+* [参考文献]
+* コンピュータ・ジオメトリ (計算幾何学: アルゴリズムと応用) ：近代科学社
+* M. ドバーグ, M. ファン・クリベルド, M. オーバマーズ, O. シュワルツコップ 共著
+* 浅野 哲夫 訳
+* ****************************************************************************** */
+
+/* ****************************************************************************** /
+* 以下は，凸でない多角形 |P| を三角形分割するためのアルゴリズムである．
+* そのために，まずは |P| を単調多角形 (monotone polygon) 配列 |P'|に分割する．
+* いきなり |P'| に分割することは困難なので，他の図形に非被内包である，
+* 外郭図形 (内包図形の有無に無関係)を，処理図形のグループとして |P_s| にする．
+*   ※ 3DCG においての用語との混同を避けるため，以降 monotone geometry とする．
+*   ※ |P'| と |P_s| との勲に注意する．
+* ここでは，|nonConvexGeometryEdgesJagAry| を疑似的に |P'| として扱う．
+* まずは，|P| の頂点を，通常点と変曲点で以下のように分類する．
+*   [ 出発点: start, 統合点: merge, 分離点: split, 最終点: end, 通常の点: regular ]
+* そして，|P'| の頂点を時計回りに並べたものをv_0, v_1, ..., v_{n-1} とする．
+* また，|P'| の辺集合を e_0, e_1, ..., e_{n-1} とする．
+* また，|P'| の辺集合と同じ大きさの配列 |Helper| を用意し，
+* v_i の頂点種類を，すぐ右の辺にあたる helper(e_{v_i}) に格納する．
+* すぐ右の辺がない場合は，自身を終点とする辺の始点が helper(e_{v_i}) となる．
+*
+* 以下は，そのアルゴリズムの具体的な手順である．
+* 1. |P_s| の頂点の分類配列を，y 座標の降順にソートする．(sごとに)
+* 2. y 座標の降順に helper(v_i) を参照していき，以下の通りに処理を行う．
+*
+*    case: 出発点
+*    (1). とくに何もしない．
+*    case: 最終点
+*    (1). もし，helper(e_{v_i}-1) が統合点の場合，
+*         - v_i と helper(e_{v_i}-1) を結ぶ両辺を，辺集合 {E_s} に追加する．
+*    (2). helper(e_{v_i}-1) を削除する．
+*    case: 統合点
+*    (1). もし，helper(e_{v_i}-1) が統合点の場合，
+*         - v_i と helper(e_{v_i}-1) を結ぶ両辺を，辺集合 {E_s} に追加する．
+*    (2). helper(e_{v_i}-1) を削除する．
+*    (3). もし，helper(e_{v_i}) が統合点の場合，
+*         - v_i と helper(e_{v_i}) を結ぶ両辺を，辺集合 {E_s} に追加する．
+*    (4). helper(e_{v_i}) に v_i を設定する．
+*    case: 分離点
+*    (1). v_i と helper(e_{v_i}) を結ぶ両辺を，辺集合 {E_s} に追加する．
+*    (2). helper(e_{v_i}) に v_i を設定する．
+*    case: 通常の点
+*    (1). もし，v_i が e_{v_i}-1 の左側にある場合，以下の処理を行う．
+*         - もし，helper(e_{v_i}-1) が統合点の場合，
+*         -- v_i と helper(e_{v_i}-1) を結ぶ両辺を，辺集合 {E_s} に追加する．
+*         -- helper(e_{v_i}-1) を削除する．
+*         -- helper(e_{v_i}) に v_i を設定する．
+*         - もし，helper(e_{v_i}-1) が統合点でない場合，
+*         -- もし，helper(e_{v_i}) が統合点の場合，
+*         --- v_i と helper(e_{v_i}) を結ぶ両辺を，辺集合 {E_s} に追加する．
+*         -- helper(e_{v_i}) に v_i を設定する．
+*
+* 3. {E_s} ごとに，辺のグルーピングを再度行い，|P'| を生成する．
+* 4. |P'| を三角形分割する．
+*
+* このアルゴリズムで行っていること，図形を分割する際に行わなければいけない処理は，
+* 分離点と統合点による，他の頂点からの対角線の横断を防ぐことです．
+* 例えば，統合点と分離点が，y 座標で近しい距離にあるとき，
+* つまり図形的にわかりやすく判別式を設けるなら，一貫性があればどちらでも構わない，
+* すぐ隣の辺の始点から終点の間に存在するほど近しいとき，
+* その辺から他の頂点に対して対角線を引くときに，
+* 二点による別の対角線が，横断することになります．
+* なので，その閾値による存在位置の判別により他の頂点と繋ぐことで，
+* 他の頂点からの対角線の横断を防いでいます．
+*
+* 最後に，このアルゴリズムは参考文献をもとに，自己流にアレンジしたものなので，
+* 参考文献とは重点を置いている部分が異なります．
+* 図形探索アルゴリズムに最適はあるかもしれないけど正解はないよね？
+* 参考文献にだっていやちょっと待て，と，そういう部分もあるしね．
+* ****************************************************************************** */
+
     // 頂点の種類を判別して，各頂点にラベルを付与する
     public string[] ClusteringVertexType(Vector2[] new2DVerticesArray, List<List<int>> joinedVertexGroupList) {
         // 頂点の種類を格納する配列を新頂点の数と同じ大きさで用意する
@@ -648,82 +738,6 @@ public static class GeometryUtils {
         }
         return vertexType;
     }
-}
-
-// 単調多角形分割と，多角形の三角形分割に関する処理系
-public static class ComputationalGeometryAlgorithm {
-/* ****************************************************************************** /
-* [参考文献]
-* コンピュータ・ジオメトリ (計算幾何学: アルゴリズムと応用) ：近代科学社
-* M. ドバーグ, M. ファン・クリベルド, M. オーバマーズ, O. シュワルツコップ 共著
-* 浅野 哲夫 訳
-* ****************************************************************************** */
-
-/* ****************************************************************************** /
-* 以下は，凸でない多角形 |P| を三角形分割するためのアルゴリズムである．
-* そのために，まずは |P| を単調多角形 (monotone polygon) 配列 |P'|に分割する．
-* いきなり |P'| に分割することは困難なので，他の図形に非被内包である，
-* 外郭図形 (内包図形の有無に無関係)を，処理図形のグループとして |P_s| にする．
-*   ※ 3DCG においての用語との混同を避けるため，以降 monotone geometry とする．
-*   ※ |P'| と |P_s| との勲に注意する．
-* ここでは，|nonConvexGeometryEdgesJagAry| を疑似的に |P'| として扱う．
-* まずは，|P| の頂点を，通常点と変曲点で以下のように分類する．
-*   [ 出発点: start, 統合点: merge, 分離点: split, 最終点: end, 通常の点: regular ]
-* そして，|P'| の頂点を時計回りに並べたものをv_0, v_1, ..., v_{n-1} とする．
-* また，|P'| の辺集合を e_0, e_1, ..., e_{n-1} とする．
-* また，|P'| の辺集合と同じ大きさの配列 |Helper| を用意し，
-* v_i の頂点種類を，すぐ右の辺にあたる helper(e_{v_i}) に格納する．
-* すぐ右の辺がない場合は，自身を終点とする辺の始点が helper(e_{v_i}) となる．
-*
-* 以下は，そのアルゴリズムの具体的な手順である．
-* 1. |P_s| の頂点の分類配列を，y 座標の降順にソートする．(sごとに)
-* 2. y 座標の降順に helper(v_i) を参照していき，以下の通りに処理を行う．
-*
-*    case: 出発点
-*    (1). とくに何もしない．
-*    case: 最終点
-*    (1). もし，helper(e_{v_i-1}) が統合点の場合，
-*         - v_i と helper(e_{v_i-1}) を結ぶ両辺を，辺集合 {E_s} に追加する．
-*    (2). helper(e_{v_i-1}) を削除する．
-*    case: 統合点
-*    (1). もし，helper(e_{v_i-1}) が統合点の場合，
-*         - v_i と helper(e_{v_i-1}) を結ぶ両辺を，辺集合 {E_s} に追加する．
-*    (2). helper(e_{v_i-1}) を削除する．
-*    (3). もし，helper(e_{v_i}) が統合点の場合，
-*         - v_i と helper(e_{v_i}) を結ぶ両辺を，辺集合 {E_s} に追加する．
-*    (4). helper(e_{v_i}) に v_i を設定する．
-*    case: 分離点
-*    (1). v_i と helper(e_{v_i}) を結ぶ両辺を，辺集合 {E_s} に追加する．
-*    (2). helper(e_{v_i}) に v_i を設定する．
-*    case: 通常の点
-*    (1). もし，v_i が e_{v_i-1} の左側にある場合，以下の処理を行う．
-*         - もし，helper(e_{v_i-1}) が統合点の場合，
-*         -- v_i と helper(e_{v_i-1}) を結ぶ両辺を，辺集合 {E_s} に追加する．
-*         -- helper(e_{v_i-1}) を削除する．
-*         -- helper(e_{v_i}) に v_i を設定する．
-*         - もし，helper(e_{v_i-1}) が統合点でない場合，
-*         -- もし，helper(e_{v_i}) が統合点の場合，
-*         --- v_i と helper(e_{v_i}) を結ぶ両辺を，辺集合 {E_s} に追加する．
-*         -- helper(e_{v_i}) に v_i を設定する．
-*
-* 3. {E_s} ごとに，辺のグルーピングを再度行い，|P'| を生成する．
-* 4. |P'| を三角形分割する．
-*
-* このアルゴリズムで行っていること，図形を分割する際に行わなければいけない処理は，
-* 分離点と統合点による，他の頂点からの対角線の横断を防ぐことです．
-* 例えば，統合点と分離点が，y 座標で近しい距離にあるとき，
-* つまり図形的にわかりやすく判別式を設けるなら，一貫性があればどちらでも構わない，
-* すぐ隣の辺の始点から終点の間に存在するほど近しいとき，
-* その辺から他の頂点に対して対角線を引くときに，
-* 二点による別の対角線が，横断することになります．
-* なので，その閾値による存在位置の判別により他の頂点と繋ぐことで，
-* 他の頂点からの対角線の横断を防いでいます．
-*
-* 最後に，このアルゴリズムは参考文献をもとに，自己流にアレンジしたものなので，
-* 参考文献とは重点を置いている部分が異なります．
-* 図形探索アルゴリズムに最適はあるかもしれないけど正解はないよね？
-* 参考文献にだっていやちょっと待て，と，そういう部分もあるしね．
-* ****************************************************************************** */
 
     // ヘルパ頂点配列と新頂点配列を関連付けて，処理図形グループ頂点リストを y 座標の降順にソートする
     public static void SortVerticesByCoordinateY(Vector2[] new2DVerticesArray, int [][] nonConvexGeometryVerticesJagAry) {
@@ -740,9 +754,12 @@ public static class ComputationalGeometryAlgorithm {
     }
 
     // 対象の頂点が出発点である場合の処理
-    private void HandleEndVertex(int newVertexIndex) {
-        // helper(e_newVertexIndex - 1) が統合点である場合
-        if (nonConvexGeometryEdgesHelperAry[newVertexIndex - 1] == "merge") {
+    private void HandleEndVertex(int newVertexIndex, int[] onceNonConvexGeometryEdgesHelperAry) {
+        // nonConvexGeometryVerticesJagAry の対象処理図形における newVertexIndex の出現する位置を取得する
+        int edgeIndex = Array.IndexOf(onceNonConvexGeometryVerticesJagAry, newVertexIndex);
+        // helper(e_{v_i} - 1) が統合点である場合
+        if (nonConvexGeometryEdgesHelperAry[edge - 1] == "merge") {
+            
             // 右の辺のヘルパに自身のインデックスを設定する
             nonConvexGeometryEdgesHelperAry[newVertexIndex] = "merge";
         }
