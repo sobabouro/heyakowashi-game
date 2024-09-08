@@ -62,7 +62,10 @@ public class ActSubdivide : MonoBehaviour {
         // 切断対象のオブジェクトの各ポリゴンの左右判定用
         bool vertexTruthValue1, vertexTruthValue2, vertexTruthValue3;
 
-        // 既存メッシュ情報の整理
+        /* **************************** */
+        /* 断面の左右のメッシュを生成する */
+        /* **************************** */
+
         for (int i = 0; i < targetTriangles.Length; i += 3) {
             vertexTruthValue1 = cutter.GetSide(targetVertices[targetTriangles[i]]);
             vertexTruthValue2 = cutter.GetSide(targetVertices[targetTriangles[i + 1]]);
@@ -108,9 +111,9 @@ public class ActSubdivide : MonoBehaviour {
                 );
             }
         }
-        /* ======================== */
-        /* 断面のメッシュを生成する */
-        /* ======================== */
+        /* ************************ */
+        /* 断面上のメッシュを生成する */
+        /* ************************ */
         
         // 新頂点の二次元座標変換する
         new2DVerticesArray = new Vector2[newVerticesList.Count];
@@ -122,9 +125,17 @@ public class ActSubdivide : MonoBehaviour {
         // 新頂点を種類ごとに分類する
         vertexType = new string[newVerticesList.Count];
         vertexType = GeometryUtils.ClusteringVertexType(new2DVerticesArray, joinedVertexGroupList);
-        // 処理図形グループをもとに，処理図形ごとの辺リストを生成する
-        int[][][] nonConvexGeometryEdgeList = GeometryUtils.EdgeForMakeMonotone(nonConvexGeometryList, joinedVertexGroupList);
-        // 各処理図形を単調多角形に分割する
+        // 処理図形グループをもとに，処理図形ごとの頂点リストと辺リストを生成する
+        (
+            int [][] nonConvexGeometryVerticesJagAry,
+            int [][][] nonConvexGeometryEdgesJagAry
+        ) = GeometryUtils.EdgeForMakeMonotone(
+            nonConvexGeometryList, 
+            joinedVertexGroupList
+        );
+        // 処理図形グループの頂点リストを y 座標降順でソートする
+        )
+
     }
     private void AddToRightSide(
         int i, 
@@ -223,9 +234,9 @@ public class ActSubdivide : MonoBehaviour {
         int [] newVertexSet =  new int[] {newVertexIndexSV - targetVerticesLength, newVertexIndexLV - targetVerticesLength};
         vertexPairList.Add(newVertexSet);
 
-        /* ==================================== */
+        /* ********************************* */
         /* 孤独な頂点が無限平面の右側にある場合 */
-        /* ==================================== */
+        /* ********************************* */
         if (rtlf) {
             // 切断ポリゴン右側を生成する処理
             rightUVs.Add(targetUVs[vertexIndex1]);
@@ -249,9 +260,9 @@ public class ActSubdivide : MonoBehaviour {
             leftTriangles.Add(newVertexIndexLV);
             leftTriangles.Add(newVertexIndexSV);
         }
-        /* ==================================== */
+        /* ********************************* */
         /* 孤独な頂点が無限平面の左側にある場合 */
-        /* ==================================== */
+        /* ********************************* */
         else {
             // 切断ポリゴン左側を生成する処理
             leftUVs.Add(targetUVs[vertexIndex1]);
@@ -535,9 +546,16 @@ public static class GeometryUtils {
     }
 
         // 処理図形ごとの頂点ペアのリストを生成する
-    public static int[][][] EdgeForMakeMonotone(List<List<int>> nonConvexGeometryList, List<List<int>> joinedVertexGroupList) {
+    public static (
+        int [][] nonConvexGeometryVerticesJagAry, 
+        int [][][] nonConvexGeometryEdgesJagAry
+    ) EdgeForMakeMonotone(
+        List<List<int>> nonConvexGeometryList, 
+        List<List<int>> joinedVertexGroupList
+    ) {
         /*
-        *   jointedVertexGroupList の返却型をはじめから List<List<int[]>> にする方法とどちらが良いかは感覚でこちらにした．
+        *   jointedVertexGroupList の返却型をはじめから
+        *   List<List<int[]>> にする方法とどちらが良いかは感覚でこちらにした．
         *
         *   List<List<int>> A {
         *       List<int> [0] {0, 1, 3},
@@ -563,27 +581,31 @@ public static class GeometryUtils {
         *       }
         *   }
         */
-        int[][][] nonConvexGeometryEdgeList = new int[nonConvexGeometryList.Count][][];
+        int [][] nonConvexGeometryVerticesJagAry = new int[nonConvexGeometryList.Count][];
+        int [][][] nonConvexGeometryEdgesJagAry = new int[nonConvexGeometryList.Count][][];
         for (int i = 0; i < nonConvexGeometryList.Count; i++) {
-            // グループに必要な総エッジ数を計算する
-            int totalEdges = 0;
+            // グループに必要な総頂点数・エッジ数を計算する
+            int total = 0;
             for (int j = 0; j < nonConvexGeometryList[i].Count; j++) {
-                totalEdges += joinedVertexGroupList[nonConvexGeometryList[i][j]].Count - 1;
+                total += joinedVertexGroupList[nonConvexGeometryList[i][j]].Count - 1;
             }
+            // グループの頂点リストを初期化する
+            nonConvexGeometryVerticesJagAry[i] = new int[total];
             // グループのエッジリストを初期化する
-            nonConvexGeometryEdgeList[i] = new int[totalEdges][];
-            int edgeIndex = 0;
+            nonConvexGeometryEdgesJagAry[i] = new int[total][];
+            int index = 0;
             for (int j = 0; j < nonConvexGeometryList[i].Count; j++) {
                 List<int> vertexIndices = joinedVertexGroupList[nonConvexGeometryList[i][j]];
                 for (int k = 0; k < vertexIndices.Count - 1; k++) {
-                    nonConvexGeometryEdgeList[i][edgeIndex] = new int[2];
-                    nonConvexGeometryEdgeList[i][edgeIndex][0] = vertexIndices[k];
-                    nonConvexGeometryEdgeList[i][edgeIndex][1] = vertexIndices[k + 1];
-                    edgeIndex++;
+                    nonConvexGeometryVerticesJagAry[i][index] = vertexIndices[k];
+                    nonConvexGeometryEdgesJagAry[i][index] = new int[2];
+                    nonConvexGeometryEdgesJagAry[i][index][0] = vertexIndices[k];
+                    nonConvexGeometryEdgesJagAry[i][index][1] = vertexIndices[k + 1];
+                    index++;
                 }
             }
         }
-        return nonConvexGeometryEdgeList;
+        return (nonConvexGeometryVerticesJagAry, nonConvexGeometryEdgesJagAry);
     }
 
     // 頂点の種類を判別して，各頂点にラベルを付与する
@@ -630,13 +652,88 @@ public static class GeometryUtils {
 
 // 単調多角形分割と，多角形の三角形分割に関する処理系
 public static class ComputationalGeometryAlgorithm {
-/*
+/* ****************************************************************************** /
 * [参考文献]
 * コンピュータ・ジオメトリ (計算幾何学: アルゴリズムと応用) ：近代科学社
 * M. ドバーグ, M. ファン・クリベルド, M. オーバマーズ, O. シュワルツコップ 共著
 * 浅野 哲夫 訳
-*/
-    // 
+* ****************************************************************************** */
+
+/* ****************************************************************************** /
+* 以下は，凸でない多角形 |P| を三角形分割するためのアルゴリズムである．
+* そのために，まずは |P| を単調多角形 (monotone polygon) 配列 |P'|に分割する．
+* いきなり |P'| に分割することは困難なので，他の図形に非被内包である，
+* 外郭図形 (内包図形の有無に無関係)を，処理図形のグループとして |P_s| にする．
+*   ※ 3DCG においての用語との混同を避けるため，以降 monotone geometry とする．
+*   ※ |P'| と |P_s| との勲に注意する．
+* ここでは，|nonConvexGeometryEdgesJagAry| を疑似的に |P'| として扱う．
+* まずは，|P| の頂点を，通常点と変曲点で以下のように分類する．
+*   [ 出発点: start, 統合点: merge, 分離点: split, 最終点: end, 通常の点: regular ]
+* そして，|P'| の頂点を時計回りに並べたものをv_0, v_1, ..., v_{n-1} とする．
+* また，|P'| の辺集合を e_0, e_1, ..., e_{n-1} とする．
+* また，|P'| の辺集合と同じ大きさの配列 |Helper| を用意し，
+* v_i の頂点種類を，すぐ右の辺にあたる helper(e_{v_i}) に格納する．
+* すぐ右の辺がない場合は，自身を終点とする辺の始点が helper(e_{v_i}) となる．
+*
+* 以下は，そのアルゴリズムの具体的な手順である．
+* 1. |P_s| の頂点の分類配列を，y 座標の降順にソートする．(sごとに)
+* 2. y 座標の降順に helper(v_i) を参照していき，以下の通りに処理を行う．
+*
+*    case: 出発点
+*    (1). とくに何もしない．
+*    case: 最終点
+*    (1). もし，helper(e_{v_i-1}) が統合点の場合，
+*         - v_i と helper(e_{v_i-1}) を結ぶ両辺を，辺集合 {E_s} に追加する．
+*    (2). helper(e_{v_i-1}) を削除する．
+*    case: 統合点
+*    (1). もし，helper(e_{v_i-1}) が統合点の場合，
+*         - v_i と helper(e_{v_i-1}) を結ぶ両辺を，辺集合 {E_s} に追加する．
+*    (2). helper(e_{v_i-1}) を削除する．
+*    (3). もし，helper(e_{v_i}) が統合点の場合，
+*         - v_i と helper(e_{v_i}) を結ぶ両辺を，辺集合 {E_s} に追加する．
+*    (4). helper(e_{v_i}) に v_i を設定する．
+*    case: 分離点
+*    (1). v_i と helper(e_{v_i}) を結ぶ両辺を，辺集合 {E_s} に追加する．
+*    (2). helper(e_{v_i}) に v_i を設定する．
+*    case: 通常の点
+*    (1). もし，v_i が e_{v_i-1} の左側にある場合，以下の処理を行う．
+*         - もし，helper(e_{v_i-1}) が統合点の場合，
+*         -- v_i と helper(e_{v_i-1}) を結ぶ両辺を，辺集合 {E_s} に追加する．
+*         -- helper(e_{v_i-1}) を削除する．
+*         -- helper(e_{v_i}) に v_i を設定する．
+*         - もし，helper(e_{v_i-1}) が統合点でない場合，
+*         -- もし，helper(e_{v_i}) が統合点の場合，
+*         --- v_i と helper(e_{v_i}) を結ぶ両辺を，辺集合 {E_s} に追加する．
+*         -- helper(e_{v_i}) に v_i を設定する．
+*
+* 最後に，このアルゴリズムは参考文献をもとに，自己流にアレンジしたものなので，
+* 参考文献とは重点を置いている部分が異なります．
+* 図形探索アルゴリズムに最適はあるかもしれないけど正解はないよね？
+* 参考文献にだっていやちょっと待て，と，そういう部分もあるしね．
+* ****************************************************************************** */
+
+    // ヘルパ頂点配列と新頂点配列を関連付けて，処理図形グループ頂点リストを y 座標の降順にソートする
+    public static void SortVerticesByCoordinateY(Vector2[] new2DVerticesArray, int [][] nonConvexGeometryVerticesJagAry) {
+        for (int i = 0; i < nonConvexGeometryVerticesJagAry.Length; i++) {
+            Array.Sort(nonConvexGeometryVerticesJagAry[i], (a, b) => {
+                if (new2DVerticesArray[j].y != new2DVerticesArray[k].y) {
+                    return new2DVerticesArray[k].y.CompareTo(new2DVerticesArray[j].y);
+                }
+                else {
+                    return new2DVerticesArray[k].x.CompareTo(new2DVerticesArray[j].x);
+                }
+            });
+        }
+    }
+
+    // 対象の頂点が出発点である場合の処理
+    private void HandleEndVertex(int newVertexIndex) {
+        // helper(e_newVertexIndex - 1) が統合点である場合
+        if (nonConvexGeometryEdgesHelperAry[newVertexIndex - 1] == "merge") {
+            // 右の辺のヘルパに自身のインデックスを設定する
+            nonConvexGeometryEdgesHelperAry[newVertexIndex] = "merge";
+        }
+    }
 
     // 対象の頂点が統合点である場合の処理
     private void HandleMergeVertex(int newVertexIndex) {
