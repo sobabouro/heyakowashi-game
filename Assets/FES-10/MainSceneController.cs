@@ -4,20 +4,18 @@ using UnityEngine;
 
 public class MainSceneController : MonoBehaviour
 {
-    [SerializeField]
-    private ScoreController scoreController;
-
-    [SerializeField]
-    private int _startTime = 0;
+    [SerializeField] public ScoreController scoreController;
+    [SerializeField] private int _startTime = 0;
 
     private float _nowTime;
-    private bool enableCountdown;
 
     public float NowTime
     {
         get => _nowTime;
         set => _nowTime = value;
     }
+
+    private bool enableCountdown;
 
     private void Start()
     {
