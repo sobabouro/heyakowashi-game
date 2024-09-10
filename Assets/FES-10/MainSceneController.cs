@@ -21,7 +21,6 @@ public class MainSceneController : MonoBehaviour
     {
         _nowTime = _timeLimit;
         enableCountdown = false;
-        ScoreController.Init();
     }
 
     private void Update()
