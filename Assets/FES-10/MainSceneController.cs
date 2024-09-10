@@ -15,11 +15,12 @@ public class MainSceneController : MonoBehaviour
         set => _nowTime = value;
     }
 
-    private bool enableCountdown;
+    private bool enableCountdown = false;
 
     private void Start()
     {
         _nowTime = _timeLimit;
+        enableCountdown = false;
         ScoreController.Init();
     }
 
