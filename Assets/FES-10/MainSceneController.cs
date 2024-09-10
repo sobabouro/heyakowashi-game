@@ -28,8 +28,11 @@ public class MainSceneController : MonoBehaviour
         if (!enableCountdown) return;
         // カウントダウン
         _nowTime -= Time.deltaTime;
-        if (_nowTime < 0) { _nowTime = 0; }
-
+        // カウントゼロでゲーム修了
+        if (_nowTime < 0) { 
+            _nowTime = 0;
+            FinishGame();
+        }
     }
 
     /// <summary>
