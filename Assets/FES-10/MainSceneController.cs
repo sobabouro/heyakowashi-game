@@ -5,7 +5,7 @@ using UnityEngine;
 public class MainSceneController : MonoBehaviour
 {
     [SerializeField] public ScoreController scoreController;
-    [SerializeField] private int _startTime = 0;
+    [SerializeField] private int _timeLimit = 0;
 
     private float _nowTime;
 
@@ -19,7 +19,7 @@ public class MainSceneController : MonoBehaviour
 
     private void Start()
     {
-        _nowTime = _startTime;
+        _nowTime = _timeLimit;
         ScoreController.Init();
     }
 
