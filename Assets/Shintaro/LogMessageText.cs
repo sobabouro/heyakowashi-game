@@ -5,12 +5,12 @@ using UnityEngine.UI;
 using TMPro;
 
 // 必須コンポーネントを指定
-[RequireComponent(typeof(TextMeshPro))]
+[RequireComponent(typeof(TextMeshProUGUI))]
 public class LogMessageText : MonoBehaviour
 {
     /// デバッグログ用テキスト
     /// </summary>
-    private TextMeshPro p_Text;
+    private TextMeshProUGUI p_Text;
 
     /// <summary>
     /// 表示行数
@@ -28,7 +28,7 @@ public class LogMessageText : MonoBehaviour
         // Logメッセージイベント追加
         Application.logMessageReceived += LogMessageOutput;
 
-        p_Text = this.GetComponent<TextMeshPro>();
+        p_Text = this.GetComponent<TextMeshProUGUI>();
     }
 
     /// <summary>
