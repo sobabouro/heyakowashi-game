@@ -6,24 +6,24 @@ using UnityEngine.Events;
 
 public class CollisionEvent : MonoBehaviour
 {
-    [Serializable] public class UnityEventArgObj : UnityEvent<GameObject> { }
+    [Serializable] public class UnityEventArgCollision : UnityEvent<Collision> { }
 
-    [SerializeField] UnityEventArgObj collisionEvnetEnter;
-    [SerializeField] UnityEventArgObj collisionEvnetStay;
-    [SerializeField] UnityEventArgObj collisionEvnetExit;
+    [SerializeField] UnityEventArgCollision collisionEvnetEnter;
+    [SerializeField] UnityEventArgCollision collisionEvnetStay;
+    [SerializeField] UnityEventArgCollision collisionEvnetExit;
 
     private void OnCollisionEnter(Collision collision)
     {
-        collisionEvnetEnter.Invoke(collision.gameObject);
+        collisionEvnetEnter.Invoke(collision);
     }
 
     private void OnCollisionStay(Collision collision)
     {
-        collisionEvnetEnter.Invoke(collision.gameObject);
+        collisionEvnetEnter.Invoke(collision);
     }
 
     private void OnCollisionExit(Collision collision)
     {
-        collisionEvnetEnter.Invoke(collision.gameObject);
+        collisionEvnetEnter.Invoke(collision);
     }
 }
