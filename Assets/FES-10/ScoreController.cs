@@ -18,6 +18,7 @@ public class ScoreController : MonoBehaviour
     public void AddScore(int addScore)
     {
         score += addScore;
+        Debug.Log($"SCORE: {score} (+ {addScore})");
     }
 
     public int GetScore()
