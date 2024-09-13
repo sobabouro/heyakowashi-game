@@ -1,6 +1,5 @@
 fileFormatVersion: 2
-guid: f735e311710bf4dff9c88fc40dde6fc8
-folderAsset: yes
+guid: afcafe3ff8506da479d07943d26e3b85
 PluginImporter:
   externalObjects: {}
   serializedVersion: 2
@@ -13,41 +12,17 @@ PluginImporter:
   validateReferences: 1
   platformData:
   - first:
-      : Linux
+      : Any
     second:
       enabled: 0
       settings:
-        CPU: x86
-  - first:
-      : LinuxUniversal
-    second:
-      enabled: 0
-      settings:
-        CPU: None
-  - first:
-      : OSXIntel
-    second:
-      enabled: 1
-      settings:
-        CPU: AnyCPU
-  - first:
-      : OSXIntel64
-    second:
-      enabled: 1
-      settings:
-        CPU: AnyCPU
-  - first:
-      : SamsungTV
-    second:
-      enabled: 0
-      settings:
-        STV_MODEL: STANDARD_13
-  - first:
-      Android: Android
-    second:
-      enabled: 0
-      settings:
-        CPU: AnyCPU
+        Exclude Editor: 1
+        Exclude Linux64: 1
+        Exclude OSXUniversal: 1
+        Exclude WebGL: 0
+        Exclude Win: 1
+        Exclude Win64: 1
+        Exclude WindowsStoreApps: 0
   - first:
       Any: 
     second:
@@ -60,38 +35,46 @@ PluginImporter:
       settings:
         CPU: AnyCPU
         DefaultValueInitialized: true
-        OS: OSX
+        OS: AnyOS
   - first:
       Standalone: Linux64
     second:
       enabled: 0
       settings:
-        CPU: AnyCPU
+        CPU: None
   - first:
       Standalone: OSXUniversal
     second:
-      enabled: 1
+      enabled: 0
       settings:
-        CPU: AnyCPU
+        CPU: None
   - first:
       Standalone: Win
     second:
       enabled: 0
       settings:
-        CPU: AnyCPU
+        CPU: None
   - first:
       Standalone: Win64
     second:
       enabled: 0
       settings:
-        CPU: AnyCPU
+        CPU: None
   - first:
-      iPhone: iOS
+      WebGL: WebGL
     second:
-      enabled: 0
+      enabled: 1
+      settings: {}
+  - first:
+      Windows Store Apps: WindowsStoreApps
+    second:
+      enabled: 1
       settings:
-        CompileFlags: 
-        FrameworkDependencies: 
+        CPU: ARM64
+        DontProcess: false
+        PlaceholderPath: 
+        SDK: AnySDK
+        ScriptingBackend: AnyScriptingBackend
   userData: 
   assetBundleName: 
   assetBundleVariant: 
