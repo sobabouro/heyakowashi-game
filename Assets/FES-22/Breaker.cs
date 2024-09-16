@@ -4,15 +4,20 @@ using UnityEngine;
 
 public class Breaker : MonoBehaviour
 {
-    // Start is called before the first frame update
-    void Start()
+    [SerializeField, Tooltip("Šî‘bUŒ‚—Í")]
+    private int baseATK = default;
+    [SerializeField, Tooltip("‘®«")]
+    private Type type = Type.plane;
+    private enum Type
     {
-        
+        plane,
+        slash,
+        crash,
+        pierce
     }
 
-    // Update is called once per frame
-    void Update()
-    {
-        
-    }
+    // ‘¬“x‚ğæ“¾‚·‚é‚½‚ß‚ÌRigitbody
+    [SerializeField]
+    private Rigidbody my_Rigitbody;
+
 }
