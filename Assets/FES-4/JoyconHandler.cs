@@ -1,6 +1,8 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using static Joycon;
 
 public class JoyconHandler : MonoBehaviour
 {
@@ -10,6 +12,7 @@ public class JoyconHandler : MonoBehaviour
     public float[] stick;
     public Vector3 gyro;
     public Vector3 accel;
+    public Vector3 velocity;
     public int jc_ind = 0;
     public Quaternion orientation;
 
@@ -17,6 +20,7 @@ public class JoyconHandler : MonoBehaviour
     {
         gyro = new Vector3(0, 0, 0);
         accel = new Vector3(0, 0, 0);
+        velocity = new Vector3(0, 0, 0);
         // get the public Joycon array attached to the JoyconManager in scene
         joycons = JoyconManager.Instance.j;
         if (joycons.Count < jc_ind + 1)
@@ -41,6 +45,8 @@ public class JoyconHandler : MonoBehaviour
 
                 // Joycon has no magnetometer, so it cannot accurately determine its yaw value. Joycon.Recenter allows the user to reset the yaw value.
                 j.Recenter();
+                j.ResetVelocityInWorld();
+                gameObject.transform.position = Vector3.zero;
             }
             // GetButtonDown checks if a button has been released
             if (j.GetButtonUp(Joycon.Button.SHOULDER_2))
@@ -66,6 +72,10 @@ public class JoyconHandler : MonoBehaviour
                 // (Useful for dynamically changing rumble values.)
                 // Then call SetRumble(0,0,0) when you want to turn it off.
             }
+            if (j.GetButtonDown(Joycon.Button.HOME) || j.GetButtonDown(Joycon.Button.CAPTURE))
+            {
+                j.Recenter();
+            }
 
             stick = j.GetStick();
 
@@ -75,17 +85,31 @@ public class JoyconHandler : MonoBehaviour
             // Accel values:  x, y, z axis values (in Gs)
             accel = j.GetAccel();
 
-            orientation = j.GetVector();
+
             if (j.GetButton(Joycon.Button.DPAD_UP))
             {
-                gameObject.GetComponent<Renderer>().material.color = Color.red;
+                gameObject.GetComponent<Renderer>().material.color = Color.green;
             }
             else
             {
-                gameObject.GetComponent<Renderer>().material.color = Color.blue;
+                if (j.isLeft)
+                {
+                    gameObject.GetComponent<Renderer>().material.color = Color.blue;
+                }
+                else
+                {
+                    gameObject.GetComponent<Renderer>().material.color = Color.red;
+                }
             }
+
+            // ‰ñ“]
+            orientation = j.GetVector();
             gameObject.transform.rotation = orientation;
-            gameObject.transform.Rotate(90, 0, 0, Space.World);
+
+            // ˆÚ“®
+            velocity = j.GetVelocityInWorld();
+            gameObject.transform.Translate(velocity * Time.deltaTime, Space.World);
         }
     }
+
 }

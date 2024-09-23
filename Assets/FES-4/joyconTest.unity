@@ -303,7 +303,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
-  m_RootOrder: 4
+  m_RootOrder: 3
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &175691703
 MonoBehaviour:
@@ -320,6 +320,7 @@ MonoBehaviour:
   stick: []
   gyro: {x: 0, y: 0, z: 0}
   accel: {x: 0, y: 0, z: 0}
+  velocity: {x: 0, y: 0, z: 0}
   jc_ind: 0
   orientation: {x: 0, y: 0, z: 0, w: 0}
 --- !u!1 &495671515
@@ -418,7 +419,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
-  m_RootOrder: 3
+  m_RootOrder: 4
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &495671521
 MonoBehaviour:
@@ -435,6 +436,7 @@ MonoBehaviour:
   stick: []
   gyro: {x: 0, y: 0, z: 0}
   accel: {x: 0, y: 0, z: 0}
+  velocity: {x: 0, y: 0, z: 0}
   jc_ind: 1
   orientation: {x: 0, y: 0, z: 0, w: 0}
 --- !u!1 &946559473
