@@ -7,6 +7,9 @@ using System;
 
 using System.Threading;
 using UnityEngine;
+using Unity.VisualScripting;
+using UnityEngine.Rendering;
+using UnityEngine.UIElements;
 
 public class Joycon
 {
@@ -19,7 +22,7 @@ public class Joycon
         IMU,
         RUMBLE,
     };
-	public DebugType debug_type = DebugType.NONE;
+    public DebugType debug_type = DebugType.IMU;
     public bool isLeft;
     public enum state_ : uint
     {
@@ -54,8 +57,8 @@ public class Joycon
 
     private float[] stick = { 0, 0 };
 
-    private 
-	IntPtr handle;
+    private
+    IntPtr handle;
 
     byte[] default_buf = { 0x0, 0x1, 0x40, 0x40, 0x0, 0x1, 0x40, 0x40 };
 
@@ -68,15 +71,30 @@ public class Joycon
     private int timestamp;
     private bool first_imu_packet = true;
     private bool imu_enabled = false;
-    private Int16[] acc_r = { 0, 0, 0 };
-    private Vector3 acc_g;
 
-    private Int16[] gyr_r = { 0, 0, 0 };
-    private Int16[] gyr_neutral = { 0, 0, 0 };
-    private Vector3 gyr_g;
-	private bool do_localize;
+    private Int16[] acc_r = { 0, 0, 0 };                  // 生データ
+    private Int16[] acc_neutral = { 0, 0, 0 };            // joyconを水平面に置いた時にトリガー部分などで傾く値
+    private Int16[] acc_horizontal_offset = { 0, 0, 0 };  // joyconを水平面に置いた時の重力加速度
+    private Vector3 acc_g;       
+
+    private Int16[] gyr_r = { 0, 0, 0 };        // 生データ
+    private Int16[] gyr_neutral = { 0, 0, 0 };  // joyconが静止しているときのオフセット
+    private Vector3 gyr_g;                      // 加工後ジャイロ(単位不明？？)
+
+    // 自作変数
+    private Int16[] gyr_neutral_left = { 2, -6, -6 };    // ジャイロの再補正値
+    private Int16[] gyr_neutral_right = { 1, 27, -9 };    // ジャイロの再補正値
+    private Vector3 acc_r_world;          // ワールド座標の加速度
+    private Vector3 acc_ac_world;         // 動的加速度
+    private Vector3 acc_gravity_world = new Vector3(0, 4075, 0);  // 重力加速度4096
+    private Vector3 acc_ac_mps_world;     // 動的加速度(m/s2)
+    private Vector3 velocity_world = Vector3.zero;  // 速度(m/s)
+    // ここまで
+
+    private bool do_localize;
     private float filterweight;
     private const uint report_len = 49;
+
     private struct Report
     {
         byte[] r;
@@ -138,7 +156,6 @@ public class Joycon
         }
         public byte[] GetData()
         {
-
             byte[] rumble_data = new byte[8];
             l_f = clamp(l_f, 40.875885f, 626.286133f);
             amp = clamp(amp, 0.0f, 1.0f);
@@ -187,14 +204,14 @@ public class Joycon
     private byte global_count = 0;
     private string debug_str;
 
-	public Joycon(IntPtr handle_, bool imu, bool localize, float alpha, bool left)
+    public Joycon(IntPtr handle_, bool imu, bool localize, float alpha, bool left)
     {
-		handle = handle_;
-		imu_enabled = imu;
-		do_localize = localize;
+        handle = handle_;
+        imu_enabled = imu;
+        do_localize = localize;
         rumble_obj = new Rumble(160, 320, 0);
-		filterweight = alpha;
-		isLeft = left;
+        filterweight = alpha;
+        isLeft = left;
     }
     public void DebugPrint(String s, DebugType d)
     {
@@ -220,25 +237,82 @@ public class Joycon
     {
         return stick;
     }
+    public Vector3 GetGyroRaw()
+    {
+        return new Vector3(gyr_r[0] - gyr_neutral[0], gyr_r[1] - gyr_neutral[1], gyr_r[2] - gyr_neutral[2]);
+    }
     public Vector3 GetGyro()
     {
         return gyr_g;
+    }
+
+    public Vector3 ChangeAxisToLocal(Vector3 v)
+    {
+        return isLeft ? new Vector3(v.z, -v.x, v.y) : new Vector3(v.z, v.x, -v.y);
+    }
+
+    // 軸を左手系に変換？
+    public Vector3 ChangeAxisToUnity(Vector3 v)
+    {
+        return isLeft ? new Vector3(-v.y, v.z, v.x) : new Vector3(v.y, -v.z, v.x);
+    }
+    // 重力加速度
+    public Vector3 ChangeAxisToWorld(Vector3 v)
+    {
+        return GetVector() * v;
+    }
+    public Vector3 GetAccelRaw()
+    {
+        return new Vector3(acc_r[0], acc_r[1], acc_r[2]);
     }
     public Vector3 GetAccel()
     {
         return acc_g;
     }
+    public Vector3 GetAccelRawInWorld()
+    {
+        return acc_r_world;
+    }
+    // 重力加速度
+    public Vector3 GetAccelGravityInWorld()
+    {
+        return acc_gravity_world;
+    }
+    // 動的加速度（重力加速度を含まないデータ）
+    public Vector3 GetAccelACInWorld()
+    {
+        return acc_ac_world;
+    }
+    public Vector3 GetAccelACmpsInWorld()
+    {
+        return acc_ac_mps_world;
+    }
+
     public Quaternion GetVector()
     {
         Vector3 v1 = new Vector3(j_b.x, i_b.x, k_b.x);
         Vector3 v2 = -(new Vector3(j_b.z, i_b.z, k_b.z));
-        if (v2 != Vector3.zero){
-		    return Quaternion.LookRotation(v1, v2);
-        }else{
-            return Quaternion.identity;
+        Debug.DrawLine(ChangeAxisToUnity(v1), ChangeAxisToUnity(v2));
+
+        if (v2 != Vector3.zero)
+        {
+            return Quaternion.Euler(90, 0, 0) * Quaternion.LookRotation(v1, v2);
+        }
+        else
+        {
+            return Quaternion.Euler(90, 0, 0) * Quaternion.identity;
         }
     }
-	public int Attach(byte leds_ = 0x0)
+    public Vector3 GetVelocityInWorld()
+    {
+        return velocity_world;
+    }
+    public void ResetVelocityInWorld()
+    {
+        velocity_world = Vector3.zero;
+    }
+
+    public int Attach(byte leds_ = 0x0)
     {
         state = state_.ATTACHED;
         byte[] a = { 0x0 };
@@ -372,13 +446,17 @@ public class Joycon
                 ts_prev = rep.GetTime();
             }
             ProcessButtonsAndStick(report_buf);
-			if (rumble_obj.timed_rumble) {
-				if (rumble_obj.t < 0) {
-					rumble_obj.set_vals (160, 320, 0, 0);
-				} else {
-					rumble_obj.t -= Time.deltaTime;
-				}
-			}
+            if (rumble_obj.timed_rumble)
+            {
+                if (rumble_obj.t < 0)
+                {
+                    rumble_obj.set_vals(160, 320, 0, 0);
+                }
+                else
+                {
+                    rumble_obj.t -= Time.deltaTime;
+                }
+            }
         }
     }
     private int ProcessButtonsAndStick(byte[] report_buf)
@@ -406,6 +484,7 @@ public class Joycon
             buttons[(int)Button.DPAD_UP] = (report_buf[3 + (isLeft ? 2 : 0)] & (isLeft ? 0x02 : 0x02)) != 0;
             buttons[(int)Button.DPAD_LEFT] = (report_buf[3 + (isLeft ? 2 : 0)] & (isLeft ? 0x08 : 0x01)) != 0;
             buttons[(int)Button.HOME] = ((report_buf[4] & 0x10) != 0);
+            buttons[(int)Button.CAPTURE] = ((report_buf[4] & 0x20) != 0); // 何故かCAPTUREだけ器用に忘れてるので追加
             buttons[(int)Button.MINUS] = ((report_buf[4] & 0x01) != 0);
             buttons[(int)Button.PLUS] = ((report_buf[4] & 0x02) != 0);
             buttons[(int)Button.STICK] = ((report_buf[4] & (isLeft ? 0x08 : 0x04)) != 0);
@@ -427,35 +506,66 @@ public class Joycon
         }
         return 0;
     }
+
+    // ノイズによるブレはだいたい±4、ただ日によって気まぐれにズレるので再補正回避で2倍くらいに
+    private static UInt16 acc_threshold = 30;
+    private static UInt16 gyr_threshold = 9;
     private void ExtractIMUValues(byte[] report_buf, int n = 0)
     {
-        gyr_r[0] = (Int16)(report_buf[19 + n * 12] | ((report_buf[20 + n * 12] << 8) & 0xff00));
-        gyr_r[1] = (Int16)(report_buf[21 + n * 12] | ((report_buf[22 + n * 12] << 8) & 0xff00));
-        gyr_r[2] = (Int16)(report_buf[23 + n * 12] | ((report_buf[24 + n * 12] << 8) & 0xff00));
         acc_r[0] = (Int16)(report_buf[13 + n * 12] | ((report_buf[14 + n * 12] << 8) & 0xff00));
         acc_r[1] = (Int16)(report_buf[15 + n * 12] | ((report_buf[16 + n * 12] << 8) & 0xff00));
         acc_r[2] = (Int16)(report_buf[17 + n * 12] | ((report_buf[18 + n * 12] << 8) & 0xff00));
-        for (int i = 0; i < 3; ++i)
+        gyr_r[0] = (Int16)(report_buf[19 + n * 12] | ((report_buf[20 + n * 12] << 8) & 0xff00));
+        gyr_r[1] = (Int16)(report_buf[21 + n * 12] | ((report_buf[22 + n * 12] << 8) & 0xff00));
+        gyr_r[2] = (Int16)(report_buf[23 + n * 12] | ((report_buf[24 + n * 12] << 8) & 0xff00));
+
+        // 傾き測定用加速度の設定
+        for (int i = 0; i < 3; i++)
         {
-            acc_g[i] = acc_r[i] * 0.00025f;
-            gyr_g[i] = (gyr_r[i] - gyr_neutral[i]) * 0.00122187695f;
+            acc_g[i] = acc_r[i] * 0.000244f;  // * 0.00025f;
+        }
+        // ワールド座標軸に変換
+        acc_r_world = ChangeAxisToWorld(ChangeAxisToUnity(new Vector3(acc_r[0], acc_r[1], acc_r[2])));
+
+        for (int i = 0; i < 3; i++)
+        {
+            // 重力成分の除去
+            acc_ac_world[i] = acc_r_world[i] - acc_gravity_world[i];
+            // 静止時のノイズ除去
+            if (-acc_threshold < acc_ac_world[i] && acc_ac_world[i] < acc_threshold) {
+                acc_ac_mps_world[i] = 0f;
+            } else {
+                acc_ac_mps_world[i] = acc_ac_world[i] * 0.00239420166f;
+            }
+
+            if (-gyr_threshold < (gyr_r[i] - gyr_neutral[i]) && (gyr_r[i] - gyr_neutral[i]) < gyr_threshold) {
+                gyr_g[i] = 0f;
+            } else {
+                gyr_g[i] = (gyr_r[i] - gyr_neutral[i]) * 0.00122187695f;
+            }
+
             if (Math.Abs(acc_g[i]) > Math.Abs(max[i]))
                 max[i] = acc_g[i];
         }
+
+        // 速度の計算
+        if (!first_imu_packet) {
+            velocity_world += 20 * acc_ac_mps_world * Time.deltaTime;
+        }
     }
 
-	private float err;
+    private float err;
     public Vector3 i_b, j_b, k_b, k_acc;
-	private Vector3 d_theta;
-	private Vector3 i_b_;
-	private Vector3 w_a, w_g;
+    private Vector3 d_theta;
+    private Vector3 i_b_;
+    private Vector3 w_a, w_g;
     private Quaternion vec;
-	
+
     private int ProcessIMU(byte[] report_buf)
     {
 
-		// Direction Cosine Matrix method
-		// http://www.starlino.com/dcm_tutorial.html
+        // Direction Cosine Matrix method
+        // http://www.starlino.com/dcm_tutorial.html
 
         if (!imu_enabled | state < state_.IMU_DATA_OK)
             return -1;
@@ -469,18 +579,20 @@ public class Joycon
         for (int n = 0; n < 3; ++n)
         {
             ExtractIMUValues(report_buf, n);
-            
-			float dt_sec = 0.005f * dt;
+            Vector3 gyr_g_copy = gyr_g;
+            Vector3 acc_g_copy = acc_g;
+
+            float dt_sec = 0.005f * dt;
             sum[0] += gyr_g.x * dt_sec;
             sum[1] += gyr_g.y * dt_sec;
             sum[2] += gyr_g.z * dt_sec;
 
             if (isLeft)
             {
-                gyr_g.y *= -1;
-                gyr_g.z *= -1;
-                acc_g.y *= -1;
-                acc_g.z *= -1;
+                gyr_g_copy.y *= -1;
+                gyr_g_copy.z *= -1;
+                acc_g_copy.y *= -1;
+                acc_g_copy.z *= -1;
             }
 
             if (first_imu_packet)
@@ -492,9 +604,9 @@ public class Joycon
             }
             else
             {
-                k_acc = -Vector3.Normalize(acc_g);
+                k_acc = -Vector3.Normalize(acc_g_copy);
                 w_a = Vector3.Cross(k_b, k_acc);
-                w_g = -gyr_g * dt_sec;
+                w_g = -gyr_g_copy * dt_sec;
                 d_theta = (filterweight * w_a + w_g) / (1f + filterweight);
                 k_b += Vector3.Cross(d_theta, k_b);
                 i_b += Vector3.Cross(d_theta, i_b);
@@ -545,7 +657,7 @@ public class Joycon
     public void SetRumble(float low_freq, float high_freq, float amp, int time = 0)
     {
         if (state <= Joycon.state_.ATTACHED) return;
-		if (rumble_obj.timed_rumble == false || rumble_obj.t < 0)
+        if (rumble_obj.timed_rumble == false || rumble_obj.t < 0)
         {
             rumble_obj = new Rumble(low_freq, high_freq, amp, time);
         }
@@ -609,7 +721,33 @@ public class Joycon
         buf_ = ReadSPI(0x60, (isLeft ? (byte)0x86 : (byte)0x98), 16);
         deadzone = (UInt16)((buf_[4] << 8) & 0xF00 | buf_[3]);
 
-        buf_ = ReadSPI(0x80, 0x34, 10);
+
+        // 加速度の補正値取得
+        buf_ = ReadSPI(0x80, 0x28, 6);
+        acc_neutral[0] = (Int16)(buf_[0] | ((buf_[1] << 8) & 0xff00));
+        acc_neutral[1] = (Int16)(buf_[2] | ((buf_[3] << 8) & 0xff00));
+        acc_neutral[2] = (Int16)(buf_[4] | ((buf_[5] << 8) & 0xff00));
+        PrintArray(acc_neutral, len: 3, d: DebugType.IMU, format: "User accle neutral position: {0:S}");
+
+        // 工場出荷データ取得
+        if (acc_neutral[0] + acc_neutral[1] + acc_neutral[2] == -3 || Math.Abs(acc_neutral[0]) > 100 || Math.Abs(acc_neutral[1]) > 100 || Math.Abs(acc_neutral[2]) > 100)
+        {
+            buf_ = ReadSPI(0x60, 0x20, 6);
+            acc_neutral[0] = (Int16)(buf_[0] | ((buf_[1] << 8) & 0xff00));
+            acc_neutral[1] = (Int16)(buf_[2] | ((buf_[3] << 8) & 0xff00));
+            acc_neutral[2] = (Int16)(buf_[4] | ((buf_[5] << 8) & 0xff00));
+            PrintArray(acc_neutral, len: 3, d: DebugType.IMU, format: "Factory accle neutral position: {0:S}");
+        }
+
+        // 6軸水平オフセット
+        buf_ = ReadSPI(0x60, 0x80, 6);
+        acc_horizontal_offset[0] = (Int16)(buf_[0] | ((buf_[1] << 8) & 0xff00));
+        acc_horizontal_offset[1] = (Int16)(buf_[2] | ((buf_[3] << 8) & 0xff00));
+        acc_horizontal_offset[2] = (Int16)(buf_[4] | ((buf_[5] << 8) & 0xff00));
+        PrintArray(acc_horizontal_offset, len: 3, d: DebugType.IMU, format: "Factory acc horizontal offset: {0:S}");
+
+        // ジャイロの補正値取得
+        buf_ = ReadSPI(0x80, 0x34, 6);
         gyr_neutral[0] = (Int16)(buf_[0] | ((buf_[1] << 8) & 0xff00));
         gyr_neutral[1] = (Int16)(buf_[2] | ((buf_[3] << 8) & 0xff00));
         gyr_neutral[2] = (Int16)(buf_[4] | ((buf_[5] << 8) & 0xff00));
@@ -618,13 +756,32 @@ public class Joycon
         // This is an extremely messy way of checking to see whether there is user stick calibration data present, but I've seen conflicting user calibration data on blank Joy-Cons. Worth another look eventually.
         if (gyr_neutral[0] + gyr_neutral[1] + gyr_neutral[2] == -3 || Math.Abs(gyr_neutral[0]) > 100 || Math.Abs(gyr_neutral[1]) > 100 || Math.Abs(gyr_neutral[2]) > 100)
         {
-            buf_ = ReadSPI(0x60, 0x29, 10);
-            gyr_neutral[0] = (Int16)(buf_[3] | ((buf_[4] << 8) & 0xff00));
-            gyr_neutral[1] = (Int16)(buf_[5] | ((buf_[6] << 8) & 0xff00));
-            gyr_neutral[2] = (Int16)(buf_[7] | ((buf_[8] << 8) & 0xff00));
+            buf_ = ReadSPI(0x60, 0x2C, 6);
+            gyr_neutral[0] = (Int16)(buf_[0] | ((buf_[1] << 8) & 0xff00));
+            gyr_neutral[1] = (Int16)(buf_[2] | ((buf_[3] << 8) & 0xff00));
+            gyr_neutral[2] = (Int16)(buf_[4] | ((buf_[5] << 8) & 0xff00));
+            // なんで先頭を4つ前にずらして3番目から参照してんの？？？？？
+            //buf_ = ReadSPI(0x60, 0x29, 10);
+            //gyr_neutral[0] = (Int16)(buf_[3] | ((buf_[4] << 8) & 0xff00));
+            //gyr_neutral[1] = (Int16)(buf_[5] | ((buf_[6] << 8) & 0xff00));
+            //gyr_neutral[2] = (Int16)(buf_[7] | ((buf_[8] << 8) & 0xff00));
             PrintArray(gyr_neutral, len: 3, d: DebugType.IMU, format: "Factory gyro neutral position: {0:S}");
         }
-    }
+
+
+        // 正しい補正値
+        if (isLeft) {
+            gyr_neutral[0] = 2;
+            gyr_neutral[1] = -6;
+            gyr_neutral[2] = -6;
+        } else {
+            gyr_neutral[0] = 1;
+            gyr_neutral[1] = -27;
+            gyr_neutral[2] = -9;
+        }
+
+}
+
     private byte[] ReadSPI(byte addr1, byte addr2, uint len, bool print = false)
     {
         byte[] buf = { addr2, addr1, 0x00, 0x00, (byte)len };
