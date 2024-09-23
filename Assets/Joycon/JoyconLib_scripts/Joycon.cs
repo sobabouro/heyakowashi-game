@@ -84,9 +84,12 @@ public class Joycon
     // 自作変数
     private Int16[] gyr_neutral_left = { 2, -6, -6 };    // ジャイロの再補正値
     private Int16[] gyr_neutral_right = { 1, 27, -9 };    // ジャイロの再補正値
+    private Vector3 acc_lowpass = Vector3.zero;    // ハイパスフォイルタの値
+    private Vector3 acc_highpass = Vector3.zero;   // ローパスフィルタの値
+    private float lowpassalpha = 0.99f;        // ローパスフィルタの係数
     private Vector3 acc_r_world;          // ワールド座標の加速度
     private Vector3 acc_ac_world;         // 動的加速度
-    private Vector3 acc_gravity_world = new Vector3(0, 4075, 0);  // 重力加速度4096
+    private Vector3 acc_gravity_world = new Vector3(0, 4075, 0);  // 重力加速度 4096
     private Vector3 acc_ac_mps_world;     // 動的加速度(m/s2)
     private Vector3 velocity_world = Vector3.zero;  // 速度(m/s)
     // ここまで
@@ -508,7 +511,7 @@ public class Joycon
     }
 
     // ノイズによるブレはだいたい±4、ただ日によって気まぐれにズレるので再補正回避で2倍くらいに
-    private static UInt16 acc_threshold = 30;
+    private static UInt16 acc_threshold = 4;
     private static UInt16 gyr_threshold = 9;
     private void ExtractIMUValues(byte[] report_buf, int n = 0)
     {
@@ -519,11 +522,17 @@ public class Joycon
         gyr_r[1] = (Int16)(report_buf[21 + n * 12] | ((report_buf[22 + n * 12] << 8) & 0xff00));
         gyr_r[2] = (Int16)(report_buf[23 + n * 12] | ((report_buf[24 + n * 12] << 8) & 0xff00));
 
-        // 傾き測定用加速度の設定
-        for (int i = 0; i < 3; i++)
-        {
-            acc_g[i] = acc_r[i] * 0.000244f;  // * 0.00025f;
-        }
+        // ローパスフィルタで重力加速度を抽出
+        // acc_lowpass[0] = lowpassalpha * acc_lowpass[0] + (1.0f - lowpassalpha) * acc_r[0];
+        // acc_lowpass[1] = lowpassalpha * acc_lowpass[1] + (1.0f - lowpassalpha) * acc_r[1];
+        // acc_lowpass[2] = lowpassalpha * acc_lowpass[2] + (1.0f - lowpassalpha) * acc_r[2];
+        // acc_gravity_world = ChangeAxisToWorld(ChangeAxisToUnity(acc_lowpass));
+        // ハイフィルタで動的加速度を抽出
+        // acc_highpass[0] = acc_r[0] - acc_lowpass[0];
+        // acc_highpass[1] = acc_r[1] - acc_lowpass[1];
+        // acc_highpass[2] = acc_r[2] - acc_lowpass[2];
+        // acc_ac_world = ChangeAxisToWorld(ChangeAxisToUnity(acc_highpass));
+
         // ワールド座標軸に変換
         acc_r_world = ChangeAxisToWorld(ChangeAxisToUnity(new Vector3(acc_r[0], acc_r[1], acc_r[2])));
 
@@ -538,6 +547,10 @@ public class Joycon
                 acc_ac_mps_world[i] = acc_ac_world[i] * 0.00239420166f;
             }
 
+            // 傾き測定用加速度の設定
+            acc_g[i] = acc_r[i] * 0.000244f;  // * 0.00025f;
+
+            // ジャイロの設定
             if (-gyr_threshold < (gyr_r[i] - gyr_neutral[i]) && (gyr_r[i] - gyr_neutral[i]) < gyr_threshold) {
                 gyr_g[i] = 0f;
             } else {

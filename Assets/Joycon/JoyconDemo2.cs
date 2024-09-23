@@ -128,7 +128,7 @@ public class JoyconDemo2 : MonoBehaviour
             GUILayout.Label("　加速度の大きさ：" + accel_world.magnitude);
 
             GUILayout.Label("ワールド座標軸(m/s)");
-            GUILayout.Label("　加速度：" + accel_ac_mps_world);
+            GUILayout.Label("　動的加速度：" + accel_ac_mps_world);
             GUILayout.Label("　速度　：" + velocity_world);
 
             GUILayout.EndVertical();
