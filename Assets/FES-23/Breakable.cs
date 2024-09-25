@@ -65,9 +65,11 @@ public class Breakable : MonoBehaviour
 		{
 			case Type.slash:
                 // Slashクラスを呼び出す
+                Destroy(this.gameObject);
                 break;
             case Type.crash:
                 // Crashクラスを呼び出す
+                Destroy(this.gameObject);
                 break;
             case Type.pierce:
                 // Pierceクラスを呼び出す
