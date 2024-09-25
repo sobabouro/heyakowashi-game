@@ -4,7 +4,6 @@ using TMPro;
 using UnityEditor.Experimental.GraphView;
 using UnityEngine;
 using UnityEngine.UI;
-using static UnityEngine.XR.OpenXR.Features.Interactions.HTCViveControllerProfile;
 
 public class MainSceneController : MonoBehaviour
 {
@@ -15,24 +14,26 @@ public class MainSceneController : MonoBehaviour
 
     private void Start()
     {
-        StartGame();
+        timeController.SetTimeLimit(_timeLimit);
+        timeController.timerFinishedEvent.AddListener(FinishGame);
     }
 
     /// <summary>
     /// ゲーム開始時処理
     /// </summary>
-    private void StartGame()
+    public void StartGame()
     {
         timeController.SetTimeLimit(_timeLimit);
-        timeController.TimerStart();
+        timeController.StartTimer();
     }
 
     /// <summary>
     /// ゲーム終了時処理
     /// </summary>
-    private void FinishGame()
+    public void FinishGame()
     {
         scoreController.FinishScore();
+        Debug.Log("FinishGame");
     }
 
 }
