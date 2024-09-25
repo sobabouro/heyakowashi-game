@@ -11,7 +11,7 @@ public class TimeController : MonoBehaviour
     [SerializeField] private float _defaultTimeLimit = 120;
     [SerializeField] private TextMeshProUGUI timeText = null;
 
-    [SerializeField] private UnityEvent timerFinishedEvent = null;
+    [SerializeField] public UnityEvent timerFinishedEvent = null;
 
     private float _nowTime;
 
@@ -77,7 +77,7 @@ public class TimeController : MonoBehaviour
     /// <summary>
     /// カウントダウン開始
     /// </summary>
-    public void TimerStart()
+    public void StartTimer()
     {
         enableTimer = true;
     }
@@ -85,7 +85,7 @@ public class TimeController : MonoBehaviour
     /// <summary>
     /// カウントダウン一時停止
     /// </summary>
-    public void TimerStop()
+    public void StopTimer()
     {
         enableTimer = false;
     }
