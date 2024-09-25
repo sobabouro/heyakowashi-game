@@ -77,7 +77,7 @@ public class TimeController : MonoBehaviour
     /// <summary>
     /// カウントダウン開始
     /// </summary>
-    public void TimerStart()
+    public void StartTimer()
     {
         enableTimer = true;
     }
@@ -85,7 +85,7 @@ public class TimeController : MonoBehaviour
     /// <summary>
     /// カウントダウン一時停止
     /// </summary>
-    public void TimerStop()
+    public void StopTimer()
     {
         enableTimer = false;
     }
