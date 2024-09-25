@@ -5,6 +5,7 @@ using UnityEditor.Experimental.GraphView;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.Events;
+using System;
 
 public class TimeController : MonoBehaviour
 { 
@@ -52,7 +53,7 @@ public class TimeController : MonoBehaviour
     {
         // •b‚ðmm:ssŒ`Ž®‚É‚·‚é
         int mini = (int)_nowTime / 60;
-        int sec = (int)_nowTime % 60;
+        int sec = (int)Math.Ceiling(_nowTime % 60);
         string time_str = mini + ":" + sec.ToString("00");
         // •\Ž¦‚·‚é
         if (timeText != null)
