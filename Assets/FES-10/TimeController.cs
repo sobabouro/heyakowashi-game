@@ -53,7 +53,7 @@ public class TimeController : MonoBehaviour
         // •b‚ðmm:ssŒ`Ž®‚É‚·‚é
         int mini = (int)_nowTime / 60;
         int sec = (int)_nowTime % 60;
-        string time_str = mini + ":" + sec;
+        string time_str = mini + ":" + sec.ToString("00");
         // •\Ž¦‚·‚é
         if (timeText != null)
         {
