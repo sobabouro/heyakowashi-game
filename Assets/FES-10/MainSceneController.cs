@@ -4,55 +4,18 @@ using TMPro;
 using UnityEditor.Experimental.GraphView;
 using UnityEngine;
 using UnityEngine.UI;
+using static UnityEngine.XR.OpenXR.Features.Interactions.HTCViveControllerProfile;
 
 public class MainSceneController : MonoBehaviour
 {
     [SerializeField] public ScoreController scoreController;
+    [SerializeField] public TimeController timeController;
     [SerializeField] private float _timeLimit = 120;
-    [SerializeField] private TextMeshProUGUI timeText = null;
 
-    private float _nowTime;
-
-    public float NowTime
-    {
-        get => _nowTime;
-        set => _nowTime = value;
-    }
-
-    private bool enableCountdown = false;
 
     private void Start()
     {
-        _nowTime = _timeLimit;
-        // 表示する
-        if(timeText != null) {
-            timeText.SetText(timeToString());
-        }
-        else {
-            Debug.Log(timeToString());
-        }
-        enableCountdown = false;
-
         StartGame();
-    }
-
-    private void Update()
-    {
-        if (!enableCountdown) return;
-        // カウントダウン
-        _nowTime -= Time.deltaTime;
-        if (_nowTime < 0) _nowTime = 0;
-        // 表示する
-        if (timeText != null) {
-            timeText.SetText(timeToString());
-        }
-        else {
-            Debug.Log(timeToString());
-        }
-        // カウントゼロでゲーム修了
-        if (_nowTime == 0) {
-            FinishGame();
-        }
     }
 
     /// <summary>
@@ -60,7 +23,8 @@ public class MainSceneController : MonoBehaviour
     /// </summary>
     private void StartGame()
     {
-        enableCountdown = true;
+        timeController.SetTimeLimit(_timeLimit);
+        timeController.TimerStart();
     }
 
     /// <summary>
@@ -68,16 +32,7 @@ public class MainSceneController : MonoBehaviour
     /// </summary>
     private void FinishGame()
     {
-        enableCountdown = false;
+        scoreController.FinishScore();
     }
 
-    /// <summary>
-    /// 秒をmm:ss形式にする
-    /// </summary>
-    private string timeToString()
-    {
-        int mini = (int)_nowTime / 60;
-        int sec = (int)_nowTime % 60;
-        return mini + ":" + sec;
-    }
 }
