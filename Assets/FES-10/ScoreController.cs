@@ -14,26 +14,32 @@ public class ScoreController : MonoBehaviour
     void Start()
     {
         _score = 0;
-        if (_scoreText != null) {
-            _scoreText.SetText($"SCORE: {_score}");
-        }
-        else {
-            Debug.Log($"SCORE: {_score}");
-        }
+        ShowScore();
         PlayerPrefs.SetInt("Score", _score);
     }
 
-    // addScoreをスコアに足す
+    /// <summary>
+    ///  現在のスコアを表示する
+    /// </summary>
+    private void ShowScore()
+    {
+        if (_scoreText != null)
+        {
+            _scoreText.SetText(_score.ToString());
+        }
+        else
+        {
+            Debug.Log($"SCORE: {_score}");
+        }
+    }
+
+    /// <summary>
+    ///  addScoreを現在のスコアに足す
+    /// </summary>
     public void AddScore(int addScore)
     {
         _score += addScore;
-
-        if (_scoreText != null) {
-            _scoreText.SetText($"SCORE: {_score} (+ {addScore})");
-        }
-        else {
-            Debug.Log($"SCORE: {_score} (+ {addScore})");
-        }
+        ShowScore();
     }
 
     public int GetScore()
