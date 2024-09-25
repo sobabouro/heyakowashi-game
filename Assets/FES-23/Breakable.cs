@@ -41,15 +41,15 @@ public class Breakable : MonoBehaviour
     /// <returns></returns>
     private bool ReciveAttack(int receivedATK, Type attackType)
     {
-        bool isBreak = false;
         int damage = CalcDamage(receivedATK, attackType);
         Debug.Log($"damage: {damage}");
         durability -= damage;
         Debug.Log($"durability: {durability}");
         if (durability < 0) {
-            isBreak = Break(attackType);
+            Break(attackType);
+            return true;
         }
-        return isBreak;
+        return false;
     }
 
     /// <summary>
