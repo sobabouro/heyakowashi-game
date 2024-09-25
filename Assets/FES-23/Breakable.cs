@@ -31,6 +31,10 @@ public class Breakable : MonoBehaviour
 		resists.Add(Type.pierce, pierceResist);
     }
 
+    /// <summary>
+    /// 耐久値が０になり壊れるときのメソッド
+    /// </summary>
+    /// <param name="type">どの属性に壊されるか</param>
     private void Break(Type type)
     {
         Debug.Log("Break");
