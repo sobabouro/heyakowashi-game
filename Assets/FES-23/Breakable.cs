@@ -31,6 +31,26 @@ public class Breakable : MonoBehaviour
 		resists.Add(Type.pierce, pierceResist);
     }
 
+
+
+    /// <summary>
+    /// 攻撃された時に呼び出すメソッド。
+    /// </summary>
+    /// <param name="receivedATK">受ける攻撃力</param>
+    /// <param name="attackType">受ける攻撃の属性</param>
+    /// <returns></returns>
+    private void ReciveAttack(int receivedATK, Type attackType)
+    {
+        int damage = CalcDamage(receivedATK, attackType);
+        Debug.Log($"damage: {damage}");
+        durability -= damage;
+        Debug.Log($"durability: {durability}");
+        if (durability < 0) {
+            Break(attackType);
+        }
+        return;
+    }
+
     /// <summary>
     /// 耐久値が０になり壊れるときのメソッド
     /// </summary>
