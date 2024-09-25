@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq.Expressions;
 using UnityEngine;
 
 enum Type { plane, slash, crash, pierce }
@@ -21,12 +22,37 @@ public class Breakable : MonoBehaviour
     // 属性耐性の辞書
     private Dictionary<Type, int> resists = new Dictionary<Type, int>();
     // 結合しているときの結合相手のBreakerクラス
-    // private Breaker connectedMainObj = null;
+    // private Breaker Breaker = null;
 
     private void Start()
     {
 		resists.Add(Type.slash, slashResist);
 		resists.Add(Type.crash, crashResist);
 		resists.Add(Type.pierce, pierceResist);
+    }
+
+    /// <summary>
+    /// 耐久値が０になり壊れるときのメソッド
+    /// </summary>
+    /// <param name="type">どの属性に壊されるか</param>
+    private void Break(Type type)
+    {
+        Debug.Log("Break");
+        // addScore(_socre) 
+        // Breaker.enable = ture;
+        switch (type)
+		{
+			case Type.slash:
+                // Slashクラスを呼び出す
+                break;
+            case Type.crash:
+                // Crashクラスを呼び出す
+                break;
+            case Type.pierce:
+                // Pierceクラスを呼び出す
+                break;
+            default:
+				break;
+        }
     }
 }
