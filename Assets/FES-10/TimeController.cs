@@ -11,7 +11,7 @@ public class TimeController : MonoBehaviour
     [SerializeField] private float _defaultTimeLimit = 120;
     [SerializeField] private TextMeshProUGUI timeText = null;
 
-    [SerializeField] private UnityEvent timerFinishedEvent = null;
+    [SerializeField] public UnityEvent timerFinishedEvent = null;
 
     private float _nowTime;
 
