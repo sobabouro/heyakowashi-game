@@ -24,6 +24,11 @@ public class Breakable : MonoBehaviour
     // 結合しているときの結合相手のBreakerクラス
     // private Breaker Breaker = null;
 
+    [SerializeField]
+    private float maxInterval = default;
+    private float nowInterval = 0;
+    private bool inInterval = false;
+
     private void Start()
     {
         resists.Add(Type.slash, slashResist);
@@ -32,7 +37,26 @@ public class Breakable : MonoBehaviour
         resists.Add(Type.plane, 0);
     }
 
+    private void Update()
+    {
+        CalcInterval();
+    }
 
+    /// <summary>
+    /// 連続で攻撃を受けないようにするインターバル
+    /// </summary>
+    private void CalcInterval()
+    {
+        if (inInterval)
+        {
+            nowInterval += Time.deltaTime;
+            if (nowInterval > maxInterval)
+            {
+                nowInterval = 0;
+                inInterval = false;
+            }
+        }
+    }
 
     /// <summary>
     /// 攻撃された時に呼び出すメソッド。
@@ -42,6 +66,9 @@ public class Breakable : MonoBehaviour
     /// <returns></returns>
     public bool ReciveAttack(int receivedATK, Breaker breaker)
     {
+        if (inInterval) return false;
+        inInterval = true;
+
         int damage = CalcDamage(receivedATK, breaker.Type);
         Debug.Log($"damage: {damage}");
         durability -= damage;
