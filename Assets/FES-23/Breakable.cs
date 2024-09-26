@@ -55,13 +55,13 @@ public class Breakable : MonoBehaviour
     /// <summary>
     /// 耐久値が０になり壊れるときのメソッド
     /// </summary>
-    /// <param name="type">どの属性に壊されるか</param>
-    private void Break(Type type)
+    /// <param name="breaker">`攻撃した側の情報</param>
+    private void Break(Breaker breaker)
     {
         Debug.Log("Break");
         // addScore(_socre) 
         // Breaker.enable = ture;
-        switch (type)
+        switch (breaker.Type)
 		{
 			case Type.slash:
                 // Slashクラスを呼び出す
