@@ -35,4 +35,12 @@ public class Breaker : MonoBehaviour
         return finalATK;
     }
 
+    public void Attack(GameObject collidredObject)
+    {
+        Rigidbody otherRigitbody = collidredObject.GetComponent<Rigidbody>();
+        // Breakable breakable = collidredObject.GetComponent<Breakable>();
+        int finalATK = CalcATK(otherRigitbody.velocity);
+        // breakable.ReceiveAttack(finalATK, this.gameObject);
+    }
+
 }
