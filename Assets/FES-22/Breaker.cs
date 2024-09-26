@@ -36,13 +36,15 @@ public class Breaker : MonoBehaviour
     /// <summary>
     /// 攻撃するメソッド。オブジェクトと衝突時に呼び出す。
     /// </summary>
-    /// <param name="breakableObject">壊されるオブジェクト（衝突相手）</param>
-    public void Attack(GameObject breakableObject)
+    /// <param name="collision">衝突データ全般</param>
+    public void Attack(Collision collision)
     {
-        Rigidbody otherRigitbody = breakableObject.GetComponent<Rigidbody>();
+        Breakable breakable = collision.gameObject.GetComponent<Breakable>();
+        if (breakable == null) return;
+
+        Rigidbody otherRigitbody = collision.gameObject.GetComponent<Rigidbody>();
         int finalATK = CalcATK(otherRigitbody.velocity);
-        Breakable breakable = breakableObject.GetComponent<Breakable>();
-        breakable.ReceiveAttack(finalATK, this);
+        breakable.ReciveAttack(finalATK, this);
     }
 
 }
