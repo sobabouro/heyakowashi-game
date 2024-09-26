@@ -16,15 +16,14 @@ public class Breaker : MonoBehaviour
     private int _baseATK = default;
     [SerializeField, Tooltip("属性")]
     private Type _type = Type.plane;
-
     // 速度を取得するためのRigitbody
     [SerializeField]
     private Rigidbody my_rigitbody;
-
     // ダメージが発生するために必要な最低限の速度
     [SerializeField]
     private float _velocity_threshold = 0;
 
+    public Type Type { get { return _type; } }
 
     private int CalcATK(Vector3 other_velocity)
     {
