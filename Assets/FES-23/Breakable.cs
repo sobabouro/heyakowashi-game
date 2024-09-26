@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq.Expressions;
 using UnityEngine;
 
-enum Type { plane, slash, crash, pierce }
+public enum Type { plane, slash, crash, pierce }
 
 public class Breakable : MonoBehaviour
 {
