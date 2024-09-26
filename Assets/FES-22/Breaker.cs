@@ -13,12 +13,16 @@ public enum Type
 public class Breaker : MonoBehaviour
 {
     [SerializeField, Tooltip("基礎攻撃力")]
-    private int baseATK = default;
+    private int _baseATK = default;
     [SerializeField, Tooltip("属性")]
-    private Type type = Type.plane;
+    private Type _type = Type.plane;
 
     // 速度を取得するためのRigitbody
     [SerializeField]
-    private Rigidbody my_Rigitbody;
+    private Rigidbody my_rigitbody;
+
+    // ダメージが発生するために必要な最低限の速度
+    [SerializeField]
+    private float _velocity_threshold = 0;
 
 }
