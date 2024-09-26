@@ -46,15 +46,16 @@ public class ActSubdivide : MonoBehaviour {
         List<Vector3>   newVerticesList       = new List<Vector3>();
         List<int[]>     vertexPairList        = new List<int[]>();
         List<List<int>> joinedVertexGroupList = new List<List<int>>();
+        List<List<int>> monotoneEdgeList      = new List<List<int>>();
         Vector2[]       new2DVerticesArray;
         string[]        vertexType;
 
-        // 切断面左側のオブジェクトのメッシュ情報
+        // 切断面左側のポリゴン情報
         List<int>     leftTriangles = new List<int>();
         List<Vector3> leftVertices  = new List<Vector3>();
         List<Vector3> leftNormals   = new List<Vector3>();
         List<Vector2> leftUVs       = new List<Vector2>();
-        // 切断面右側のオブジェクトのメッシュ情報
+        // 切断面右側のポリゴン情報
         List<int>     rightTriangles = new List<int>();
         List<Vector3> rightVertices  = new List<Vector3>();
         List<Vector3> rightNormals   = new List<Vector3>();
@@ -62,9 +63,9 @@ public class ActSubdivide : MonoBehaviour {
         // 切断対象のオブジェクトの各ポリゴンの左右判定用
         bool vertexTruthValue1, vertexTruthValue2, vertexTruthValue3;
 
-        /* **************************** */
-        /* 断面の左右のメッシュを生成する */
-        /* **************************** */
+        /* ****************************** */
+        /* 断面の左右のポリゴンを生成する */
+        /* ****************************** */
 
         for (int i = 0; i < targetTriangles.Length; i += 3) {
             vertexTruthValue1 = cutter.GetSide(targetVertices[targetTriangles[i]]);
@@ -111,9 +112,9 @@ public class ActSubdivide : MonoBehaviour {
                 );
             }
         }
-        /* ************************ */
-        /* 断面上のメッシュを生成する */
-        /* ************************ */
+        /* ************************** */
+        /* 断面上のポリゴンを生成する */
+        /* ************************** */
         
         // 新頂点の二次元座標変換する
         new2DVerticesArray = new Vector2[newVerticesList.Count];
@@ -122,19 +123,9 @@ public class ActSubdivide : MonoBehaviour {
         joinedVertexGroupList = GeometryUtils.GroupingForDetermineGeometry(vertexPairList, joinedVertexGroupList);
         // 最も外郭となる処理図形 (内包図形の有無に関わらない) ごとにグループ化する
         List<List<int>> nonConvexGeometryList = GeometryUtils.GroupingForSegmentNonMonotoneGeometry(new2DVerticesArray, joinedVertexGroupList);
-        // 新頂点を種類ごとに分類する
-        vertexType = new string[newVerticesList.Count];
-        vertexType = GeometryUtils.ClusteringVertexType(new2DVerticesArray, joinedVertexGroupList);
-        // 処理図形グループをもとに，処理図形ごとの頂点リストと辺リストを生成する
-        (
-            int [][] nonConvexGeometryVerticesJagAry,
-            int [][][] nonConvexGeometryEdgesJagAry
-        ) = GeometryUtils.EdgeForMakeMonotone(
-            nonConvexGeometryList, 
-            joinedVertexGroupList
-        );
-        // 処理図形グループの頂点リストを y 座標降順でソートする
-        )
+        // 処理図形に対して，単調多角形分割を行うための辺リストを生成する
+        ComputationalGeometryAlgorithm.MakeMonotone(nonConvexGeometryList, new2DVerticesArray, vertexType);
+        // 単調多角形分割を行う
 
     }
     private void AddToRightSide(
@@ -290,7 +281,7 @@ public class ActSubdivide : MonoBehaviour {
 }
 
 // 分断ポリゴンに対する処理系
-public static class SegmentedPolygonsUtils {
+internal static class SegmentedPolygonsUtils {
     // ポリゴンの頂点番号を，孤独な頂点を先頭に，表裏情報をもつ順番に並び替える
     public static (
         bool rtlf, 
@@ -408,7 +399,7 @@ public static class SegmentedPolygonsUtils {
 }
 
 // 切断平面上の頂点と，それらが構成する図形に対する処理系
-public static class GeometryUtils {
+internal static class GeometryUtils {
     // 新頂点リストから，ペア同士の探索を行い，頂点グループを生成する
     public static List<List<int>> GroupingForDetermineGeometry(
         List<int[]> vertexPairList, 
@@ -583,7 +574,7 @@ public static class GeometryUtils {
 }
 
 // 単調多角形分割と，多角形の三角形分割に関する処理系
-public static class ComputationalGeometryAlgorithm {
+internal static class ComputationalGeometryAlgorithm {
 /* ****************************************************************************** /
 * [参考文献]
 * コンピュータ・ジオメトリ (計算幾何学: アルゴリズムと応用) ：近代科学社
@@ -636,10 +627,11 @@ public static class ComputationalGeometryAlgorithm {
 *         -- v_i と helper(e_{v_i}-1) を結ぶ両辺を，辺集合 {E_s} に追加する．
 *         -- helper(e_{v_i}-1) を削除する．
 *         -- helper(e_{v_i}) に v_i を設定する．
-*         - もし，helper(e_{v_i}-1) が統合点でない場合，右隣の辺 e_j を探す．
-*         -- もし，helper(e_j) が統合点の場合，
-*         --- v_i と helper(e_j) を結ぶ両辺を，辺集合 {E_s} に追加する．
-*         -- helper(e_j) に v_i を設定する．
+*    (2). もし，v_i が e_{v_i}-1 の右側にある場合，以下の処理を行う．
+*         - 右隣の辺 e_j を探す．
+*         - もし，helper(e_j) が統合点の場合，
+*         -- v_i と helper(e_j) を結ぶ両辺を，辺集合 {E_s} に追加する．
+*         - helper(e_j) に v_i を設定する．
 *
 * 3. {E_s} ごとに，辺のグルーピングを再度行い，|P'| を生成する．
 * 4. |P'| を三角形分割する．
@@ -660,25 +652,23 @@ public static class ComputationalGeometryAlgorithm {
 * 参考文献にだっていやちょっと待て，と，そういう部分もあるしね．
 * ****************************************************************************** */
 
-    // 処理図形グループの頂点配列を，頂点の種類に応じて探索する
+    // 処理図形グループの数だけ，単調多角形分割を行う
     public static void MakeMonotone(
         Vector2[] new2DVerticesArray, 
         List<List<int>> joinedVertexGroupList, 
-        List<List<int>> nonConvexGeometryList
+        List<List<int>> nonConvexGeometryList, 
+        List<int[]> 
     ) {
-        // 処理図形グループの数
-        int processingCount = nonConvexGeometryList.Count;
         // 新頂点の種類を格納する配列
         string[] vertexType = new string[new2DVerticesArray.Length];
-        // 処理図形グループ n のノード配列
-        int[][] part_nonConvexGeometryNodesJagAry;
         // 処理図形グループ n の辺リスト
-        List<int[]> part_nonConvexGeometryEdgesList;
+        List<int[]> monotoneEdgeList = new List<int[2]>();
+        // 処理図形グループ n のノード配列
+        RefInt[][] part_nonConvexGeometryNodesJagAry;
         // 各辺のヘルパー配列
-        int[] helper = new int[new2DVerticesArray.Length];
-        for (int i = 0; i < helper.Length; i++) {
-            helper[i] = i;
-        }
+        RefInt[] helper = new int[new2DVerticesArray.Length];
+        // 単調多角形のグループ辺リスト
+        List<List<int>> jointedMonotoneVertexGroupList = new List<List<int>>();
 
         // 新頂点を種類ごとに分類する
         vertexType = ClusteringVertexType(
@@ -687,73 +677,99 @@ public static class ComputationalGeometryAlgorithm {
         );
 
         // 処理図形グループごとに，単調多角形分割を行う
-        for (int i = 0; i < processingCount; i++) {
-            // 頂点配列と辺配列を生成する
+        for (int processingCount = 0; processingCount < nonConvexGeometryList.Count; processingCount++) {
+            // ノード配列と辺リストを生成する
             (
-                part_nonConvexGeometryVerticesJagAry, 
-                part_nonConvexGeometryNodesJagAry
-            ) = EdgeForMakeMonotone(
+                helper,
+                part_nonConvexGeometryNodesJagAry, 
+                monotoneEdgeList
+            ) = GenerateNodeReference(
                 processingCount, 
                 nonConvexGeometryList, 
                 joinedVertexGroupList
             );
-            // 頂点配列の y 座標ソート順 (降順) を取得する
-            alignment = SortVerticesByCoordinateY(
+            // ノード配列を y 座標 (降順) でソートする 
+            SortVerticesByCoordinateY(
                 new2DVerticesArray, 
-                nonConvexGeometryList, 
-                joinedVertexGroupList
+                part_nonConvexGeometryNodesJagAry
             );
             // 単調多角形分割を行う
-            PreMakeMonotone(
+            MakeMonotoneEdge(
                 new2DVerticesArray, 
                 vertexType, 
                 helper,
                 part_nonConvexGeometryNodesJagAry,
-                part_nonConvexGeometryEdgesList
+                monotoneEdgeList
             );
+            // 辺リストから，単調多角形を生成する
         }
     }
 
     // 処理図形グループのうちの一つのグループの頂点配列を，頂点の種類に応じて探索する
-    private static void PreMakeMonotone(
+    private static void MakeMonotoneEdge(
         Vector2[] new2DVerticesArray, 
         string[] vertexType, 
-        int[] helper,
-        int[][] part_nonConvexGeometryNodesJagAry, 
-        List<int[]> part_nonConvexGeometryEdgesList
+        RefInt[] helper,
+        RefInt[][] part_nonConvexGeometryNodesJagAry, 
+        List<int[]> monotoneEdgeList
     ) {
-        // alignment を使って，y 座標の降順に頂点配列を探索する．
-        for (int i = 0; i < alignment.Length; i++) {
-            // 対角線を構成する頂点のインデックス
-            int diagonalVertex1 = new int();
-            int diagonalVertex2 = new int();
+        // y 座標の降順に頂点配列を探索する．
+        for (int i = 0; i < part_nonConvexGeometryNodesJagAry.Length; i++) {
             // 探索対象の頂点の種類を取得する
             string targetVertexType = new string(vertexType[part_nonConvexGeometryNodesJagAry[i][1]]);
             // 出発点の場合は，特に何もしない
             // 最終点の場合
             if (targetVertexType == "end") {
-                HandleEndVertex();
+                HandleEndVertex(
+                    i, 
+                    vertexType, 
+                    helper,
+                    part_nonConvexGeometryNodesJagAry, 
+                    monotoneEdgeList
+                );
             }
             // 統合点の場合
             else if (targetVertexType == "merge") {
-                HandleMergeVertex();
+                HandleMergeVertex(
+                    i, 
+                    new2DVerticesArray, 
+                    vertexType, 
+                    helper,
+                    part_nonConvexGeometryNodesJagAry, 
+                    monotoneEdgeList
+                );
             }
             // 分離点の場合
             else if (targetVertexType == "split") {
-                HandleSplitVertex();
+                HandleSplitVertex(
+                    i, 
+                    new2DVerticesArray, 
+                    vertexType, 
+                    helper,
+                    part_nonConvexGeometryNodesJagAry, 
+                    monotoneEdgeList
+                );
             }
             // 通常の点の場合
             else if (targetVertexType == "regular") {
-                HandleRegularVertex();
+                HandleRegularVertex(
+                    i, 
+                    new2DVerticesArray, 
+                    vertexType, 
+                    helper,
+                    part_nonConvexGeometryNodesJagAry, 
+                    monotoneEdgeList
+                );
             }
         }
     }
 
     // 処理図形ごとの頂点ペアのリストを生成する
     private static (
-        int [][] part_nonConvexGeometryNodesJagAry,
-        List<int[]> part_nonConvexGeometryEdgesList
-    ) EdgeForMakeMonotone(
+        RefInt[] helper,
+        RefInt[][] part_nonConvexGeometryNodesJagAry,
+        List<int[]> monotoneEdgeList
+    ) GenerateNodeReference(
         int i, 
         List<List<int>> nonConvexGeometryList, 
         List<List<int>> joinedVertexGroupList
@@ -767,24 +783,15 @@ public static class ComputationalGeometryAlgorithm {
         *       List<int> [1] {4, 2}
         *   }
         *   List<List<int>> B { // joinedVertexGroupList
-        *       List<int> [0] {24, 25, 26, 27, 24},             // 処理図形グループ 1
-        *       List<int> [1] {28, 29, 30, 31, 32, 28},         // 処理図形グループ 2
-        *       List<int> [2] {33, 34, 35, 36, 37, 33},         // 処理図形グループ 1
-        *       List<int> [3] {38, 39, 40, 38}                  // 処理図形グループ 1
-        *       List<int> [4] {41, 42, 43, 44, 45, 46, 47, 41}  // 処理図形グループ 2
+        *       List<int> [0] {24, 25, 26, 31, 29, 30, 27, 28, 24}, // 処理図形グループ 1
+        *       List<int> [2] {32, 33, 34, 35, 36, 37, 32},         // 処理図形グループ 2
+        *       List<int> [3] {38, 39, 40, 38}                      // 処理図形グループ 1
+        *       List<int> [4] {41, 42, 43, 44, 45, 46, 47, 41}      // 処理図形グループ 2
         *   }
-        *   // この二つから，各処理図形ごとの辺リストを生成する
-        *   int[][][] C = new int[A.Count][][] {
-        *       int[0] = new int[ for (i = A[0].Count)(j = A[i].Count) {B[A[i][j]].Count - 1} sum+= ][2] {
-        *           {24, 25}, {25, 26}, {26, 27}, {27, 24}, 
-        *           {28, 29}, {29, 30}, {30, 31}, {31, 32}, {32, 28}, 
-        *           {38, 39}, {39, 40}, {40, 38}
-        *       },
-        *       int[1] = new int[ for (i = A[1].Count)(j = A[i].Count) {B[A[i][j]].Count - 1} sum+= ][2] {
-        *           {41, 42}, {42, 43}, {43, 44}, {44, 45}, {45, 46}, {46, 47}, {47, 41}, 
-        *           {33, 34}, {34, 35}, {35, 36}, {36, 37}, {37, 33}
-        *       }
-        *   }
+        *
+        *   // part_nonConvexGeometryNodesList に，helper の参照を保持する．
+        *   // helper を RefInt[] として保持し，各要素が joinedVertexGroupList の
+        *   // vertexIndices を参照するようにする．
         */
 
         int total = 0;
@@ -793,24 +800,41 @@ public static class ComputationalGeometryAlgorithm {
         for (int j = 0; j < nonConvexGeometryList[i].Count; j++) {
             total += joinedVertexGroupList[nonConvexGeometryList[i][j]].Count - 1;
         }
-        // グループのノード配列を初期化する
-        int[][] part_nonConvexGeometryNodesJagAry = new int[total][];
         // グループの辺リストを初期化する
-        List<int[]> part_nonConvexGeometryEdgesList = new List<int[2]>();
+        List<int[]> monotoneEdgeList = new List<int[2]>();
+        // グループのノード配列を初期化する
+        RefInt[][] part_nonConvexGeometryNodesJagAry = new RefInt[total][];
+        // ヘルパー配列を初期化する
+        RefInt[] helper = new int[new2DVerticesArray.Length];
 
-        // 頂点リスト・辺リストに値と参照を代入する
+        // ヘルパー配列に参照を格納する
         for (int j = 0; j < nonConvexGeometryList[i].Count; j++) {
             List<int> vertexIndices = joinedVertexGroupList[nonConvexGeometryList[i][j]];
             for (int k = 0; k < vertexIndices.Count - 1; k++) {
-                part_nonConvexGeometryNodesJagAry[index] = new int[3];
-                part_nonConvexGeometryNodesJagAry[index][0] = k == 0 ? vertexIndices[vertexIndices.Count - 2] : vertexIndices[k - 1];
-                part_nonConvexGeometryNodesJagAry[index][1] = vertexIndices[k];
-                part_nonConvexGeometryNodesJagAry[index][2] = vertexIndices[k + 1];
-                part_nonConvexGeometryEdgesList.Add(new int[2] { vertexIndices[k], vertexIndices[k + 1] });
+                helper[index] = new RefInt(vertexIndices[k]);
                 index++;
             }
         }
-        return (part_nonConvexGeometryNodesJagAry, part_nonConvexGeometryEdgesList);
+        index = 0;
+
+        // ノード配列・辺リストに参照と値を格納する
+        for (int j = 0; j < nonConvexGeometryList[i].Count; j++) {
+            List<int> vertexIndices = joinedVertexGroupList[nonConvexGeometryList[i][j]];
+            for (int k = 0; k < vertexIndices.Count - 1; k++) {
+                part_nonConvexGeometryNodesJagAry[index] = new RefInt[4];
+                // ひとつ前の頂点の参照
+                part_nonConvexGeometryNodesJagAry[index][0] = new RefInt(k == 0 ? vertexIndices[vertexIndices.Count - 2] : vertexIndices[k - 1]);
+                // 現在の頂点の参照
+                part_nonConvexGeometryNodesJagAry[index][1] = new RefInt(vertexIndices[k]);
+                // ひとつ前の頂点のヘルパ参照
+                part_nonConvexGeometryNodesJagAry[index][2] = k == 0 ? helper[index + vertexIndices.Count - 2] : helper[k - 1];
+                // 現在の頂点のヘルパ参照
+                part_nonConvexGeometryNodesJagAry[index][3] = helper[k];
+                monotoneEdgeList.Add(new int[2] { vertexIndices[k], vertexIndices[k + 1] });
+                index++;
+            }
+        }
+        return (helper, part_nonConvexGeometryNodesJagAry, monotoneEdgeList);
     }
 
     // 頂点の種類を判別して，各頂点にラベルを付与する
@@ -857,37 +881,36 @@ public static class ComputationalGeometryAlgorithm {
         return vertexType;
     }
 
-    // ヘルパ頂点配列と新頂点配列を関連付けて，処理図形グループ頂点リストを y 座標の降順にソートしたときの，ソート前のインデックス情報をもつ配列を生成する (※ソートは行わない．あくまでもソートした仮定での順番を格納するだけ)
+    // 処理図形グループ頂点リストを y 座標の降順にソートする
     private static void SortVerticesByCoordinateY(
         Vector2[] new2DVerticesArray, 
-        int[][] part_nonConvexGeometryNodesJagAry
+        RefInt[][] part_nonConvexGeometryNodesJagAry
     ) {
         // 配列を対応する頂点の y座標 > x座標 の優先度で降順にソート
         Array.Sort(part_nonConvexGeometryNodesJagAry, (a, b) => {
             // y 座標を比較（降順）
-            int compareY = new2DVerticesArray[part_nonConvexGeometryNodesJagAry[b][1]].y.CompareTo(new2DVerticesArray[part_nonConvexGeometryNodesJagAry[a][1]].y);
+            int compareY = new2DVerticesArray[part_nonConvexGeometryNodesJagAry[b][1].Value].y.CompareTo(new2DVerticesArray[part_nonConvexGeometryNodesJagAry[a][1].Value].y);
             if (compareY != 0) {
                 return compareY;
             }
             // y 座標が等しければ x 座標を比較（降順）
-            return new2DVerticesArray[part_nonConvexGeometryNodesJagAry[b][1]].x.CompareTo(new2DVerticesArray[part_nonConvexGeometryNodesJagAry[a][1]].x);
+            return new2DVerticesArray[part_nonConvexGeometryNodesJagAry[b][1].Value].x.CompareTo(new2DVerticesArray[part_nonConvexGeometryNodesJagAry[a][1].Value].x);
         });
     }
 
     // 対象の頂点が最終点である場合の処理
     private static void HandleEndVertex(
         int i, 
-        Vector2[] new2DVerticesArray, 
         string[] vertexType, 
-        int[] helper,
-        int[][] part_nonConvexGeometryNodesJagAry, 
-        List<int[]> part_nonConvexGeometryEdgesList
+        RefInt[] helper,
+        RefInt[][] part_nonConvexGeometryNodesJagAry, 
+        List<int[]> monotoneEdgeList
     ) {
         // もし，helper(e_{v_i}-1) が統合点の場合，
-        if (vertexType[part_nonConvexGeometryNodesJagAry[alignment[i]][0]] == "merge") {
+        if (vertexType[part_nonConvexGeometryNodesJagAry[i][2].Value] == "merge") {
             // v_i と helper(e_{v_i}-1) を結ぶ両辺を，辺集合 {E_s} に追加する
-            part_nonConvexGeometryEdgesList.Add(new int[2] { part_nonConvexGeometryNodesJagAry[i][0], part_nonConvexGeometryNodesJagAry[i][1] });
-            part_nonConvexGeometryEdgesList.Add(new int[2] { part_nonConvexGeometryNodesJagAry[i][1], part_nonConvexGeometryNodesJagAry[i][0] });
+            monotoneEdgeList.Add(new int[2] { part_nonConvexGeometryNodesJagAry[i][1].Value, part_nonConvexGeometryNodesJagAry[i][2].Value });
+            monotoneEdgeList.Add(new int[2] { part_nonConvexGeometryNodesJagAry[i][2].Value, part_nonConvexGeometryNodesJagAry[i][1].Value });
         }
     }
 
@@ -896,27 +919,27 @@ public static class ComputationalGeometryAlgorithm {
         int i, 
         Vector2[] new2DVerticesArray, 
         string[] vertexType, 
-        int[] helper,
-        int[][] part_nonConvexGeometryNodesJagAry, 
-        List<int[]> part_nonConvexGeometryEdgesList
+        RefInt[] helper,
+        RefInt[][] part_nonConvexGeometryNodesJagAry, 
+        List<int[]> monotoneEdgeList
     ) {
         // もし，helper(e_{v_i}-1) が統合点の場合，
-        if (vertexType[part_nonConvexGeometryNodesJagAry[alignment[i]][0]] == "merge") {
+        if (vertexType[part_nonConvexGeometryNodesJagAry[i][2].Value] == "merge") {
             // v_i と helper(e_{v_i}-1) を結ぶ両辺を，辺集合 {E_s} に追加する
-            part_nonConvexGeometryEdgesList.Add(new int[2] { part_nonConvexGeometryNodesJagAry[i][0], part_nonConvexGeometryNodesJagAry[i][1] });
-            part_nonConvexGeometryEdgesList.Add(new int[2] { part_nonConvexGeometryNodesJagAry[i][1], part_nonConvexGeometryNodesJagAry[i][0] });
+            monotoneEdgeList.Add(new int[2] { part_nonConvexGeometryNodesJagAry[i][1].Value, part_nonConvexGeometryNodesJagAry[i][2].Value });
+            monotoneEdgeList.Add(new int[2] { part_nonConvexGeometryNodesJagAry[i][2].Value, part_nonConvexGeometryNodesJagAry[i][1].Value });
         }
         // すぐ右隣の辺を探す
         for (int j = 0; j < part_nonConvexGeometryNodesJagAry.Length; j++) {
-            if (new2DVerticesArray[part_nonConvexGeometryNodesJagAry[j][1]].y > new2DVerticesArray[part_nonConvexGeometryNodesJagAry[i][1]].y && new2DVerticesArray[part_nonConvexGeometryNodesJagAry[j][2]].y <= new2DVerticesArray[part_nonConvexGeometryNodesJagAry[i][1]].y) {
+            if (new2DVerticesArray[part_nonConvexGeometryNodesJagAry[j][0].Value].y > new2DVerticesArray[part_nonConvexGeometryNodesJagAry[i][1].Value].y && new2DVerticesArray[part_nonConvexGeometryNodesJagAry[j][1].Value].y <= new2DVerticesArray[part_nonConvexGeometryNodesJagAry[i][1].Value].y) {
                 // もし，helper(e_j) が統合点の場合，
-                if (vertexType[part_nonConvexGeometryNodesJagAry[j][2]] == "merge") {
+                if (vertexType[part_nonConvexGeometryNodesJagAry[j][3].Value] == "merge") {
                     // v_i と helper(e_j) を結ぶ両辺を，辺集合 {E_s} に追加する
-                    part_nonConvexGeometryEdgesList.Add(new int[2] { part_nonConvexGeometryNodesJagAry[i][1], part_nonConvexGeometryNodesJagAry[j][2] });
-                    part_nonConvexGeometryEdgesList.Add(new int[2] { part_nonConvexGeometryNodesJagAry[j][2], part_nonConvexGeometryNodesJagAry[i][1] });
+                    monotoneEdgeList.Add(new int[2] { part_nonConvexGeometryNodesJagAry[i][1].Value, part_nonConvexGeometryNodesJagAry[j][3].Value });
+                    monotoneEdgeList.Add(new int[2] { part_nonConvexGeometryNodesJagAry[j][3].Value, part_nonConvexGeometryNodesJagAry[i][1].Value });
                 }
                 // helper(e_j) に v_i を設定する
-                part_nonConvexGeometryNodesJagAry[j][2] = part_nonConvexGeometryNodesJagAry[i][1];
+                helper[Array.IndexOf(helper, part_nonConvexGeometryNodesJagAry[j][3])] = part_nonConvexGeometryNodesJagAry[i][1];
                 break;
             }
         }
@@ -927,23 +950,21 @@ public static class ComputationalGeometryAlgorithm {
         int i, 
         Vector2[] new2DVerticesArray, 
         string[] vertexType, 
-        int[] helper,
-        int[][] part_nonConvexGeometryNodesJagAry, 
-        List<int[]> part_nonConvexGeometryEdgesList
+        RefInt[] helper,
+        RefInt[][] part_nonConvexGeometryNodesJagAry, 
+        List<int[]> monotoneEdgeList
     ) {
         // 右隣の辺を探す
         for (int j = 0; j < part_nonConvexGeometryNodesJagAry.Length; j++) {
-            if (new2DVerticesArray[part_nonConvexGeometryNodesJagAry[j][1]].y > new2DVerticesArray[part_nonConvexGeometryNodesJagAry[i][1]].y && new2DVerticesArray[part_nonConvexGeometryNodesJagAry[j][2]].y <= new2DVerticesArray[part_nonConvexGeometryNodesJagAry[i][1]].y) {
+            if (new2DVerticesArray[part_nonConvexGeometryNodesJagAry[j][0].Value].y > new2DVerticesArray[part_nonConvexGeometryNodesJagAry[i][1].Value].y && new2DVerticesArray[part_nonConvexGeometryNodesJagAry[j][1].Value].y <= new2DVerticesArray[part_nonConvexGeometryNodesJagAry[i][1].Value].y) {
                 // v_i と helper(e_j) を結ぶ両辺を，辺集合 {E_s} に追加する
-                part_nonConvexGeometryEdgesList.Add(new int[2] { part_nonConvexGeometryNodesJagAry[i][1], part_nonConvexGeometryNodesJagAry[j][2] });
-                part_nonConvexGeometryEdgesList.Add(new int[2] { part_nonConvexGeometryNodesJagAry[j][2], part_nonConvexGeometryNodesJagAry[i][1] });
+                monotoneEdgeList.Add(new int[2] { part_nonConvexGeometryNodesJagAry[i][1].Value, part_nonConvexGeometryNodesJagAry[j][3].Value });
+                monotoneEdgeList.Add(new int[2] { part_nonConvexGeometryNodesJagAry[j][3].Value, part_nonConvexGeometryNodesJagAry[i][1].Value });
                 // helper(e_j) に v_i を設定する
-                part_nonConvexGeometryNodesJagAry[j][2] = part_nonConvexGeometryNodesJagAry[i][1];
+                helper[Array.IndexOf(helper, part_nonConvexGeometryNodesJagAry[j][3])] = part_nonConvexGeometryNodesJagAry[i][1];
                 break;
             }
         }
-
-
     }
 
     // 対象の頂点が通常点である場合の処理
@@ -951,16 +972,43 @@ public static class ComputationalGeometryAlgorithm {
         int i, 
         Vector2[] new2DVerticesArray, 
         string[] vertexType, 
-        int[] helper,
-        int[][] part_nonConvexGeometryNodesJagAry, 
-        List<int[]> part_nonConvexGeometryEdgesList
+        RefInt[] helper,
+        RefInt[][] part_nonConvexGeometryNodesJagAry, 
+        List<int[]> monotoneEdgeList
     ) {
-
+        // もし，図形の内部が v_i の座標平面左側にある場合，以下の処理を行う
+        if (new2DVerticesArray[part_nonConvexGeometryNodesJagAry[i][1].Value].y < new2DVerticesArray[part_nonConvexGeometryNodesJagAry[i][0].Value].y) {
+            // もし，helper(e_{v_i}-1) が統合点の場合，
+            if (vertexType[part_nonConvexGeometryNodesJagAry[i][2].Value] == "merge") {
+                // v_i と helper(e_{v_i}-1) を結ぶ両辺を，辺集合 {E_s} に追加する
+                monotoneEdgeList.Add(new int[2] { part_nonConvexGeometryNodesJagAry[i][1].Value, part_nonConvexGeometryNodesJagAry[i][2].Value });
+                monotoneEdgeList.Add(new int[2] { part_nonConvexGeometryNodesJagAry[i][2].Value, part_nonConvexGeometryNodesJagAry[i][1].Value });
+                // helper(e_{v_i}) に v_i を設定する
+                helper[Array.IndexOf(helper, part_nonConvexGeometryNodesJagAry[i][3])] = part_nonConvexGeometryNodesJagAry[i][1];
+            }
+        }
+        // もし，図形の内部が v_i の座標平面右側にある場合，以下の処理を行う
+        else {
+            // 右隣の辺を探す
+            for (int j = 0; j < part_nonConvexGeometryNodesJagAry.Length; j++) {
+                if (new2DVerticesArray[part_nonConvexGeometryNodesJagAry[j][0].Value].y > new2DVerticesArray[part_nonConvexGeometryNodesJagAry[i][1].Value].y && new2DVerticesArray[part_nonConvexGeometryNodesJagAry[j][1].Value].y <= new2DVerticesArray[part_nonConvexGeometryNodesJagAry[i][1].Value].y) {
+                    // もし，helper(e_j) が統合点の場合，
+                    if (vertexType[part_nonConvexGeometryNodesJagAry[j][3].Value] == "merge") {
+                        // v_i と helper(e_j) を結ぶ両辺を，辺集合 {E_s} に追加する
+                        monotoneEdgeList.Add(new int[2] { part_nonConvexGeometryNodesJagAry[i][1].Value, part_nonConvexGeometryNodesJagAry[j][3].Value });
+                        monotoneEdgeList.Add(new int[2] { part_nonConvexGeometryNodesJagAry[j][3].Value, part_nonConvexGeometryNodesJagAry[i][1].Value });
+                    }
+                    // helper(e_j) に v_i を設定する
+                    helper[Array.IndexOf(helper, part_nonConvexGeometryNodesJagAry[j][3])] = part_nonConvexGeometryNodesJagAry[i][1];
+                    break;
+                }
+            }
+        }
     }
 }
 
 // 計算に関する処理系
-public static class MathUtils {
+internal static class MathUtils {
     // 2つのベクトルの外積を計算する
     public static float CrossProduct(
         Vector2 internalVertex, 
@@ -991,15 +1039,25 @@ public static class MathUtils {
     }
 }
 
-public class RefInt {
+// ラッパー用クラス
+internal class RefInt {
     public int Value { get; set; }
     public RefInt(int value) {
         Value = value;
     }
 }
 
+// 特定のインスタンス間で参照を共有するためのクラス
+internal class SharedRef {
+    public RefInt RefIntInstance { get; }
+    
+    public SharedRef(int value) {
+        RefIntInstance = new RefInt(value);
+    }
+}
+
 // Debug用の処理系
-public static class MyDebug {
+internal static class MyDebug {
     public void CreateObject(
         Vector3[] vertices, 
         Vector2[] uvs, 
