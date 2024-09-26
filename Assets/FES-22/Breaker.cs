@@ -2,13 +2,8 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public enum Type
-{
-    plane,
-    slash,
-    crash,
-    pierce
-}
+// breakable.cs ‚Å’è‹`‚·‚é
+// public enum Type { plane, slash, crash, pierce }
 
 public class Breaker : MonoBehaviour
 {
