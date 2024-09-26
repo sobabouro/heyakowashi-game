@@ -39,14 +39,14 @@ public class Breakable : MonoBehaviour
     /// <param name="receivedATK">ó‚¯‚éUŒ‚—Í</param>
     /// <param name="attackType">ó‚¯‚éUŒ‚‚Ì‘®«</param>
     /// <returns></returns>
-    private bool ReciveAttack(int receivedATK, Type attackType)
+    private bool ReciveAttack(int receivedATK, Breaker breaker)
     {
-        int damage = CalcDamage(receivedATK, attackType);
+        int damage = CalcDamage(receivedATK, breaker.type);
         Debug.Log($"damage: {damage}");
         durability -= damage;
         Debug.Log($"durability: {durability}");
         if (durability < 0) {
-            Break(attackType);
+            Break(breaker);
             return true;
         }
         return false;
