@@ -26,10 +26,9 @@ public class Breaker : MonoBehaviour
     private float _velocity_threshold = 0;
 
 
-
-    private int CalcATK(float other_velocity)
+    private int CalcATK(Vector3 other_velocity)
     {
-        float velocity = my_rigitbody.velocity.magnitude - other_velocity;
+        float velocity = (my_rigitbody.velocity - other_velocity).magnitude;
         if (velocity < _velocity_threshold) velocity = 0;
         int finalATK = (int)(_baseATK * my_rigitbody.velocity.magnitude);
         return finalATK;
