@@ -12,6 +12,10 @@ public enum Type
 
 public class Breaker : MonoBehaviour
 {
+    // 自分の親オブジェクト
+    [SerializeField]
+    private Transform _container = null;
+
     [SerializeField, Tooltip("基礎攻撃力")]
     private int _baseATK = default;
     [SerializeField, Tooltip("属性")]
@@ -24,6 +28,7 @@ public class Breaker : MonoBehaviour
     private float _velocity_threshold = 0;
 
     public Type Type { get { return _type; } }
+
 
     private int CalcATK(Vector3 other_velocity)
     {
