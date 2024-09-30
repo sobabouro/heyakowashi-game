@@ -47,4 +47,8 @@ public class Breaker : MonoBehaviour
         breakable.ReciveAttack(finalATK, this);
     }
 
+    public Transform GetContainer()
+    {
+        return _container;
+    }
 }
