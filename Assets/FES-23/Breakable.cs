@@ -102,6 +102,7 @@ public class Breakable : MonoBehaviour
                 break;
             case Type.pierce:
                 // PierceƒNƒ‰ƒX‚ğŒÄ‚Ño‚·
+                durability = this.gameObject.GetComponent<Pierce>().Connect(breaker);
                 break;
             default:
                 break;
