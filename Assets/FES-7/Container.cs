@@ -26,4 +26,8 @@ public class Container : MonoBehaviour
         registeredObject = targetObject;
         collisionEvent.collisionEvnetEnter.AddListener(registeredObject.GetComponent<Breaker>().Attack);
     }
+    public GameObject GetRegisteredObject()
+    {
+        return registeredObject;
+    }
 }
