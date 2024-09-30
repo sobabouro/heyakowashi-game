@@ -7,9 +7,13 @@ public class Pierce : MonoBehaviour
     [SerializeField]
     private int durabilityRecoveryAmount;
 
-    public void Connect(Breaker breaker)
+    public int Connect(Breaker breaker)
     {
-        this.gameObject.transform.parent = breaker.GetContainer();
+        this.gameObject.transform.SetParent(breaker.GetContainer());        // 自身の親をBreaker.containerにする
+        GameObject container = breaker.GetContainer().gameObject;           
+        container.GetComponent<Container>().SetRegisteredObject(this.gameObject);   // Containerクラスの登録オブジェクトを自身にする
+
+        return durabilityRecoveryAmount;
     }
 
     private Vector3 DecideConnectPosition()
