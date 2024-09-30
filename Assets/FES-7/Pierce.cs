@@ -13,7 +13,7 @@ public class Pierce : MonoBehaviour
         GameObject container = breaker.GetContainer().gameObject;           
         container.GetComponent<Container>().SetRegisteredObject(this.gameObject);   // Containerクラスの登録オブジェクトを自身にする
 
-        return durabilityRecoveryAmount;
+        return durabilityRecoveryAmount; // 回復する耐久値を返す
     }
 
     private Vector3 DecideConnectPosition()
