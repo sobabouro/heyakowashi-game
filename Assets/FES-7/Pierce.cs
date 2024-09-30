@@ -9,7 +9,7 @@ public class Pierce : MonoBehaviour
 
     public void Connect(Breaker breaker)
     {
-
+        this.gameObject.transform.parent = breaker.GetContainer();
     }
 
     private Vector3 DecideConnectPosition()
