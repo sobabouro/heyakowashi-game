@@ -584,6 +584,7 @@ GameObject:
   - component: {fileID: 776295111}
   - component: {fileID: 776295115}
   - component: {fileID: 776295114}
+  - component: {fileID: 776295116}
   m_Layer: 0
   m_Name: Sphere
   m_TagString: Untagged
@@ -912,6 +913,27 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   autoConstraintSelection: 1
   selectedConstraints: []
+--- !u!114 &776295116
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 776295109}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: caee9d42d57213d47ba8af350a330a41, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  collisionEvnetEnter:
+    m_PersistentCalls:
+      m_Calls: []
+  collisionEvnetStay:
+    m_PersistentCalls:
+      m_Calls: []
+  collisionEvnetExit:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!1 &938179202
 GameObject:
   m_ObjectHideFlags: 0
@@ -923,6 +945,7 @@ GameObject:
   - component: {fileID: 938179204}
   - component: {fileID: 938179206}
   - component: {fileID: 938179207}
+  - component: {fileID: 938179208}
   m_Layer: 0
   m_Name: Container
   m_TagString: Untagged
@@ -977,6 +1000,27 @@ Rigidbody:
   m_Interpolate: 0
   m_Constraints: 0
   m_CollisionDetection: 0
+--- !u!114 &938179208
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 938179202}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: caee9d42d57213d47ba8af350a330a41, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  collisionEvnetEnter:
+    m_PersistentCalls:
+      m_Calls: []
+  collisionEvnetStay:
+    m_PersistentCalls:
+      m_Calls: []
+  collisionEvnetExit:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!1 &967602444
 GameObject:
   m_ObjectHideFlags: 0
@@ -989,8 +1033,8 @@ GameObject:
   - component: {fileID: 967602448}
   - component: {fileID: 967602447}
   - component: {fileID: 967602446}
-  - component: {fileID: 967602445}
   - component: {fileID: 967602450}
+  - component: {fileID: 967602451}
   m_Layer: 0
   m_Name: Cube
   m_TagString: Untagged
@@ -998,18 +1042,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &967602445
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 967602444}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 26e38ffdf0fba244790fcf9bcb435257, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!65 &967602446
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -1104,6 +1136,39 @@ Rigidbody:
   m_Interpolate: 0
   m_Constraints: 126
   m_CollisionDetection: 0
+--- !u!114 &967602451
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 967602444}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: caee9d42d57213d47ba8af350a330a41, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  collisionEvnetEnter:
+    m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 0}
+        m_TargetAssemblyTypeName: 
+        m_MethodName: 
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: 
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+  collisionEvnetStay:
+    m_PersistentCalls:
+      m_Calls: []
+  collisionEvnetExit:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!1001 &1151024049
 PrefabInstance:
   m_ObjectHideFlags: 0

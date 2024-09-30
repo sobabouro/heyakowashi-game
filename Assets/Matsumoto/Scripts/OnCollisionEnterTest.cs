@@ -5,8 +5,8 @@ using UnityEngine;
 public class OnCollisionEnterTest : MonoBehaviour
 {
 
-    void OnCollisionEnter(Collision collision)
+    public void DerbugCollisionText(string text)
     {
-        Debug.Log(collision.gameObject + "Ç…ìñÇΩÇ¡ÇƒÇ¢ÇÈÅI");
+        Debug.Log(text);
     }
 }
