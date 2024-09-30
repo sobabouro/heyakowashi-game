@@ -7,6 +7,7 @@ public class Pierce : MonoBehaviour
     [SerializeField]
     private int durabilityRecoveryAmount;
 
+    // 刺突属性による結合の開始
     public int Connect(Breaker breaker)
     {
         this.gameObject.transform.SetParent(breaker.GetContainer());        // 自身の親をBreaker.containerにする
@@ -16,6 +17,7 @@ public class Pierce : MonoBehaviour
         return durabilityRecoveryAmount; // 回復する耐久値を返す
     }
 
+    // 結合する座標の設定
     private Vector3 DecideConnectPosition()
     {
         Vector3 connectPosition = new Vector3();
