@@ -88,7 +88,7 @@ public class Breakable : MonoBehaviour
     private void Break(Breaker breaker)
     {
         Debug.Log("Break");
-        addScore(_score);
+        /*addScore(_score);*/
         if (mainBreaker != null) mainBreaker.enable = ture;
         switch (breaker.Type)
         {
