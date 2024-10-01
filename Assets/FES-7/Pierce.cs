@@ -19,10 +19,8 @@ public class Pierce : MonoBehaviour
     }
 
     // Œ‹‡‚·‚éÀ•W‚Ìİ’è
-    private Vector3 DecideConnectPosition()
+    private void DecideConnectPosition()
     {
-        Vector3 connectPosition = new Vector3();
-
-        return connectPosition;
+        
     }
 }
