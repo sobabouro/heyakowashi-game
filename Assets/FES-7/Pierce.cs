@@ -13,6 +13,7 @@ public class Pierce : MonoBehaviour
         this.gameObject.transform.SetParent(breaker.GetContainer());        // 自身の親をBreaker.containerにする
         GameObject container = breaker.GetContainer().gameObject;           
         container.GetComponent<Container>().SetRegisteredObject(this.gameObject);   // Containerクラスの登録オブジェクトを自身にする
+        breaker.enabled = false;
 
         return durabilityRecoveryAmount; // 回復する耐久値を返す
     }
