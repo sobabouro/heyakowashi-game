@@ -88,8 +88,8 @@ public class Breakable : MonoBehaviour
     private void Break(Breaker breaker)
     {
         Debug.Log("Break");
-        addScore(_score);
-        if (mainBreaker != null) mainBreaker.enable = ture;
+        /*addScore(_score);*/
+        if (mainBreaker != null) mainBreaker.enabled = true;
         switch (breaker.Type)
         {
             case Type.slash:

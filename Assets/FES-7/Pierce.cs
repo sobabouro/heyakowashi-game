@@ -11,9 +11,12 @@ public class Pierce : MonoBehaviour
     // 刺突属性による結合の開始
     public int Connect(Breaker breaker)
     {
+        Rigidbody rigidbody = this.gameObject.GetComponent<Rigidbody>();
+        Destroy(rigidbody);
         this.gameObject.transform.SetParent(breaker.GetContainer());        // 自身の親をBreaker.containerにする
         GameObject container = breaker.GetContainer().gameObject;
         container.GetComponent<Container>().SetRegisteredObject(this.gameObject);   // Containerクラスの登録オブジェクトを自身にする
+        this.gameObject.GetComponent<Breaker>().SetRigidbody(container.GetComponent<Rigidbody>());
         breaker.enabled = false;
         this.gameObject.GetComponent<ObjectManipulator>().HostTransform = container.transform; // HoloLens2での操作での座標移動の対象をcontainerにする
 

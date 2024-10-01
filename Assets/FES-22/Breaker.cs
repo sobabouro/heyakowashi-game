@@ -17,7 +17,7 @@ public class Breaker : MonoBehaviour
     private Type _type = Type.plane;
     // 速度を取得するためのRigitbody
     [SerializeField]
-    private Rigidbody my_rigitbody;
+    private Rigidbody my_rigidbody;
     // ダメージが発生するために必要な最低限の速度
     [SerializeField]
     private float _velocity_threshold = 0;
@@ -27,9 +27,9 @@ public class Breaker : MonoBehaviour
 
     private int CalcATK(Vector3 other_velocity)
     {
-        float velocity = (my_rigitbody.velocity - other_velocity).magnitude;
+        float velocity = (my_rigidbody.velocity - other_velocity).magnitude;
         if (velocity < _velocity_threshold) velocity = 0;
-        int finalATK = (int)(_baseATK * my_rigitbody.velocity.magnitude);
+        int finalATK = (int)(_baseATK * my_rigidbody.velocity.magnitude);
         return finalATK;
     }
 
@@ -40,13 +40,14 @@ public class Breaker : MonoBehaviour
     public void Attack(Collision collision)
     {
         Container container = collision.gameObject.GetComponent<Container>();
+        Breakable breakable;
         if (container != null)
         {
-            Breakable breakable = container.GetRegisteredObject().GetCompoonent<Breakable>();
+            breakable = container.GetRegisteredObject().GetComponent<Breakable>();
         }
         else
         {
-            Breakable breakable = collision.gameObject.GetComponent<Breakable>();
+            breakable = collision.gameObject.GetComponent<Breakable>();
         }
         
         if (breakable == null) return;
@@ -54,10 +55,17 @@ public class Breaker : MonoBehaviour
         Rigidbody otherRigitbody = collision.gameObject.GetComponent<Rigidbody>();
         int finalATK = CalcATK(otherRigitbody.velocity);
         breakable.ReciveAttack(finalATK, this);
+
+        Debug.Log("Attack! : " + this.gameObject + " : " + breakable + " : " + finalATK + " : " + otherRigitbody.velocity + " : " + my_rigidbody.velocity);
     }
 
     public Transform GetContainer()
     {
         return _container;
+    }
+
+    public void SetRigidbody(Rigidbody rigidbody)
+    {
+        my_rigidbody = rigidbody;
     }
 }
