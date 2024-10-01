@@ -39,7 +39,16 @@ public class Breaker : MonoBehaviour
     /// <param name="collision">衝突データ全般</param>
     public void Attack(Collision collision)
     {
-        Breakable breakable = collision.gameObject.GetComponent<Breakable>();
+        Container container = collision.gameObject.GetComponent<Container>();
+        if (container != null)
+        {
+            Breakable breakable = container.GetRegisteredObject().GetCompoonent<Breakable>();
+        }
+        else
+        {
+            Breakable breakable = collision.gameObject.GetComponent<Breakable>();
+        }
+        
         if (breakable == null) return;
 
         Rigidbody otherRigitbody = collision.gameObject.GetComponent<Rigidbody>();
@@ -47,4 +56,8 @@ public class Breaker : MonoBehaviour
         breakable.ReciveAttack(finalATK, this);
     }
 
+    public Transform GetContainer()
+    {
+        return _container;
+    }
 }
