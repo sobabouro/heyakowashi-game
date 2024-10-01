@@ -89,7 +89,11 @@ public class Breakable : MonoBehaviour
     {
         Debug.Log("Break");
         /*addScore(_score);*/
-        if (mainBreaker != null) mainBreaker.enabled = true;
+        if (mainBreaker != null)
+        {
+            mainBreaker.enabled = true;
+            this.gameObject.transform.parent.gameObject.GetComponent<Container>().SetMainRegister();
+        }
         switch (breaker.Type)
         {
             case Type.slash:
@@ -97,11 +101,13 @@ public class Breakable : MonoBehaviour
                 Destroy(this.gameObject);
                 break;
             case Type.crash:
+                Debug.Log("Destroy! : " + this.gameObject);
                 // Crashクラスを呼び出す
                 Destroy(this.gameObject);
                 break;
             case Type.pierce:
                 // Pierceクラスを呼び出す
+                mainBreaker = breaker;
                 durability = this.gameObject.GetComponent<Pierce>().Connect(breaker);
                 break;
             default:

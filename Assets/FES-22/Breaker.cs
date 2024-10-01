@@ -24,12 +24,17 @@ public class Breaker : MonoBehaviour
 
     public Type Type { get { return _type; } }
 
+    private void Start()
+    {
+        
+    }
+
 
     private int CalcATK(Vector3 other_velocity)
     {
         float velocity = (my_rigidbody.velocity - other_velocity).magnitude;
         if (velocity < _velocity_threshold) velocity = 0;
-        int finalATK = (int)(_baseATK * my_rigidbody.velocity.magnitude);
+        int finalATK = (int)(_baseATK * velocity);
         return finalATK;
     }
 
@@ -56,7 +61,7 @@ public class Breaker : MonoBehaviour
         int finalATK = CalcATK(otherRigitbody.velocity);
         breakable.ReciveAttack(finalATK, this);
 
-        Debug.Log("Attack! : " + this.gameObject + " : " + breakable + " : " + finalATK + " : " + otherRigitbody.velocity + " : " + my_rigidbody.velocity);
+        Debug.Log("Attack! : " + this.gameObject + " to " + breakable + " : " + finalATK + " : " + otherRigitbody.velocity + " : " + my_rigidbody.velocity);
     }
 
     public Transform GetContainer()

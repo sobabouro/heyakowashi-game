@@ -252,7 +252,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 653514ead52426a47a2b2958f5121436, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  durability: 50000
+  durability: 530000
   slashResist: 0
   crashResist: 0
   pierceResist: 0
@@ -1255,7 +1255,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 653514ead52426a47a2b2958f5121436, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  durability: 50
+  durability: 100
   slashResist: 0
   crashResist: 0
   pierceResist: 0

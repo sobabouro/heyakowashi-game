@@ -11,7 +11,7 @@ public class Container : MonoBehaviour
 
     private void Start()
     {
-        SetRegisteredObject(mainObject);
+        SetMainRegister();
     }
 
     public void SetMainObject(GameObject targetObject)
@@ -27,7 +27,7 @@ public class Container : MonoBehaviour
     public void SetRegisteredObject(GameObject targetObject)
     {
         CollisionEvent collisionEvent = this.gameObject.GetComponent<CollisionEvent>();
-        if(targetObject != mainObject) collisionEvent.collisionEvnetEnter.RemoveListener(registeredObject.GetComponent<Breaker>().Attack);
+        if(targetObject != registeredObject) collisionEvent.collisionEvnetEnter.RemoveListener(registeredObject.GetComponent<Breaker>().Attack);
         registeredObject = targetObject;
         collisionEvent.collisionEvnetEnter.AddListener(registeredObject.GetComponent<Breaker>().Attack);
         registeredObject.GetComponent<Breaker>().SetRigidbody(this.gameObject.GetComponent<Rigidbody>());
@@ -35,5 +35,14 @@ public class Container : MonoBehaviour
     public GameObject GetRegisteredObject()
     {
         return registeredObject;
+    }
+
+    public void SetMainRegister()
+    {
+        if (mainObject == registeredObject) return;
+        CollisionEvent collisionEvent = this.gameObject.GetComponent<CollisionEvent>();
+        registeredObject = mainObject;
+        collisionEvent.collisionEvnetEnter.AddListener(registeredObject.GetComponent<Breaker>().Attack);
+        registeredObject.GetComponent<Breaker>().SetRigidbody(this.gameObject.GetComponent<Rigidbody>());
     }
 }
