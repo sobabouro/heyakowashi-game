@@ -9,27 +9,31 @@ public class Breaker : MonoBehaviour
 {
     // 自分の親オブジェクト
     [SerializeField]
-    private Transform _container = null;
+    private Container _container = null;
 
     [SerializeField, Tooltip("基礎攻撃力")]
     private int _baseATK = default;
     [SerializeField, Tooltip("属性")]
     private Type _type = Type.plane;
-    // 速度を取得するためのRigitbody
+    // 速度を取得するためのRigidbody
     [SerializeField]
-    private Rigidbody my_rigitbody;
+    private Rigidbody my_rigidbody;
     // ダメージが発生するために必要な最低限の速度
     [SerializeField]
     private float _velocity_threshold = 0;
 
     public Type Type { get { return _type; } }
 
+    private void Start()
+    {
+
+    }
 
     private int CalcATK(Vector3 other_velocity)
     {
-        float velocity = (my_rigitbody.velocity - other_velocity).magnitude;
+        float velocity = (my_rigidbody.velocity - other_velocity).magnitude;
         if (velocity < _velocity_threshold) velocity = 0;
-        int finalATK = (int)(_baseATK * my_rigitbody.velocity.magnitude);
+        int finalATK = (int)(_baseATK * velocity);
         return finalATK;
     }
 
@@ -39,12 +43,33 @@ public class Breaker : MonoBehaviour
     /// <param name="collision">衝突データ全般</param>
     public void Attack(Collision collision)
     {
-        Breakable breakable = collision.gameObject.GetComponent<Breakable>();
+        Container container = collision.gameObject.GetComponent<Container>();
+        Breakable breakable;
+        if (container != null)
+        {
+            breakable = container.GetRegisteredObject().GetComponent<Breakable>();
+        }
+        else
+        {
+            breakable = collision.gameObject.GetComponent<Breakable>();
+        }
+        
         if (breakable == null) return;
 
         Rigidbody otherRigitbody = collision.gameObject.GetComponent<Rigidbody>();
         int finalATK = CalcATK(otherRigitbody.velocity);
         breakable.ReciveAttack(finalATK, this);
+
+        Debug.Log("Attack! : " + this.gameObject + " to " + breakable + " : " + finalATK + " : " + otherRigitbody.velocity + " : " + my_rigidbody.velocity);
     }
 
+    public Container GetContainer()
+    {
+        return _container;
+    }
+
+    public void SetRigidbody(Rigidbody rigidbody)
+    {
+        my_rigidbody = rigidbody;
+    }
 }
