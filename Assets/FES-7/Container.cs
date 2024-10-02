@@ -9,6 +9,11 @@ public class Container : MonoBehaviour
     [SerializeField]
     private GameObject registeredObject;
 
+    private void Start()
+    {
+        SetMainRegister();
+    }
+
     public void SetMainObject(GameObject targetObject)
     {
         mainObject = targetObject;
@@ -29,5 +34,14 @@ public class Container : MonoBehaviour
     public GameObject GetRegisteredObject()
     {
         return registeredObject;
+    }
+
+    public void SetMainRegister()
+    {
+        if (mainObject == registeredObject) return;
+        CollisionEvent collisionEvent = this.gameObject.GetComponent<CollisionEvent>();
+        registeredObject = mainObject;
+        collisionEvent.collisionEvnetEnter.AddListener(registeredObject.GetComponent<Breaker>().Attack);
+        registeredObject.GetComponent<Breaker>().SetRigidbody(this.gameObject.GetComponent<Rigidbody>());
     }
 }
