@@ -9,6 +9,15 @@ public class Container : MonoBehaviour
     private GameObject mainObject;
     [SerializeField]
     private GameObject registeredObject;
+    private CollisionEvent collisionEvent;
+    private Rigidbody rigidbody;
+
+    private void Start()
+    {
+        collisionEvent = this.gameObject.GetComponent<CollisionEvent>();
+        rigidbody = this.gameObject.GetComponent<Rigidbody>();
+        SetMainRegister();
+    }
 
     private void Start()
     {
@@ -27,8 +36,12 @@ public class Container : MonoBehaviour
 
     public void SetRegisteredObject(GameObject targetObject)
     {
+<<<<<<< HEAD
         CollisionEvent collisionEvent = this.gameObject.GetComponent<CollisionEvent>();
         if(targetObject != registeredObject) collisionEvent.collisionEvnetEnter.RemoveListener(registeredObject.GetComponent<Breaker>().Attack);
+=======
+        if (targetObject != registeredObject) collisionEvent.collisionEvnetEnter.RemoveListener(registeredObject.GetComponent<Breaker>().Attack);
+>>>>>>> FES-7-突属性によるオブジェクトの破壊処理
         registeredObject = targetObject;
         collisionEvent.collisionEvnetEnter.AddListener(registeredObject.GetComponent<Breaker>().Attack);
 
