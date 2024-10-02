@@ -16,16 +16,6 @@ public class Pierce : MonoBehaviour
         Destroy(rigidbody);
 
         // Ž©g‚Ìe‚ðBreaker.container‚É‚·‚é
-<<<<<<< HEAD
-        this.gameObject.transform.SetParent(breaker.GetContainer().gameObject.transform);
-
-        // ContainerƒNƒ‰ƒX‚Ì“o˜^ƒIƒuƒWƒFƒNƒg‚ðŽ©g‚É‚·‚é
-        GameObject container = breaker.GetContainer().gameObject;
-        container.GetComponent<Container>().SetRegisteredObject(this.gameObject);   
-
-        // ‰ñ•œ‚·‚é‘Ï‹v’l‚ð•Ô‚·
-        return durabilityRecoveryAmount; 
-=======
         this.gameObject.transform.SetParent(container.gameObject.transform);
 
         // ContainerƒNƒ‰ƒX‚Ì“o˜^ƒIƒuƒWƒFƒNƒg‚ðŽ©g‚É‚·‚é
@@ -33,7 +23,6 @@ public class Pierce : MonoBehaviour
 
         // ‰ñ•œ‚·‚é‘Ï‹v’l‚ð•Ô‚·
         return durabilityRecoveryAmount;
->>>>>>> FES-7-çªå±žæ€§ã«ã‚ˆã‚‹ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã®ç ´å£Šå‡¦ç†
     }
 
     // Œ‹‡‚·‚éÀ•W‚ÌÝ’è

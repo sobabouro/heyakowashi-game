@@ -21,11 +21,8 @@ public class Breakable : MonoBehaviour
 
     // ‘®«‘Ï«‚Ì«‘
     private Dictionary<Type, int> resists = new Dictionary<Type, int>();
-<<<<<<< HEAD
-    // Œ‹‡‚µ‚Ä‚¢‚é‚Æ‚«‚ÌŒ‹‡‘Šè‚ÌBreakerƒNƒ‰ƒX
-=======
+
     // Œ‹‡‚µ‚Ä‚¢‚é‚Æ‚«‚Ìe‚Ì‚ÌContainerƒNƒ‰ƒX
->>>>>>> FES-23-å£Šã•ã‚Œã‚‹å´ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã®ã‚³ãƒ³ãƒãƒ¼ãƒãƒ³ãƒˆã®åˆ¶ä½œ
     private Container container = null;
 
     [SerializeField]
@@ -95,11 +92,7 @@ public class Breakable : MonoBehaviour
         /*addScore(_score);*/
         if (container != null)
         {
-<<<<<<< HEAD
-            this.gameObject.transform.parent.gameObject.GetComponent<Container>().SetMainRegister();
-=======
             container.SetMainRegister();
->>>>>>> FES-23-å£Šã•ã‚Œã‚‹å´ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã®ã‚³ãƒ³ãƒãƒ¼ãƒãƒ³ãƒˆã®åˆ¶ä½œ
         }
         switch (breaker.Type)
         {
@@ -117,11 +110,8 @@ public class Breakable : MonoBehaviour
             case Type.pierce:
                 // PierceƒNƒ‰ƒX‚ğŒÄ‚Ño‚·
                 container = breaker.GetContainer();
-<<<<<<< HEAD
-                durability = this.gameObject.GetComponent<Pierce>().Connect(breaker);
-=======
+
                 durability = this.gameObject.GetComponent<Pierce>().Connect(container);
->>>>>>> FES-23-å£Šã•ã‚Œã‚‹å´ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã®ã‚³ãƒ³ãƒãƒ¼ãƒãƒ³ãƒˆã®åˆ¶ä½œ
                 break;
             default:
                 break;

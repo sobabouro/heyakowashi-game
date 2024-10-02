@@ -26,14 +26,8 @@ public class Breaker : MonoBehaviour
 
     private void Start()
     {
-<<<<<<< HEAD
         
     }
-
-=======
-
-    }
->>>>>>> FES-22-壊す側のオブジェクトのコンポーネントの制作
 
     private int CalcATK(Vector3 other_velocity)
     {

@@ -19,11 +19,6 @@ public class Container : MonoBehaviour
         SetMainRegister();
     }
 
-    private void Start()
-    {
-        SetMainRegister();
-    }
-
     public void SetMainObject(GameObject targetObject)
     {
         mainObject = targetObject;
@@ -36,17 +31,12 @@ public class Container : MonoBehaviour
 
     public void SetRegisteredObject(GameObject targetObject)
     {
-<<<<<<< HEAD
-        CollisionEvent collisionEvent = this.gameObject.GetComponent<CollisionEvent>();
-        if(targetObject != registeredObject) collisionEvent.collisionEvnetEnter.RemoveListener(registeredObject.GetComponent<Breaker>().Attack);
-=======
         if (targetObject != registeredObject) collisionEvent.collisionEvnetEnter.RemoveListener(registeredObject.GetComponent<Breaker>().Attack);
->>>>>>> FES-7-çªå±æ€§ã«ã‚ˆã‚‹ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã®ç ´å£Šå‡¦ç†
         registeredObject = targetObject;
         collisionEvent.collisionEvnetEnter.AddListener(registeredObject.GetComponent<Breaker>().Attack);
 
         // BreakerƒNƒ‰ƒX‚É•Û‘¶‚³‚ê‚érigidbody‚É“o˜^
-        registeredObject.GetComponent<Breaker>().SetRigidbody(this.gameObject.GetComponent<Rigidbody>());
+        registeredObject.GetComponent<Breaker>().SetRigidbody(rigidbody);
 
         // HoloLens2‚Å‚Ì‘€ì‚Å‚ÌÀ•WˆÚ“®‚Ì‘ÎÛ‚ğcontainer‚É‚·‚é
         HostTransformSwitch(registeredObject);
