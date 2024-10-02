@@ -17,12 +17,12 @@ public class Breakable : MonoBehaviour
     [SerializeField, Tooltip("貫通耐性"),]
     private int pierceResist = default;
     [SerializeField, Tooltip("スコア")]
-    private int score = default;
+    private int _score = default;
 
     // 属性耐性の辞書
     private Dictionary<Type, int> resists = new Dictionary<Type, int>();
-    // 結合しているときの結合相手のBreakerクラス
-    // private Breaker Breaker = null;
+    // 結合しているときの親ののContainerクラス
+    private Container container = null;
 
     [SerializeField]
     private float maxInterval = default;
@@ -88,20 +88,27 @@ public class Breakable : MonoBehaviour
     private void Break(Breaker breaker)
     {
         Debug.Log("Break");
-        // addScore(_socre) 
-        // Breaker.enable = ture;
+        /*addScore(_score);*/
+        if (container != null)
+        {
+            container.SetMainRegister();
+        }
         switch (breaker.Type)
         {
             case Type.slash:
                 // Slashクラスを呼び出す
+                Debug.Log("Destroy! : " + this.gameObject);
                 Destroy(this.gameObject);
                 break;
             case Type.crash:
                 // Crashクラスを呼び出す
+                Debug.Log("Destroy! : " + this.gameObject);
                 Destroy(this.gameObject);
                 break;
             case Type.pierce:
                 // Pierceクラスを呼び出す
+                container = breaker.GetContainer();
+                durability = this.gameObject.GetComponent<Pierce>().Connect(container);
                 break;
             default:
                 break;
