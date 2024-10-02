@@ -9,18 +9,17 @@ public class Pierce : MonoBehaviour
     private int durabilityRecoveryAmount;
 
     // 刺突属性による結合の開始
-    public int Connect(Breaker breaker)
+    public int Connect(Container container)
     {
         // コンテナの子オブジェクトにされるrigidbodyの破棄
         Rigidbody rigidbody = this.gameObject.GetComponent<Rigidbody>();
         Destroy(rigidbody);
 
         // 自身の親をBreaker.containerにする
-        this.gameObject.transform.SetParent(breaker.GetContainer().gameObject.transform);
+        this.gameObject.transform.SetParent(container.gameObject.transform);
 
         // Containerクラスの登録オブジェクトを自身にする
-        GameObject container = breaker.GetContainer().gameObject;
-        container.GetComponent<Container>().SetRegisteredObject(this.gameObject);
+        container.SetRegisteredObject(this.gameObject);
 
         // 回復する耐久値を返す
         return durabilityRecoveryAmount;
