@@ -91,7 +91,7 @@ public class Breakable : MonoBehaviour
         /*addScore(_score);*/
         if (container != null)
         {
-            this.gameObject.transform.parent.gameObject.GetComponent<Container>().SetMainRegister();
+            container.SetMainRegister();
         }
         switch (breaker.Type)
         {
