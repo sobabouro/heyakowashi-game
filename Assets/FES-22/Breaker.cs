@@ -15,7 +15,7 @@ public class Breaker : MonoBehaviour
     private int _baseATK = default;
     [SerializeField, Tooltip("‘®«")]
     private Type _type = Type.plane;
-    // ‘¬“x‚ğæ“¾‚·‚é‚½‚ß‚ÌRigitbody
+    // ‘¬“x‚ğæ“¾‚·‚é‚½‚ß‚ÌRigidbody
     [SerializeField]
     private Rigidbody my_rigidbody;
     // ƒ_ƒ[ƒW‚ª”­¶‚·‚é‚½‚ß‚É•K—v‚ÈÅ’áŒÀ‚Ì‘¬“x
@@ -26,9 +26,14 @@ public class Breaker : MonoBehaviour
 
     private void Start()
     {
+<<<<<<< HEAD
         
     }
 
+=======
+
+    }
+>>>>>>> FES-22-å£Šã™å´ã®ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã®ã‚³ãƒ³ãƒãƒ¼ãƒãƒ³ãƒˆã®åˆ¶ä½œ
 
     private int CalcATK(Vector3 other_velocity)
     {
