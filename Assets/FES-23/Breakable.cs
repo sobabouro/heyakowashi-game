@@ -21,8 +21,8 @@ public class Breakable : MonoBehaviour
 
     // 属性耐性の辞書
     private Dictionary<Type, int> resists = new Dictionary<Type, int>();
-    // 結合しているときの結合相手のBreakerクラス
-    private Breaker mainBreaker = null;
+    // 結合しているときの親ののContainerクラス
+    private Container container = null;
 
     [SerializeField]
     private float maxInterval = default;
@@ -89,9 +89,8 @@ public class Breakable : MonoBehaviour
     {
         Debug.Log("Break");
         /*addScore(_score);*/
-        if (mainBreaker != null)
+        if (container != null)
         {
-            mainBreaker.enabled = true;
             this.gameObject.transform.parent.gameObject.GetComponent<Container>().SetMainRegister();
         }
         switch (breaker.Type)
@@ -108,7 +107,7 @@ public class Breakable : MonoBehaviour
                 break;
             case Type.pierce:
                 // Pierceクラスを呼び出す
-                mainBreaker = breaker;
+                container = breaker.GetContainer();
                 durability = this.gameObject.GetComponent<Pierce>().Connect(breaker);
                 break;
             default:
