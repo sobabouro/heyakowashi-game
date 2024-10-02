@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using MixedReality.Toolkit.SpatialManipulation;
 
 public class Container : MonoBehaviour
 {
@@ -30,7 +31,12 @@ public class Container : MonoBehaviour
         if (targetObject != registeredObject) collisionEvent.collisionEvnetEnter.RemoveListener(registeredObject.GetComponent<Breaker>().Attack);
         registeredObject = targetObject;
         collisionEvent.collisionEvnetEnter.AddListener(registeredObject.GetComponent<Breaker>().Attack);
+
+        // Breakerクラスに保存されるrigidbodyに登録
         registeredObject.GetComponent<Breaker>().SetRigidbody(this.gameObject.GetComponent<Rigidbody>());
+
+        // HoloLens2での操作での座標移動の対象をcontainerにする
+        HostTransformSwitch(registeredObject);
     }
     public GameObject GetRegisteredObject()
     {
@@ -43,6 +49,18 @@ public class Container : MonoBehaviour
         CollisionEvent collisionEvent = this.gameObject.GetComponent<CollisionEvent>();
         registeredObject = mainObject;
         collisionEvent.collisionEvnetEnter.AddListener(registeredObject.GetComponent<Breaker>().Attack);
+
+        // Breakerクラスに保存されるrigidbodyに登録
         registeredObject.GetComponent<Breaker>().SetRigidbody(this.gameObject.GetComponent<Rigidbody>());
+
+        // HoloLens2での操作での座標移動の対象をcontainerにする
+        HostTransformSwitch(mainObject);
+    }
+
+    // 引数ObjectのHoloLens2での操作での座標移動の対象をcontainerにする
+    private void HostTransformSwitch(GameObject targetObject)
+    {
+        if (targetObject.GetComponent<ObjectManipulator>() == null) return;
+        targetObject.GetComponent<ObjectManipulator>().HostTransform = this.gameObject.transform;
     }
 }
