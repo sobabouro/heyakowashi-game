@@ -9,7 +9,7 @@ public class Breaker : MonoBehaviour
 {
     // 自分の親オブジェクト
     [SerializeField]
-    private Transform _container = null;
+    private Container _container = null;
 
     [SerializeField, Tooltip("基礎攻撃力")]
     private int _baseATK = default;
@@ -64,7 +64,7 @@ public class Breaker : MonoBehaviour
         Debug.Log("Attack! : " + this.gameObject + " to " + breakable + " : " + finalATK + " : " + otherRigitbody.velocity + " : " + my_rigidbody.velocity);
     }
 
-    public Transform GetContainer()
+    public Container GetContainer()
     {
         return _container;
     }

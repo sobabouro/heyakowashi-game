@@ -270,7 +270,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 916c45e0acabc3f49b0909e2b4c050c0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _container: {fileID: 660191241}
+  _container: {fileID: 660191239}
   _baseATK: 10
   _type: 3
   my_rigidbody: {fileID: 660191240}

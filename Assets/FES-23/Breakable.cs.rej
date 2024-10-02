@@ -1,0 +1,12 @@
+diff a/Assets/FES-23/Breakable.cs b/Assets/FES-23/Breakable.cs	(rejected hunks)
+@@ -21,8 +21,8 @@
+ 
+     // �����ϐ��̎���
+     private Dictionary<Type, int> resists = new Dictionary<Type, int>();
+-    // �������Ă���Ƃ��̌��������Breaker�N���X
+-    private Breaker mainBreaker = null;
++    // �������Ă���Ƃ��̐e��Container�N���X
++    private Container container = null;
+ 
+     [SerializeField]
+     private float maxInterval = default;
