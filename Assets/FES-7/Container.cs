@@ -36,7 +36,7 @@ public class Container : MonoBehaviour
         collisionEvent.collisionEvnetEnter.AddListener(registeredObject.GetComponent<Breaker>().Attack);
 
         // BreakerƒNƒ‰ƒX‚É•Û‘¶‚³‚ê‚érigidbody‚É“o˜^
-        registeredObject.GetComponent<Breaker>().SetRigidbody(this.gameObject.GetComponent<Rigidbody>());
+        registeredObject.GetComponent<Breaker>().SetRigidbody(rigidbody);
 
         // HoloLens2‚Å‚Ì‘€ì‚Å‚ÌÀ•WˆÚ“®‚Ì‘ÎÛ‚ğcontainer‚É‚·‚é
         HostTransformSwitch(registeredObject);
@@ -54,7 +54,7 @@ public class Container : MonoBehaviour
         collisionEvent.collisionEvnetEnter.AddListener(registeredObject.GetComponent<Breaker>().Attack);
 
         // BreakerƒNƒ‰ƒX‚É•Û‘¶‚³‚ê‚érigidbody‚É“o˜^
-        registeredObject.GetComponent<Breaker>().SetRigidbody(this.gameObject.GetComponent<Rigidbody>());
+        registeredObject.GetComponent<Breaker>().SetRigidbody(rigidbody);
 
         // HoloLens2‚Å‚Ì‘€ì‚Å‚ÌÀ•WˆÚ“®‚Ì‘ÎÛ‚ğcontainer‚É‚·‚é
         HostTransformSwitch(mainObject);
