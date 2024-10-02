@@ -59,10 +59,17 @@ public class Breaker : MonoBehaviour
         Rigidbody otherRigitbody = collision.gameObject.GetComponent<Rigidbody>();
         int finalATK = CalcATK(otherRigitbody.velocity);
         breakable.ReciveAttack(finalATK, this);
+
+        Debug.Log("Attack! : " + this.gameObject + " to " + breakable + " : " + finalATK + " : " + otherRigitbody.velocity + " : " + my_rigidbody.velocity);
     }
 
     public Transform GetContainer()
     {
         return _container;
+    }
+
+    public void SetRigidbody(Rigidbody rigidbody)
+    {
+        my_rigidbody = rigidbody;
     }
 }
