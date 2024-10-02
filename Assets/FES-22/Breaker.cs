@@ -15,21 +15,25 @@ public class Breaker : MonoBehaviour
     private int _baseATK = default;
     [SerializeField, Tooltip("属性")]
     private Type _type = Type.plane;
-    // 速度を取得するためのRigitbody
+    // 速度を取得するためのRigidbody
     [SerializeField]
-    private Rigidbody my_rigitbody;
+    private Rigidbody my_rigidbody;
     // ダメージが発生するために必要な最低限の速度
     [SerializeField]
     private float _velocity_threshold = 0;
 
     public Type Type { get { return _type; } }
 
+    private void Start()
+    {
+
+    }
 
     private int CalcATK(Vector3 other_velocity)
     {
-        float velocity = (my_rigitbody.velocity - other_velocity).magnitude;
+        float velocity = (my_rigidbody.velocity - other_velocity).magnitude;
         if (velocity < _velocity_threshold) velocity = 0;
-        int finalATK = (int)(_baseATK * my_rigitbody.velocity.magnitude);
+        int finalATK = (int)(_baseATK * velocity);
         return finalATK;
     }
 
@@ -40,13 +44,14 @@ public class Breaker : MonoBehaviour
     public void Attack(Collision collision)
     {
         Container container = collision.gameObject.GetComponent<Container>();
+        Breakable breakable;
         if (container != null)
         {
-            Breakable breakable = container.GetRegisteredObject().GetCompoonent<Breakable>();
+            breakable = container.GetRegisteredObject().GetComponent<Breakable>();
         }
         else
         {
-            Breakable breakable = collision.gameObject.GetComponent<Breakable>();
+            breakable = collision.gameObject.GetComponent<Breakable>();
         }
         
         if (breakable == null) return;
