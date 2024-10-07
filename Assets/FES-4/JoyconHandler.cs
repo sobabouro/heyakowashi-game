@@ -103,12 +103,13 @@ public class JoyconHandler : MonoBehaviour
             }
 
             // ‰ñ“]
-            orientation = j.GetVector();
+            //orientation = j.GetVector();
+            orientation = j.Rotation;
             gameObject.transform.rotation = orientation;
 
             // ˆÚ“®
             velocity = j.GetVelocityInWorld();
-            gameObject.transform.Translate(velocity * Time.deltaTime, Space.World);
+            //gameObject.transform.Translate(velocity * Time.deltaTime, Space.World);
         }
     }
 

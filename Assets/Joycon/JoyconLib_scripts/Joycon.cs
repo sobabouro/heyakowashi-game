@@ -1,15 +1,9 @@
-#define DEBUG
-
 using System.Collections;
 using System.Collections.Generic;
-using System.Runtime.InteropServices;
 using System;
 
 using System.Threading;
 using UnityEngine;
-using Unity.VisualScripting;
-using UnityEngine.Rendering;
-using UnityEngine.UIElements;
 
 public class Joycon
 {
@@ -574,6 +568,8 @@ public class Joycon
     private Vector3 w_a, w_g;
     private Quaternion vec;
 
+    private Vector3 acc_g_copy;
+    private Vector3 gyr_g_copy;
     private int ProcessIMU(byte[] report_buf)
     {
 
@@ -592,8 +588,8 @@ public class Joycon
         for (int n = 0; n < 3; ++n)
         {
             ExtractIMUValues(report_buf, n);
-            Vector3 gyr_g_copy = gyr_g;
-            Vector3 acc_g_copy = acc_g;
+            gyr_g_copy = gyr_g;
+            acc_g_copy = acc_g;
 
             float dt_sec = 0.005f * dt;
             sum[0] += gyr_g.x * dt_sec;
@@ -617,6 +613,7 @@ public class Joycon
             }
             else
             {
+                /*
                 k_acc = -Vector3.Normalize(acc_g_copy);
                 w_a = Vector3.Cross(k_b, k_acc);
                 w_g = -gyr_g_copy * dt_sec;
@@ -630,12 +627,52 @@ public class Joycon
                 j_b = Vector3.Normalize(j_b - err * i_b);
                 i_b = i_b_;
                 k_b = Vector3.Cross(i_b, j_b);
+                */
+                ProcessEKF(dt_sec);
             }
             dt = 1;
         }
         timestamp = report_buf[1] + 2;
         return 0;
     }
+
+    private ExtendedKalmanFilter extendedKalmanFilter = new ExtendedKalmanFilter();
+    private Matrix Q;
+    private Matrix R;
+    double[] u = new double[3];
+    double[] z= new double[2];
+    double[] ekf_x;
+    private Quaternion rotation;
+    public Quaternion Rotation { get=>rotation; }
+
+    private int ProcessEKF(float dt_sec)
+    {
+        u[0] = gyr_g_copy.x * dt_sec;
+        u[1] = gyr_g_copy.y * dt_sec;
+        u[2] = gyr_g_copy.z * dt_sec;
+
+        
+        z[0] = Math.Atan(acc_g_copy.y / acc_g_copy.z);
+        z[1] = -Math.Atan(acc_g_copy.x / Math.Sqrt(acc_g_copy.y * acc_g_copy.y + acc_g_copy.z * acc_g_copy.z));
+
+        Debug.Log(acc_g);
+        R = new Matrix(new double[2, 2] {
+                { 1.0*dt_sec*dt_sec, 0},
+                { 0, 1.0*dt_sec*dt_sec}
+            });
+        Q = new Matrix(new double[3, 3] {
+                { 0.174*dt_sec*dt_sec, 0,0},
+                { 0, 0.174*dt_sec*dt_sec,0},
+                { 0, 0,0.174*dt_sec*dt_sec}
+            });
+
+        // ekf
+        ekf_x = extendedKalmanFilter.ekf(u, z, R, Q);
+        //Debug.Log($"{ekf_x[0]}, {ekf_x[1]}, {ekf_x[2]}");
+        rotation = Quaternion.Euler((float)ekf_x[0], (float)ekf_x[1], (float)ekf_x[2]);
+        return 0;
+    }
+
     public void Begin()
     {
         if (PollThreadObj == null)
