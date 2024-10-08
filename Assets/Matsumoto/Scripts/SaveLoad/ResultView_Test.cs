@@ -33,9 +33,12 @@ public class ResultView_Test : MonoBehaviour
 
     private int playerRankingIndex;
 
+    [SerializeField]
+    private bool deleateDataFlug = false;
+
     void Start()
     {
-        DeleteData();
+        if(deleateDataFlug)  DeleteData();
         playerScore.SetText("");
         playerComment.SetText("");
         InitializeScoreData();

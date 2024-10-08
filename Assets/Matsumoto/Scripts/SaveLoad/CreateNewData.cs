@@ -5,14 +5,21 @@ using UnityEngine;
 public class CreateNewData : MonoBehaviour
 {
     private SaveData saveData = new SaveData();
-
+    [SerializeField]
+    public bool debugFlug;
     void Start()
     {
-        // Debug用データ
-        CreateDebugSaveData();
-
-        // 正規実行用データ
-        // CreateSaveData();
+        if (debugFlug)
+        {
+            Debug.Log("Debug開始!");
+            // Debug用データ
+            CreateDebugSaveData();
+        }
+        else
+        {
+            // 正規実行用データ
+            CreateSaveData();
+        }
     }
 
     public SaveData GetSaveData()
