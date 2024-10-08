@@ -155,6 +155,7 @@ public class ActSubdivide : MonoBehaviour {
             joinedVertexGroupList
         );
         // 処理図形に対して，単調多角形分割を行う
+        jointedMonotoneVertexGroupList = new List<List<int>>();
         jointedMonotoneVertexGroupList = ComputationalGeometryAlgorithm.MakeMonotone(
             new2DVerticesArray, 
             joinedVertexGroupList, 
@@ -164,7 +165,6 @@ public class ActSubdivide : MonoBehaviour {
         ComputationalGeometryAlgorithm.TriangulateMonotonePolygon(
             targetVerticesLength, 
             new2DVerticesArray, 
-            jointedMonotoneVertexGroupList, 
             albedoTexture, 
             rightTriangles, 
             rightUVs, 
@@ -172,17 +172,58 @@ public class ActSubdivide : MonoBehaviour {
             leftUVs
         );
         // 新しいオブジェクトを生成する
-        MyDebug.CreateObject(
+        CreateObject(
             newVerticesList.ToArray(),
             rightTriangles.ToArray(),
             rightUVs.ToArray()
         );
-        MyDebug.CreateRigidObject(
+        CreateRigidObject(
             newVerticesList.ToArray(),
             leftTriangles.ToArray(),
             leftUVs.ToArray()
         );
     }
+
+    // オブジェクト生成用メソッド
+    private static void CreateObject(
+        Vector3[] vertices, 
+        Vector2[] uvs, 
+        int[] triangles
+    ) {
+        GameObject newObject = Instantiate(newGameObjectPrefab);
+        newObject.AddComponent<MeshFilter>();
+        newObject.AddComponent<MeshRenderer>();
+        Mesh mesh = newObject.GetComponent<MeshFilter>().mesh;
+        mesh.Clear();
+        mesh.SetVertices(vertices);
+        mesh.uv = uvs;
+        mesh.SetTriangles(triangles, 0);
+        mesh.RecalculateNormals();
+        mesh.RecalculateBounds();
+        mesh.Optimize();
+    }
+
+    // リジッドボディ付きオブジェクト生成用メソッド
+    private static void CreateRigidObject(
+        Vector3[] vertices, 
+        Vector2[] uvs, 
+        int[] triangles
+    ) {
+        GameObject newObject = Instantiate(newGameObjectPrefab);
+        newObject.AddComponent<MeshFilter>();
+        newObject.AddComponent<MeshRenderer>();
+        Rigidbody rigid = newObject.AddComponent<Rigidbody>();
+        Mesh mesh = newObject.GetComponent<MeshFilter>().mesh;
+
+        mesh.Clear();
+        mesh.SetVertices(vertices);
+        mesh.uv = uvs;
+        mesh.SetTriangles(triangles, 0);
+        mesh.RecalculateNormals();
+        mesh.RecalculateBounds();
+        mesh.Optimize();
+    }
+
     private void AddToRightSide(
         int           triangleOffset, 
         int[]         targetTriangles, 
@@ -698,9 +739,9 @@ internal class ComputationalGeometryAlgorithm {
     // 処理図形グループを単調多角形分割するための対角線リスト
     private static List<int[]> monotoneDiagonalList;
     // 処理図形グループ n のノード配列
-    RefInt[][] part_nonConvexGeometryNodesJagAry;
+    private static RefInt[][] part_nonConvexGeometryNodesJagAry;
     // 各辺のヘルパー配列
-    RefInt[] helper;
+    private static RefInt[] helper;
 
     // 処理図形グループの数だけ，単調多角形分割を行う
     public static List<List<int>> MakeMonotone(
@@ -709,7 +750,6 @@ internal class ComputationalGeometryAlgorithm {
         List<List<int>> nonConvexGeometryList
     ) {
         vertexType = new string[new2DVerticesArray.Length];
-        jointedMonotoneVertexGroupList = new List<List<int>>();
 
         // 新頂点を種類ごとに分類する
         vertexType = ClusteringVertexType(
@@ -719,8 +759,8 @@ internal class ComputationalGeometryAlgorithm {
 
         // 処理図形グループごとに，単調多角形分割を行う
         for (int processingCount = 0; processingCount < nonConvexGeometryList.Count; processingCount++) {
-            monotoneEdgeList = new List<int[2]>();
-            monotoneDiagonalList = new List<int[2]>();
+            monotoneEdgeList = new List<int[]>();
+            monotoneDiagonalList = new List<int[]>();
             // ノード配列と辺リストを生成する
             (
                 helper,
@@ -746,13 +786,11 @@ internal class ComputationalGeometryAlgorithm {
             );
             // 対角線リストから，単調多角形に分割し，多角形の辺リストに格納する
             AssortmentToMonotone(
-                new2DVerticesArray, 
-                part_nonConvexGeometryNodesJagAry, 
                 monotoneDiagonalList, 
-                jointedMonotoneVertexGroupList
+                monotoneEdgeList
             );
         }
-        return jointedMonotoneVertexGroupList;
+        return ActSubdivide.jointedMonotoneVertexGroupList;
     }
 
     // 処理図形グループのうちの一つのグループの頂点配列を，頂点の種類に応じて探索する
@@ -1039,8 +1077,7 @@ internal class ComputationalGeometryAlgorithm {
     // 対角線リストと辺リストをもとに，単調多角形リストを生成する
     private static void AssortmentToMonotone(
         List<int[]> monotoneDiagonalList, 
-        List<int[]> monotoneEdgeList,
-        List<List<int>> jointedMonotoneVertexGroupList
+        List<int[]> monotoneEdgeList
     ) {
         while (monotoneEdgeList.Count > 0) {
             // 最初のDiagonalEdgeの開始点と終点を取得
@@ -1080,7 +1117,7 @@ internal class ComputationalGeometryAlgorithm {
                     }
                 }
             }
-            jointedMonotoneVertexGroupList.Add(currentGroup);
+            ActSubdivide.jointedMonotoneVertexGroupList.Add(currentGroup);
         }
     }
 
@@ -1088,7 +1125,6 @@ internal class ComputationalGeometryAlgorithm {
     public static void TriangulateMonotonePolygon(
         int targetVerticesLength, 
         Vector2[] new2DVerticesArray, 
-        List<List<int>> jointedMonotoneVertexGroupList,
         Texture2D albedoTexture,
         List<int> rightTriangles, 
         List<Vector2> rightUVs,
@@ -1104,19 +1140,18 @@ internal class ComputationalGeometryAlgorithm {
         Vector2 uv3;
 
         // 単調多角形の数だけループ
-        for (int i = 0; i < jointedMonotoneVertexGroupList.Count; i++) {
-            jointedMonotoneVertexGroupList[i].RemoveAt(jointedMonotoneVertexGroupList[i].Count - 1);
+        for (int i = 0; i < ActSubdivide.jointedMonotoneVertexGroupList.Count; i++) {
+            ActSubdivide.jointedMonotoneVertexGroupList[i].RemoveAt(ActSubdivide.jointedMonotoneVertexGroupList[i].Count - 1);
 
             vertexConnection = new List<int[]>();
             stack = new Stack<int[]>();
 
-            for (int j = 0; j < jointedMonotoneVertexGroupList[i].Count; j++) {
-                vertexConnection.Add(new int[2] {jointedMonotoneVertexGroupList[i][j], 0});
+            for (int j = 0; j < ActSubdivide.jointedMonotoneVertexGroupList[i].Count; j++) {
+                vertexConnection.Add(new int[2] {ActSubdivide.jointedMonotoneVertexGroupList[i][j], 0});
             }
             // 最大値と最小値の y 座標を持つ頂点のインデックスを取得
             (top, bottom) = FindMaxAndMinYVertexIndices(
-                new2DVerticesArray, 
-                jointedMonotoneVertexGroupList[i]
+                new2DVerticesArray
             );
             // 単調多角形頂点リストに top から bottom までの，境界の左右情報を加えて整列する
             PairTracingBoundaryEdge(
@@ -1214,18 +1249,17 @@ internal class ComputationalGeometryAlgorithm {
 
     // 最大値と最小値の y 座標を持つ頂点のインデックスを取得する
     public static (int maxYIndex, int minYIndex) FindMaxAndMinYVertexIndices(
-        Vector2[] new2DVerticesArray, 
-        List<int> jointedMonotoneVertexGroupList
+        Vector2[] new2DVerticesArray
     ) {
         // y 座標最大と最小の頂点インデックスを保持する変数
-        int maxYIndex = jointedMonotoneVertexGroupList[0];
-        int minYIndex = jointedMonotoneVertexGroupList[0];
+        int maxYIndex = ActSubdivide.jointedMonotoneVertexGroupList[0];
+        int minYIndex = ActSubdivide.jointedMonotoneVertexGroupList[0];
         // 初期値として最初の頂点の y 座標を取得
         float maxY = new2DVerticesArray[maxYIndex].y;
         float minY = new2DVerticesArray[minYIndex].y;
 
         // リストの全ての頂点インデックスについてループ
-        foreach (int vertexIndex in jointedMonotoneVertexGroupList) {
+        foreach (int vertexIndex in ActSubdivide.jointedMonotoneVertexGroupList) {
             float currentY = new2DVerticesArray[vertexIndex].y;
             if (currentY > maxY) {
                 maxY = currentY;
@@ -1351,46 +1385,5 @@ internal class RefInt {
     public int Value { get; set; }
     public RefInt(int value) {
         Value = value;
-    }
-}
-
-// Debug用の処理系
-internal class MyDebug {
-    public static void CreateObject(
-        Vector3[] vertices, 
-        Vector2[] uvs, 
-        int[] triangles
-    ) {
-        GameObject newObject = Instantiate(newGameObjectPrefab);
-        newObject.AddComponent<MeshFilter>();
-        newObject.AddComponent<MeshRenderer>();
-        Mesh mesh = newObject.GetComponent<MeshFilter>().mesh;
-        mesh.Clear();
-        mesh.SetVertices(vertices);
-        mesh.uv = uvs;
-        mesh.SetTriangles(triangles, 0);
-        mesh.RecalculateNormals();
-        mesh.RecalculateBounds();
-        mesh.Optimize();
-    }
-
-    public static void CreateRigidObject(
-        Vector3[] vertices, 
-        Vector2[] uvs, 
-        int[] triangles
-    ) {
-        GameObject newObject = Instantiate(newGameObjectPrefab);
-        newObject.AddComponent<MeshFilter>();
-        newObject.AddComponent<MeshRenderer>();
-        Rigidbody rigid = newObject.AddComponent<Rigidbody>();
-        Mesh mesh = newObject.GetComponent<MeshFilter>().mesh;
-
-        mesh.Clear();
-        mesh.SetVertices(vertices);
-        mesh.uv = uvs;
-        mesh.SetTriangles(triangles, 0);
-        mesh.RecalculateNormals();
-        mesh.RecalculateBounds();
-        mesh.Optimize();
     }
 }
