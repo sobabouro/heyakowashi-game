@@ -7,7 +7,7 @@ public class CreateNewData : MonoBehaviour
     private SaveData saveData = new SaveData();
     [SerializeField]
     public bool debugFlug;
-    void Start()
+    void Awake()
     {
         if (debugFlug)
         {
