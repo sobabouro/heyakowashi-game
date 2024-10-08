@@ -289,7 +289,7 @@ public class Joycon
     {
         Vector3 v1 = new Vector3(j_b.x, i_b.x, k_b.x);
         Vector3 v2 = -(new Vector3(j_b.z, i_b.z, k_b.z));
-        Debug.DrawLine(ChangeAxisToUnity(v1), ChangeAxisToUnity(v2));
+        // Debug.DrawLine(ChangeAxisToUnity(v1), ChangeAxisToUnity(v2));
 
         if (v2 != Vector3.zero)
         {
@@ -613,7 +613,6 @@ public class Joycon
             }
             else
             {
-                /*
                 k_acc = -Vector3.Normalize(acc_g_copy);
                 w_a = Vector3.Cross(k_b, k_acc);
                 w_g = -gyr_g_copy * dt_sec;
@@ -627,15 +626,13 @@ public class Joycon
                 j_b = Vector3.Normalize(j_b - err * i_b);
                 i_b = i_b_;
                 k_b = Vector3.Cross(i_b, j_b);
-                */
-                ProcessEKF(dt_sec);
             }
             dt = 1;
         }
         timestamp = report_buf[1] + 2;
         return 0;
     }
-
+    /*
     private ExtendedKalmanFilter extendedKalmanFilter = new ExtendedKalmanFilter();
     private Matrix Q;
     private Matrix R;
@@ -672,6 +669,7 @@ public class Joycon
         rotation = Quaternion.Euler((float)ekf_x[0], (float)ekf_x[1], (float)ekf_x[2]);
         return 0;
     }
+    */
 
     public void Begin()
     {

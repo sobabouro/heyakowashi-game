@@ -8,6 +8,8 @@ public class JoyconHandler : MonoBehaviour
 {
     private List<Joycon> joycons;
 
+    [SerializeField] private Transform cameraTransform;
+
     // Values made available via Unity
     public float[] stick;
     public Vector3 gyro;
@@ -44,9 +46,13 @@ public class JoyconHandler : MonoBehaviour
                 Debug.Log(string.Format("Stick x: {0:N} Stick y: {1:N}", j.GetStick()[0], j.GetStick()[1]));
 
                 // Joycon has no magnetometer, so it cannot accurately determine its yaw value. Joycon.Recenter allows the user to reset the yaw value.
-                j.Recenter();
-                j.ResetVelocityInWorld();
-                gameObject.transform.position = Vector3.zero;
+                // j.Recenter();
+                // j.ResetVelocityInWorld();
+                // gameObject.transform.position = pos;
+                foreach (Joycon joycon in joycons)
+                {
+                    joycon.Recenter();
+                }
             }
             // GetButtonDown checks if a button has been released
             if (j.GetButtonUp(Joycon.Button.SHOULDER_2))
@@ -92,19 +98,22 @@ public class JoyconHandler : MonoBehaviour
             }
             else
             {
-                if (j.isLeft)
+                if (jc_ind == 0)
                 {
                     gameObject.GetComponent<Renderer>().material.color = Color.blue;
                 }
-                else
+                else if(jc_ind == 1)
                 {
                     gameObject.GetComponent<Renderer>().material.color = Color.red;
+                }
+                else if (jc_ind == 2)
+                {
+                    gameObject.GetComponent<Renderer>().material.color = Color.green;
                 }
             }
 
             // ‰ñ“]
-            //orientation = j.GetVector();
-            orientation = j.Rotation;
+            orientation = cameraTransform.rotation * j.GetVector();
             gameObject.transform.rotation = orientation;
 
             // ˆÚ“®
