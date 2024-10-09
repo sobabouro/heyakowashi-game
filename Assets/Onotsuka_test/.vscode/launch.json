@@ -8,7 +8,7 @@
 		{
 			"name": "Unity Editor",
 			"type": "unity",
-			// "path": "/e:/User/Programs/Unity/Project_Aramaki2024/Assets/Onotsuka_test/Library/EditorInstance.json",
+			"path": "/d:/User/Programs/Unity/git/aramakifes2024/Library/EditorInstance.json",
 			"request": "launch"
 		},
 		{
