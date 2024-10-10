@@ -506,11 +506,16 @@ public class ActSubdivide : MonoBehaviour {
         ) {
             // コピーのリストを作成
             List<int[]> remainingVertexPairList = new List<int[]>(vertexPairList);
+            // リストが空でないことを確認
+            if (remainingVertexPairList.Count == 0) {
+                Debug.LogError("vertexPairList is empty.");
+                return joinedVertexGroupList;
+            }
             // 最初のEdgeの開始点と終点を取得
             int startVertex = remainingVertexPairList[0][0];
             int endVertex = remainingVertexPairList[0][1];
             // 最初のEdgeの頂点を追加し、削除
-            joinedVertexGroupList[0].Add(startVertex);
+            joinedVertexGroupList.Add(new List<int>(startVertex));
             MathUtils.SwapAndRemoveAt(remainingVertexPairList, 0);
             // 頂点が一周するまでループ
             while (startVertex != endVertex) {
@@ -519,6 +524,10 @@ public class ActSubdivide : MonoBehaviour {
                     if (endVertex == remainingVertexPairList[i][0]) {
                         // 終点を更新、頂点グループに追加し、削除
                         endVertex = remainingVertexPairList[i][1];
+                        // joinedVertexGroupList[i] が初期化されているか確認し、必要なら初期化
+                        if (joinedVertexGroupList.Count <= i) {
+                            joinedVertexGroupList.Add(new List<int>());
+                        }
                         joinedVertexGroupList[i].Add(endVertex);
                         MathUtils.SwapAndRemoveAt(remainingVertexPairList, i);
                         break;
