@@ -501,44 +501,44 @@ public class ActSubdivide : MonoBehaviour {
 
         // 新頂点リストから，ペア同士の探索を行い，頂点グループを生成する
         public static List<List<int>> GroupingForDetermineGeometry(
-            List<int[]> vertexPairList, 
+            List<int[]> vertexPairList,
             List<List<int>> joinedVertexGroupList
         ) {
-            // コピーのリストを作成
-            List<int[]> remainingVertexPairList = new List<int[]>(vertexPairList);
-            // リストが空でないことを確認
-            if (remainingVertexPairList.Count == 0) {
-                Debug.LogError("vertexPairList is empty.");
-                return joinedVertexGroupList;
-            }
-            // 最初のEdgeの開始点と終点を取得
-            int startVertex = remainingVertexPairList[0][0];
-            int endVertex = remainingVertexPairList[0][1];
-            // 最初のEdgeの頂点を追加し、削除
-            joinedVertexGroupList.Add(new List<int>(startVertex));
-            MathUtils.SwapAndRemoveAt(remainingVertexPairList, 0);
-            // 頂点が一周するまでループ
-            while (startVertex != endVertex) {
-                // 残りの頂点リストから、前回の終点から始まるEdgeを探す
-                for (int i = 0; i < remainingVertexPairList.Count; i++) {
-                    if (endVertex == remainingVertexPairList[i][0]) {
-                        // 終点を更新、頂点グループに追加し、削除
-                        endVertex = remainingVertexPairList[i][1];
-                        // joinedVertexGroupList[i] が初期化されているか確認し、必要なら初期化
-                        if (joinedVertexGroupList.Count <= i) {
-                            joinedVertexGroupList.Add(new List<int>());
+            HashSet<int[]> remainingVertexPairList = new HashSet<int[]>(vertexPairList);
+
+            while (remainingVertexPairList.Count > 0) {
+                List<int> geometry = new List<int>();
+                // 最初のEdgeの開始点と終点を取得
+                int[] currentEdge = remainingVertexPairList.First();
+                int startVertex = currentEdge[0];
+                int endVertex = currentEdge[1];
+                // 最初のEdgeの頂点を追加し、削除する
+                remainingVertexPairList.Remove(currentEdge);
+                geometry.Add(startVertex);
+                geometry.Add(endVertex);
+                // 頂点が一周するまでループ
+                while (startVertex != endVertex) {
+                    // 残りの頂点リストから、前回の終点から始まるEdgeを探す
+                    foreach (int[] edge in remainingVertexPairList) {
+                        // 終点を更新、頂点グループに追加し、削除する
+                        if (endVertex == edge[0]) {
+                            endVertex = edge[1];
+                            geometry.Add(endVertex);
+                            remainingVertexPairList.Remove(edge);
+                            break;
                         }
-                        joinedVertexGroupList[i].Add(endVertex);
-                        MathUtils.SwapAndRemoveAt(remainingVertexPairList, i);
-                        break;
+                        else if (endVertex == edge[1]) {
+                            endVertex = edge[0];
+                            geometry.Add(endVertex);
+                            remainingVertexPairList.Remove(edge);
+                            break;
+                        }
                     }
                 }
+                // 最初の頂点を追加して、頂点グループを完成させる
+                geometry.Add(startVertex);
+                joinedVertexGroupList.Add(geometry);
             }
-            // まだ処理されていない頂点が残っている場合、再帰的にグループ化を続ける
-            if (remainingVertexPairList.Count > 0) {
-                return GroupingForDetermineGeometry(remainingVertexPairList, joinedVertexGroupList);
-            }
-            // 全ての頂点ペアが処理された場合、結果を返す
             return joinedVertexGroupList;
         }
 
