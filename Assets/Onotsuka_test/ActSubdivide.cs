@@ -535,8 +535,6 @@ public class ActSubdivide : MonoBehaviour {
                         }
                     }
                 }
-                // 最初の頂点を追加して、頂点グループを完成させる
-                geometry.Add(startVertex);
                 joinedVertexGroupList.Add(geometry);
             }
             return joinedVertexGroupList;
@@ -656,7 +654,7 @@ public class ActSubdivide : MonoBehaviour {
                 Vector3 pointOnPlane = vertices[i] - planePoint;
                 float x = Vector3.Dot(pointOnPlane, u);
                 float y = Vector3.Dot(pointOnPlane, v);
-                result[i] = new Vector2(x, y);
+                result[i] = new Vector2(x, -y);
             }
 
             return result;
@@ -929,7 +927,7 @@ public class ActSubdivide : MonoBehaviour {
                 for (int j = 0; j < joinedVertexGroupList[i].Count - 1; j++) {
                     Vector2 internalVertex = new2DVerticesArray[joinedVertexGroupList[i][j]];
                     Vector2 terminalVertex = new2DVerticesArray[joinedVertexGroupList[i][j + 1]];
-                    Vector2 point = j == 0 ? new2DVerticesArray[joinedVertexGroupList[i].Count - 2] : new2DVerticesArray[joinedVertexGroupList[i][j - 1]];
+                    Vector2 point = j == 0 ? new2DVerticesArray[joinedVertexGroupList[i][joinedVertexGroupList[i].Count - 2]] : new2DVerticesArray[joinedVertexGroupList[i][j - 1]];
                     // y座標が前後の頂点と比較して対象の点が大きいとき
                     if (internalVertex.y >= point.y && internalVertex.y > terminalVertex.y) {
                         // 部分最大の場合: 出発点
@@ -969,12 +967,12 @@ public class ActSubdivide : MonoBehaviour {
             // 配列を対応する頂点の y座標 > x座標 の優先度で降順にソート
             Array.Sort(part_nonConvexGeometryNodesJagAry, (a, b) => {
                 // y 座標を比較（降順）
-                int compareY = new2DVerticesArray[a[1].Value].y.CompareTo(new2DVerticesArray[b[1].Value].y);
+                int compareY = new2DVerticesArray[b[1].Value].y.CompareTo(new2DVerticesArray[a[1].Value].y);
                 if (compareY != 0) {
                     return compareY;
                 }
                 // y 座標が等しければ x 座標を比較（降順）
-                return new2DVerticesArray[a[1].Value].x.CompareTo(new2DVerticesArray[b[1].Value].x);
+                return new2DVerticesArray[b[1].Value].x.CompareTo(new2DVerticesArray[a[1].Value].x);
             });
         }
 
