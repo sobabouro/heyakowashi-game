@@ -102,8 +102,7 @@ public class Breakable : MonoBehaviour
                 break;
             case Type.crash:
                 // Crashクラスを呼び出す
-                Debug.Log("Destroy! : " + this.gameObject);
-                Destroy(this.gameObject);
+                this.gameObject.GetComponent<Crash>().CallCrash();
                 break;
             case Type.pierce:
                 // Pierceクラスを呼び出す
