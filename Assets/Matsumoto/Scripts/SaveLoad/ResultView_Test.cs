@@ -33,9 +33,12 @@ public class ResultView_Test : MonoBehaviour
 
     private int playerRankingIndex;
 
+    [SerializeField]
+    private bool deleateDataFlug = false;
+
     void Start()
     {
-        DeleteData();
+        if(deleateDataFlug)  DeleteData();
         playerScore.SetText("");
         playerComment.SetText("");
         InitializeScoreData();
@@ -123,8 +126,10 @@ public class ResultView_Test : MonoBehaviour
     private void ShowRanking3Score()
     {
         SortScoreDataList();
+        Debug.Log(scoreDataList[0].GetScore());
         for (int i = 0; i < 3; i++)
         {
+            Debug.Log("Ranking" + i+1 + " : " + scoreDataList[i].GetScore());
             rankingScoreList[i].SetText(scoreDataList[i].GetScore().ToString());
         }
     }
