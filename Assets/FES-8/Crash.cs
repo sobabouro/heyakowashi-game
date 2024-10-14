@@ -10,7 +10,7 @@ public class Crash : MonoBehaviour
     private bool _canCallBrokenObject;
     // オブジェクトの破壊後に呼び出されるオブジェクト
     [SerializeField]
-    private List<GameObject> _brokenObjectPrefabList;
+    private GameObject _brokenObjectPrefab;
     // オブジェクト破壊時に呼び出すイベント登録
     public UnityEvent onBreakEvent;
     // 破壊後のオブジェクトを呼び出す際に加える外向きの力
@@ -49,14 +49,31 @@ public class Crash : MonoBehaviour
     {
         Debug.Log("CallBrokenObject!");
         // 破壊後に呼び出すオブジェクトを生成して、外側に向けてある程度の力(_addForce)を入れてオブジェクトを動かす
-        foreach (GameObject targetObject in _brokenObjectPrefabList)
+        Transform parentTransform = _brokenObjectPrefab.transform;
+
+        Debug.Log("ParentTagCheck : " + _brokenObjectPrefab.tag);
+
+        if (_brokenObjectPrefab.CompareTag("BreakableObject"))
         {
-            GameObject createObject = Instantiate(targetObject, this.gameObject.transform.position, this.gameObject.transform.rotation);
+            GameObject createObject = Instantiate(_brokenObjectPrefab, this.gameObject.transform.position + parentTransform.localPosition, this.gameObject.transform.rotation * parentTransform.localRotation);
 
             Rigidbody rigidbody = createObject.GetComponent<Rigidbody>();
-            Vector3 insideUnitSphere = Random.insideUnitSphere; // 半径 1 の球体の内部のランダムな点を返します
 
-            rigidbody.AddForce(_addImpulse * insideUnitSphere, ForceMode.Impulse);
+            rigidbody.AddForce(_addImpulse * Vector3.Normalize(parentTransform.localPosition), ForceMode.Impulse);
+        }
+        else
+        {
+            // 子オブジェクトを全て取得する(一つ下の階層を対象としてBreakableObjectのタグが付いたモノを呼び出す)
+            foreach (Transform child in parentTransform)
+            {
+                Debug.Log("ChildTagCheck : " + child.tag);
+                if (child.CompareTag("BreakableObject") == false) continue;
+                GameObject createObject = Instantiate(child.gameObject, this.gameObject.transform.position + child.localPosition, this.gameObject.transform.rotation * child.localRotation);
+
+                Rigidbody rigidbody = createObject.GetComponent<Rigidbody>();
+
+                rigidbody.AddForce(_addImpulse * Vector3.Normalize(child.localPosition), ForceMode.Impulse);
+            }
         }
     }
 
