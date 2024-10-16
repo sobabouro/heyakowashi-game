@@ -1,9 +1,22 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
-
 using UnityEngine;
 using System;
+using System.Collections.ObjectModel;
+using static System.IdentityModel.Tokens.SecurityTokenHandlerCollectionManager;
+using static UnityEngine.InputSystem.HID.HID;
+using Unity.VisualScripting;
+
+#if WINDOWS_UWP
+using Windows.Devices.HumanInterfaceDevice;
+using Windows.Devices.Enumeration;
+using Windows.Storage;
+Windows.System.Threading;
+#endif
+
+
+
 public class JoyconManager: MonoBehaviour
 {
 
@@ -24,18 +37,50 @@ public class JoyconManager: MonoBehaviour
     {
         get { return instance; }
     }
-
     void Awake()
     {
+
         if (instance != null) Destroy(gameObject);
         instance = this;
-		int i = 0;
+
+#if WINDOWS_UWP
+		Debug.Log("WINDOWS_UWP");
+		Task.Run(async () =>
+		{
+			Debug.Log("Task");
+			try 
+			{
+				string selector = HidDevice.GetDeviceSelector(0x0005, 0x0001, vendor_id_, product_l);
+				DeviceInformationCollection collection = await DeviceInformation.FindAllAsync(selector);
+				foreach (DeviceInformation inf in collection)
+				{
+					HidDevice dev = await HidDevice.FromIdAsync(inf.Id, FileAccessMode.ReadWrite);
+					if (dev != null)
+					{
+						Debug.Log($"Succeeded to open HID");
+					}
+					else
+					{
+						Debug.Log($"Failed to open HID");
+						var dai = DeviceAccessInformation.CreateFromId(inf.Id);
+						Debug.Log($"CurrentStatus:{dai.CurrentStatus.ToString()}");
+					}
+				}
+			}
+			catch (Exception e)
+			{
+				Debug.Log(e.ToString());
+			}
+		});
+#endif
+
+        int i = 0;
 
 		j = new List<Joycon>();
 		bool isLeft = false;
 		HIDapi.hid_init();
 
-		IntPtr ptr = HIDapi.hid_enumerate(vendor_id, 0x0);
+		IntPtr ptr = HIDapi.hid_enumerate(0x0, 0x0);
 		IntPtr top_ptr = ptr;
 
 		if (ptr == IntPtr.Zero)
@@ -51,8 +96,12 @@ public class JoyconManager: MonoBehaviour
 		while (ptr != IntPtr.Zero) {
 			enumerate = (hid_device_info)Marshal.PtrToStructure (ptr, typeof(hid_device_info));
 
-			Debug.Log (enumerate.product_id);
-				if (enumerate.product_id == product_l || enumerate.product_id == product_r) {
+            Debug.Log($"vendor_id: {enumerate.vendor_id}");
+            Debug.Log($"product_id: {enumerate.product_id}");
+            Debug.Log($"usage_page: {enumerate.usage_page}");
+            Debug.Log($"usage: {enumerate.usage}");
+
+            if (enumerate.product_id == product_l || enumerate.product_id == product_r) {
 					if (enumerate.product_id == product_l) {
 						isLeft = true;
 						Debug.Log ("Left Joy-Con connected.");

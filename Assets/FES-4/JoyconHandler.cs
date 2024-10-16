@@ -8,7 +8,7 @@ public class JoyconHandler : MonoBehaviour
 {
     private List<Joycon> joycons;
 
-    [SerializeField] private Transform cameraTransform;
+    [SerializeField]                                            private Transform cameraTransform;
 
     // Values made available via Unity
     public float[] stick;
