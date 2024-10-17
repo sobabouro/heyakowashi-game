@@ -3,16 +3,14 @@ using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using UnityEngine;
 using System;
-using System.Collections.ObjectModel;
-using static System.IdentityModel.Tokens.SecurityTokenHandlerCollectionManager;
-using static UnityEngine.InputSystem.HID.HID;
 using Unity.VisualScripting;
 
 #if WINDOWS_UWP
+using System.Threading.Tasks;
 using Windows.Devices.HumanInterfaceDevice;
+using Windows.Devices.Bluetooth.Rfcomm;
 using Windows.Devices.Enumeration;
 using Windows.Storage;
-Windows.System.Threading;
 #endif
 
 
@@ -29,6 +27,8 @@ public class JoyconManager: MonoBehaviour
 	private const ushort vendor_id_ = 0x057e;
 	private const ushort product_l = 0x2006;
 	private const ushort product_r = 0x2007;
+    private const ushort usage_page = 0x0001;
+    private const ushort usage_id = 0x0005;
 
     public List<Joycon> j; // Array of all connected Joy-Cons
     static JoyconManager instance;
@@ -39,37 +39,58 @@ public class JoyconManager: MonoBehaviour
     }
     void Awake()
     {
-
         if (instance != null) Destroy(gameObject);
         instance = this;
 
 #if WINDOWS_UWP
 		Debug.Log("WINDOWS_UWP");
 		Task.Run(async () =>
-		{
-			Debug.Log("Task");
+		{				
+			UnityEngine.WSA.Application.InvokeOnAppThread(()=>{
+				Debug.Log("Task start");
+			}, true);
 			try 
 			{
-				string selector = HidDevice.GetDeviceSelector(0x0005, 0x0001, vendor_id_, product_l);
+				string selector = "System.Devices.InterfaceEnabled:=System.StructuredQueryType.Boolean#True AND System.DeviceInterface.Hid.VendorId:=1406 AND System.DeviceInterface.Hid.ProductId:=8198";
+				UnityEngine.WSA.Application.InvokeOnAppThread(()=>{
+					Debug.Log($"selector: {selector}");
+				}, true);
+
 				DeviceInformationCollection collection = await DeviceInformation.FindAllAsync(selector);
+
 				foreach (DeviceInformation inf in collection)
 				{
-					HidDevice dev = await HidDevice.FromIdAsync(inf.Id, FileAccessMode.ReadWrite);
+					UnityEngine.WSA.Application.InvokeOnAppThread(()=>{
+						Debug.Log($"Id: {inf.Id}\nName: {inf.Name}\nKind: {inf.Kind}");
+					}, true);
+
+					HidDevice dev = await HidDevice.FromIdAsync(inf.Id, FileAccessMode.Read);
+
 					if (dev != null)
 					{
-						Debug.Log($"Succeeded to open HID");
+						UnityEngine.WSA.Application.InvokeOnAppThread(()=>{
+							Debug.Log($"Succeeded to open HID");
+						}, true);
 					}
 					else
 					{
-						Debug.Log($"Failed to open HID");
+						UnityEngine.WSA.Application.InvokeOnAppThread(()=>{
+							Debug.Log($"Failed to open HID");
+						}, true);
+
 						var dai = DeviceAccessInformation.CreateFromId(inf.Id);
-						Debug.Log($"CurrentStatus:{dai.CurrentStatus.ToString()}");
+
+						UnityEngine.WSA.Application.InvokeOnAppThread(()=>{
+							Debug.Log($"CurrentStatus:{dai.CurrentStatus.ToString()}");
+						}, true);
 					}
 				}
 			}
 			catch (Exception e)
 			{
-				Debug.Log(e.ToString());
+				UnityEngine.WSA.Application.InvokeOnAppThread(()=>{
+					Debug.Log($"Exception: {e.ToString()}");
+				}, true);
 			}
 		});
 #endif
@@ -80,7 +101,7 @@ public class JoyconManager: MonoBehaviour
 		bool isLeft = false;
 		HIDapi.hid_init();
 
-		IntPtr ptr = HIDapi.hid_enumerate(0x0, 0x0);
+		IntPtr ptr = HIDapi.hid_enumerate(vendor_id, 0x0);
 		IntPtr top_ptr = ptr;
 
 		if (ptr == IntPtr.Zero)

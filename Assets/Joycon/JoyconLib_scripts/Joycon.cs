@@ -5,6 +5,11 @@ using System;
 using System.Threading;
 using UnityEngine;
 
+#if WINDOWS_UWP
+using Windows.Devices.HumanInterfaceDevice;
+#endif
+
+
 public class Joycon
 {
     public enum DebugType : int
@@ -385,6 +390,11 @@ public class Joycon
         while (!stop_polling & state > state_.NO_JOYCONS)
         {
             SendRumble(rumble_obj.GetData());
+
+#if WINDOWS_UWP
+            HidInputReport inputReport = await device.GetInputReportAsync();
+#endif
+
             int a = ReceiveRaw();
             a = ReceiveRaw();
             if (a > 0)
