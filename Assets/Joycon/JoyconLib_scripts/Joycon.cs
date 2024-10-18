@@ -6,7 +6,9 @@ using System.Threading;
 using UnityEngine;
 
 #if WINDOWS_UWP
+using System.Threading.Tasks;
 using Windows.Devices.HumanInterfaceDevice;
+using Windows.Storage.Streams;
 #endif
 
 
@@ -56,8 +58,11 @@ public class Joycon
 
     private float[] stick = { 0, 0 };
 
-    private
-    IntPtr handle;
+    private IntPtr handle;
+
+#if WINDOWS_UWP
+    private HidDevice dev;
+#endif
 
     byte[] default_buf = { 0x0, 0x1, 0x40, 0x40, 0x0, 0x1, 0x40, 0x40 };
 
@@ -206,6 +211,17 @@ public class Joycon
     private byte global_count = 0;
     private string debug_str;
 
+#if WINDOWS_UWP
+    public Joycon(HidDevice dev_, bool imu, bool localize, float alpha, bool left)
+    {
+        dev = dev_;
+        imu_enabled = imu;
+        do_localize = localize;
+        rumble_obj = new Rumble(160, 320, 0);
+        filterweight = alpha;
+        isLeft = left;
+    }
+#else
     public Joycon(IntPtr handle_, bool imu, bool localize, float alpha, bool left)
     {
         handle = handle_;
@@ -215,6 +231,8 @@ public class Joycon
         filterweight = alpha;
         isLeft = left;
     }
+#endif
+
     public void DebugPrint(String s, DebugType d)
     {
         if (debug_type == DebugType.NONE) return;
@@ -318,6 +336,11 @@ public class Joycon
     {
         state = state_.ATTACHED;
         byte[] a = { 0x0 };
+#if WINDOWS_UWP
+        UnityEngine.WSA.Application.InvokeOnAppThread(() => {
+            Debug.Log("Attach");
+        }, true);
+#else
         // Input report mode
         Subcommand(0x3, new byte[] { 0x3f }, 1, false);
         a[0] = 0x1;
@@ -335,6 +358,7 @@ public class Joycon
         Subcommand(0x3, new byte[] { 0x30 }, 1, true);
         Subcommand(0x48, new byte[] { 0x1 }, 1, true);
         DebugPrint("Done with init.", DebugType.COMMS);
+#endif
         return 0;
     }
     public void SetFilterCoeff(float a)
@@ -383,18 +407,49 @@ public class Joycon
         }
         return ret;
     }
+
+#if WINDOWS_UWP
+    private Task PollTaskObj;
+#else
     private Thread PollThreadObj;
+#endif
+
     private void Poll()
     {
+#if WINDOWS_UWP
+        Task.Run(async () =>
+        {
+
+            UnityEngine.WSA.Application.InvokeOnAppThread(() => {
+                Debug.Log("Poll");
+            }, true);
+            while (!stop_polling & state > state_.NO_JOYCONS)
+            {
+                HidInputReport inputReport = await dev.GetInputReportAsync();
+                if (inputReport != null)
+                {
+                    UInt16 id = inputReport.Id;
+                    DataReader dr = DataReader.FromBuffer(inputReport.Data);
+                    byte[] bytes = new byte[inputReport.Data.Length];
+                    dr.ReadBytes(bytes);
+
+                    UnityEngine.WSA.Application.InvokeOnAppThread(() => {
+                        Debug.Log(System.Text.Encoding.ASCII.GetString(bytes));
+                    }, true);
+                }
+                else
+                {
+                    UnityEngine.WSA.Application.InvokeOnAppThread(() => {
+                        Debug.Log("Invalid input report received");
+                    }, true);
+                }
+            }
+        });
+#else
         int attempts = 0;
         while (!stop_polling & state > state_.NO_JOYCONS)
         {
             SendRumble(rumble_obj.GetData());
-
-#if WINDOWS_UWP
-            HidInputReport inputReport = await device.GetInputReportAsync();
-#endif
-
             int a = ReceiveRaw();
             a = ReceiveRaw();
             if (a > 0)
@@ -416,6 +471,7 @@ public class Joycon
             ++attempts;
         }
         DebugPrint("End poll loop.", DebugType.THREADING);
+#endif
     }
     float[] max = { 0, 0, 0 };
     float[] sum = { 0, 0, 0 };
@@ -683,11 +739,38 @@ public class Joycon
 
     public void Begin()
     {
+#if WINDOWS_UWP
+        UnityEngine.WSA.Application.InvokeOnAppThread(() => {
+            Debug.Log("Begin");
+        }, true);
+
+        // Input reports contain data from the device.
+        dev.InputReportReceived += async (sender, args) =>
+        {
+            HidInputReport inputReport = args.Report;
+            UInt16 id = inputReport.Id;
+            DataReader dr = DataReader.FromBuffer(inputReport.Data);
+            byte[] bytes = new byte[inputReport.Data.Length];
+            dr.ReadBytes(bytes);
+
+            UnityEngine.WSA.Application.InvokeOnAppThread(() => {
+                Debug.Log($"Length: {inputReport.Data.Length.ToString()}\n{inputReport.ToString()}");
+            }, true);
+        };
+        /*
+        if (PollTaskObj == null)
+        {
+            PollTaskObj = new Task(() => Poll());
+            PollTaskObj.Start();
+        }
+        */
+#else
         if (PollThreadObj == null)
         {
             PollThreadObj = new Thread(new ThreadStart(Poll));
             PollThreadObj.Start();
         }
+#endif
     }
     public void Recenter()
     {
