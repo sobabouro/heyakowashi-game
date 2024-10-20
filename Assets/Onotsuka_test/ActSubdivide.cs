@@ -5,6 +5,7 @@ using UnityEngine;
 using System.Linq;
 using System.Reflection;
 using System.CodeDom;
+using MixedReality.Toolkit.SpatialManipulation;
 
 // 切断対象オブジェクトの参照
 
@@ -35,7 +36,6 @@ public class ActSubdivide : MonoBehaviour {
     private static Vector2[]      targetUVs;
     // 切断対象のオブジェクトの情報操作用
     private static int            targetVerticesLength;
-    private static List<Vector3>  targetVerticesList;
     private static List<Vector3>  newVerticesList;
     private static List<int[]>    vertexPairList;
     public static List<List<int>> joinedVertexGroupList;
@@ -45,41 +45,68 @@ public class ActSubdivide : MonoBehaviour {
     public static string[]        vertexType;
     // 切断面左側のポリゴン情報
     public static List<int>       leftTriangles;
+    public static List<Vector3>   leftVertices;
     public static List<Vector3>   leftNormals;
     public static List<Vector2>   leftUVs;
     // 切断面右側のポリゴン情報
     public static List<int>       rightTriangles;
+    public static List<Vector3>   rightVertices;
     public static List<Vector3>   rightNormals;
     public static List<Vector2>   rightUVs;
 
+    // Degug 用
+    private bool interval = false;
+    private const float X_ROTATION     = 20f; 
+    private const float Y_ROTATION     = 30f; 
+    private const float Z_ROTATION     = 0f;
+    public Vector3      positionOffset = new Vector3(1f, 1f, 0.1f);
+
     private void Start() {
-        Plane cutter = new Plane(transform.right, transform.position);
+        Invoke("CutOK", 0.5f);
+        //    // x軸、y軸、z軸の回転をそれぞれ作成
+        //    Quaternion xRotationQuaternion = Quaternion.Euler(X_ROTATION, 0f, 0f);
+        //    Quaternion yRotationQuaternion = Quaternion.Euler(0f, Y_ROTATION, 0f);
+        //    Quaternion zRotationQuaternion = Quaternion.Euler(0f, 0f, Z_ROTATION);
 
-        // surfaceMaterial が null でないかを確認
-        if (surfaceMaterial == null) {
-            Debug.LogError("surfaceMaterial is null");
-            return;
-        }
+        //    Quaternion combinedRotation = xRotationQuaternion * yRotationQuaternion * zRotationQuaternion;
+        //    Vector3 rotatedNormal = combinedRotation * transform.right;
+        //    Vector3 customPosition = transform.position + positionOffset;
 
-        // mainTexture が null でないかを確認
-        if (surfaceMaterial.mainTexture == null) {
-            Debug.LogError("surfaceMaterial.mainTexture is null");
-            return;
-        }
+        //    Plane cutter = new Plane(rotatedNormal, customPosition);
 
-        // mainTexture を Texture2D にキャスト
-        albedoTexture = surfaceMaterial.mainTexture as Texture2D;
-        if (albedoTexture == null) {
-            Debug.LogError("mainTexture is not a Texture2D");
-            return;
-        }
+        //    // surfaceMaterial が null でないかを確認
+        //    if (surfaceMaterial == null) {
+        //        Debug.LogError("surfaceMaterial is null");
+        //        return;
+        //    }
 
-        Subdivide(cutter);
-        Destroy(this.gameObject);
+        //    // mainTexture が null でないかを確認
+        //    if (surfaceMaterial.mainTexture == null) {
+        //        Debug.LogError("surfaceMaterial.mainTexture is null");
+        //        return;
+        //    }
+
+        //    // mainTexture を Texture2D にキャスト
+        //    albedoTexture = surfaceMaterial.mainTexture as Texture2D;
+        //    if (albedoTexture == null) {
+        //        Debug.LogError("mainTexture is not a Texture2D");
+        //        return;
+        //    }
+
+        //    Subdivide(cutter);
+    }
+    private void CutOK() {
+        interval = true;
     }
 
     // メインメソッド
     public void Subdivide(Plane cutter) {
+
+        if (interval == false) {
+            return;
+        }
+        interval = false;
+
         // 切断対象のオブジェクトのメッシュ情報
         Mesh targetMesh       = this.GetComponent<MeshFilter>().mesh;
         targetTriangles       = targetMesh.triangles;
@@ -88,20 +115,22 @@ public class ActSubdivide : MonoBehaviour {
         targetUVs             = targetMesh.uv;
         // 切断対象のオブジェクトの情報操作用
         targetVerticesLength  = targetVertices.Length;
-        targetVerticesList    = new List<Vector3>(targetVertices);
         newVerticesList       = new List<Vector3>();
         vertexPairList        = new List<int[]>();
         joinedVertexGroupList = new List<List<int>>();
         // 切断面左側のポリゴン情報
         leftTriangles         = new List<int>();
+        leftVertices          = new List<Vector3>();
         leftNormals           = new List<Vector3>();
         leftUVs               = new List<Vector2>();
         // 切断面右側のポリゴン情報
         rightTriangles        = new List<int>();
+        rightVertices         = new List<Vector3>();
         rightNormals          = new List<Vector3>();
         rightUVs              = new List<Vector2>();
 
         // 切断対象のオブジェクトの各ポリゴンの左右判定用
+        int rightSortingHat = 0, leftSortingHat = 0;
         bool vertexTruthValue1, vertexTruthValue2, vertexTruthValue3;
 
         /* ****************************** */
@@ -115,27 +144,35 @@ public class ActSubdivide : MonoBehaviour {
             //対象の三角形ポリゴンの頂点すべてが右側にある場合
             if (vertexTruthValue1 && vertexTruthValue2 && vertexTruthValue3) {
                 AddToRightSide(
-                    i, 
+                    i,
+                    ref rightSortingHat, 
                     targetTriangles, 
+                    targetVertices,
                     targetUVs, 
                     rightTriangles, 
+                    rightVertices,
                     rightUVs
                 );
             }
             // 対象の三角形ポリゴンの頂点すべてが左側にある場合
             else if (!vertexTruthValue1 && !vertexTruthValue2 && !vertexTruthValue3) {
                 AddToLeftSide(
-                    i, 
-                    targetTriangles, 
-                    targetUVs, 
-                    leftTriangles, 
+                    i,
+                    ref leftSortingHat,
+                    targetTriangles,
+                    targetVertices,
+                    targetUVs,
+                    leftTriangles,
+                    leftVertices,
                     leftUVs
                 );
             }
             // 対象の三角形ポリゴンの頂点が左右に分かれている場合
             else {
                 ProcessMixedTriangle(
-                    i, 
+                    i,
+                    ref rightSortingHat,
+                    ref leftSortingHat,
                     cutter,
                     vertexTruthValue1,
                     vertexTruthValue2,
@@ -143,12 +180,13 @@ public class ActSubdivide : MonoBehaviour {
                     targetTriangles,
                     targetVertices,
                     targetUVs,
-                    targetVerticesList,
                     newVerticesList,
                     vertexPairList,
                     rightTriangles,
-                    leftTriangles, 
+                    rightVertices,
                     rightUVs,
+                    leftTriangles,
+                    leftVertices,
                     leftUVs
                 );
             }
@@ -180,106 +218,137 @@ public class ActSubdivide : MonoBehaviour {
             joinedVertexGroupList, 
             nonConvexGeometryList
         );
-
-        // albedoTexture が null でないかを確認
-        if (albedoTexture == null) {
-            Debug.LogError("albedoTexture is null before calling TriangulateMonotonePolygon");
-            return;
-        }
-
         // 単調多角形を三角形分割する
         ComputationalGeometryAlgorithm.TriangulateMonotonePolygon(
-            targetVerticesLength, 
-            new2DVerticesArray, 
-            jointedMonotoneVertexGroupList, 
-            albedoTexture, 
-            rightTriangles, 
-            rightUVs, 
-            leftTriangles, 
+            cutter.normal, 
+            targetVerticesLength,
+            ref rightSortingHat,
+            ref leftSortingHat,
+            new2DVerticesArray,
+            newVerticesList,
+            jointedMonotoneVertexGroupList,
+            albedoTexture,
+            rightTriangles,
+            rightVertices,
+            rightUVs,
+            leftTriangles,
+            leftVertices,
             leftUVs
         );
         // 生成したメッシュ情報を整理する
-        targetVerticesList.AddRange(newVerticesList);
 
         // 新しいオブジェクトを生成する
         CreateObject(
-            targetVerticesList.ToArray(),
-            rightTriangles.ToArray(),
-            rightUVs.ToArray()
+            rightVertices,
+            rightTriangles,
+            rightUVs
         );
-        CreateRigidObject(
-            targetVerticesList.ToArray(),
-            leftTriangles.ToArray(),
-            leftUVs.ToArray()
+        CreateObject(
+            leftVertices,
+            leftTriangles,
+            leftUVs
         );
+        Destroy(this.gameObject);
     }
 
     // オブジェクト生成用メソッド
     private void CreateObject(
-        Vector3[] vertices, 
-        int[] triangles, 
-        Vector2[] uvs
+        List<Vector3> cutVertices, 
+        List<int> cutTriangles, 
+        List<Vector2> cutUVs
     ) {
-        GameObject newObject = Instantiate(newGameObjectPrefab);
-        newObject.AddComponent<MeshFilter>();
-        newObject.AddComponent<MeshRenderer>();
-        Mesh mesh = newObject.GetComponent<MeshFilter>().mesh;
-        mesh.Clear();
-        mesh.SetVertices(vertices);
-        mesh.uv = uvs;
-        mesh.SetTriangles(triangles, 0);
+        //GameObject newObject = Instantiate(newGameObjectPrefab);
+        //newObject.AddComponent<MeshFilter>();
+        //newObject.AddComponent<MeshRenderer>();
+        //Mesh mesh = newObject.GetComponent<MeshFilter>().mesh;
+        //mesh.Clear();
+        //mesh.SetVertices(cutVertices);
+        //mesh.uv = cutUVs.ToArray();
+        //mesh.SetTriangles(cutTriangles, 0);
+        //mesh.RecalculateNormals();
+        //mesh.RecalculateBounds();
+        //mesh.Optimize();
+
+        GameObject obj = new GameObject("cut obj", typeof(MeshFilter), typeof(MeshRenderer), typeof(MeshCollider), typeof(Rigidbody), typeof(ActSubdivide));
+        var mesh = new Mesh();
+        mesh.vertices = cutVertices.ToArray();
+        mesh.triangles = cutTriangles.ToArray();
+        mesh.uv = cutUVs.ToArray();
         mesh.RecalculateNormals();
-        mesh.RecalculateBounds();
-        mesh.Optimize();
+        obj.GetComponent<MeshFilter>().mesh = mesh;
+        obj.GetComponent<MeshRenderer>().materials = GetComponent<MeshRenderer>().materials;
+        obj.GetComponent<MeshCollider>().sharedMesh = mesh;
+        obj.GetComponent<MeshCollider>().cookingOptions = MeshColliderCookingOptions.CookForFasterSimulation;
+        obj.GetComponent<MeshCollider>().convex = true;
+        obj.GetComponent<MeshCollider>().material = GetComponent<Collider>().material;
+        obj.transform.position = transform.position;
+        obj.transform.rotation = transform.rotation;
+        obj.transform.localScale = transform.localScale;
+        obj.GetComponent<Rigidbody>().velocity = GetComponent<Rigidbody>().velocity;
+        obj.GetComponent<Rigidbody>().angularVelocity = GetComponent<Rigidbody>().angularVelocity;
+        obj.GetComponent<ObjectManipulator>();
+        obj.GetComponent<ActSubdivide>().surfaceMaterial = surfaceMaterial;
     }
 
-    // リジッドボディ付きオブジェクト生成用メソッド
-    private void CreateRigidObject(
-        Vector3[] vertices, 
-        int[] triangles, 
-        Vector2[] uvs
-    ) {
-        GameObject newObject = Instantiate(newGameObjectPrefab);
-        newObject.AddComponent<MeshFilter>();
-        newObject.AddComponent<MeshRenderer>();
-        Rigidbody rigid = newObject.AddComponent<Rigidbody>();
-        Mesh mesh = newObject.GetComponent<MeshFilter>().mesh;
-
-        mesh.Clear();
-        mesh.SetVertices(vertices);
-        mesh.uv = uvs;
-        mesh.SetTriangles(triangles, 0);
-        mesh.RecalculateNormals();
-        mesh.RecalculateBounds();
-        mesh.Optimize();
-    }
-
-    private void AddToRightSide(
-        int           triangleOffset, 
-        int[]         targetTriangles, 
+    // 右側メッシュ情報の挿入
+    private static void AddToRightSide(
+        int           triangleOffset,
+        ref int       rightOffset,
+        int[]         targetTriangles,
+        Vector3[]     targetVertices,
         Vector2[]     targetUVs, 
-        List<int>     rightTriangles, 
+        List<int>     rightTriangles,
+        List<Vector3> rightVertices,
         List<Vector2> rightUVs
     ) {
-        for (int k = 0; k < 3; k++) {
-            rightUVs.Add(targetUVs[targetTriangles[triangleOffset + k]]);
-            rightTriangles.Add(targetTriangles[triangleOffset + k]);
-        }
+        rightTriangles.Add(rightOffset++);
+        rightTriangles.Add(rightOffset++);
+        rightTriangles.Add(rightOffset++);
+
+        rightVertices.AddRange(new Vector3[] {
+            targetVertices[targetTriangles[triangleOffset]],
+            targetVertices[targetTriangles[triangleOffset + 1]],
+            targetVertices[targetTriangles[triangleOffset + 2]]
+        });
+        rightUVs.AddRange(new Vector2[] {
+            targetUVs[targetTriangles[triangleOffset]],
+            targetUVs[targetTriangles[triangleOffset + 1]],
+            targetUVs[targetTriangles[triangleOffset + 2]]
+        });
     }
-    private void AddToLeftSide(
-        int           triangleOffset, 
+
+    // 左側メッシュ情報の挿入
+    private static void AddToLeftSide(
+        int           triangleOffset,
+        ref int       leftOffset,
         int[]         targetTriangles, 
+        Vector3[]     targetVertices,
         Vector2[]     targetUVs, 
         List<int>     leftTriangles, 
+        List<Vector3> leftVertices,
         List<Vector2> leftUVs
     ) {
-        for (int k = 0; k < 3; k++) {
-            leftUVs.Add(targetUVs[targetTriangles[triangleOffset + k]]);
-            leftTriangles.Add(targetTriangles[triangleOffset + k]);
-        }
+        leftTriangles.Add(leftOffset++);
+        leftTriangles.Add(leftOffset++);
+        leftTriangles.Add(leftOffset++);
+
+        leftVertices.AddRange(new Vector3[] {
+            targetVertices[targetTriangles[triangleOffset]],
+            targetVertices[targetTriangles[triangleOffset + 1]],
+            targetVertices[targetTriangles[triangleOffset + 2]]
+        });
+        leftUVs.AddRange(new Vector2[] {
+            targetUVs[targetTriangles[triangleOffset]],
+            targetUVs[targetTriangles[triangleOffset + 1]],
+            targetUVs[targetTriangles[triangleOffset + 2]]
+        });
     }
-    private void ProcessMixedTriangle(
-        int           triangleOffset, 
+
+    // 切断面上メッシュ情報の挿入
+    private static void ProcessMixedTriangle(
+        int           triangleOffset,
+        ref int       rightOffset,
+        ref int       leftOffset,
         Plane         cutter, 
         bool          vertexTruthValue1, 
         bool          vertexTruthValue2, 
@@ -287,12 +356,13 @@ public class ActSubdivide : MonoBehaviour {
         int[]         targetTriangles, 
         Vector3[]     targetVertices, 
         Vector2[]     targetUVs, 
-        List<Vector3> targetVerticesList, 
         List<Vector3> newVerticesList, 
         List<int[]>   vertexPairList, 
-        List<int>     rightTriangles,
-        List<int>     leftTriangles, 
+        List<int>     rightTriangles, 
+        List<Vector3> rightVertices, 
         List<Vector2> rightUVs, 
+        List<int>     leftTriangles, 
+        List<Vector3> leftVertices, 
         List<Vector2> leftUVs
     ) {
         ( // ポリゴンの頂点情報を扱いやすいように整理する
@@ -305,6 +375,20 @@ public class ActSubdivide : MonoBehaviour {
             targetTriangles[triangleOffset + 1], vertexTruthValue2, targetVertices[targetTriangles[triangleOffset + 1]],
             targetTriangles[triangleOffset + 2], vertexTruthValue3, targetVertices[targetTriangles[triangleOffset + 2]]
         );
+        // 切断面上に孤独な頂点がある場合，GetSide() で判定しきれないので，ここで処理する
+        //if (rtlf == false && Mathf.Abs(cutter.GetDistanceToPoint(lonelyVertex)) < 0.0001f) {
+        //    AddToRightSide(
+        //        triangleOffset,
+        //        ref rightOffset,
+        //        targetTriangles,
+        //        targetVertices,
+        //        targetUVs,
+        //        rightTriangles,
+        //        rightVertices,
+        //        rightUVs
+        //    );
+        //    return;
+        //}
         ( // 新しい頂点を生成する
             Vector3 newStartPairVertex, 
             Vector3 newLastPairVertex, 
@@ -316,7 +400,7 @@ public class ActSubdivide : MonoBehaviour {
         ( // 新しいUV座標を生成する
             Vector2 newUV1, 
             Vector2 newUV2
-        ) = SegmentedPolygonsUtils.GenerateNewUV (
+        ) = SegmentedPolygonsUtils.GenerateNewUV(
             ratio_LonelyAsStart, 
             ratio_LonelyAsLast,
             targetUVs[vertexIndex1], 
@@ -324,84 +408,128 @@ public class ActSubdivide : MonoBehaviour {
             targetUVs[vertexIndex3]
         );
         ( // 重複頂点の処理を行う (辺の始点)
-            bool deltrueSV, 
+            bool deltrueSV,
             int newVertexIndexSV
-        ) = SegmentedPolygonsUtils.InsertAndDeleteVertices (
-            targetVerticesLength, 
-            newStartPairVertex, 
+        ) = SegmentedPolygonsUtils.InsertAndDeleteVertices(
+            targetVerticesLength,
+            newStartPairVertex,
             newVerticesList
         );
-        if (deltrueSV == false) {
+        if (deltrueSV == false)
             newVerticesList.Add(newStartPairVertex);
-            targetVerticesList.Add(newStartPairVertex);
-        }
         ( // 重複頂点の処理を行う (辺の終点)
-            bool deltrueLV, 
+            bool deltrueLV,
             int newVertexIndexLV
-        ) = SegmentedPolygonsUtils.InsertAndDeleteVertices (
-            targetVerticesLength, 
-            newLastPairVertex, 
+        ) = SegmentedPolygonsUtils.InsertAndDeleteVertices(
+            targetVerticesLength,
+            newLastPairVertex,
             newVerticesList
         );
-        if (deltrueLV == false) {
+        if (deltrueLV == false)
             newVerticesList.Add(newLastPairVertex);
-            targetVerticesList.Add(newLastPairVertex);
-        }
         // のちに頂点インデックスをもとに，こいつはこいつで頂点グルーピングするので保存しておく
-        int [] newVertexSet =  new int[] {newVertexIndexSV - targetVerticesLength, newVertexIndexLV - targetVerticesLength};
-        vertexPairList.Add(newVertexSet);
+        if (newStartPairVertex != newLastPairVertex)
+            vertexPairList.Add(new int[] { newVertexIndexSV - targetVerticesLength, newVertexIndexLV - targetVerticesLength });
 
         /* ********************************* */
         /* 孤独な頂点が無限平面の右側にある場合 */
         /* ********************************* */
         if (rtlf) {
             // 切断ポリゴン右側を生成する処理
-            rightUVs.Add(targetUVs[vertexIndex1]);
-            rightUVs.Add(newUV1);
-            rightUVs.Add(newUV2);
-            rightTriangles.Add(vertexIndex1);
-            rightTriangles.Add(newVertexIndexSV);
-            rightTriangles.Add(newVertexIndexLV);
+            rightTriangles.Add(rightOffset++);
+            rightTriangles.Add(rightOffset++);
+            rightTriangles.Add(rightOffset++);
+
+            rightVertices.AddRange(new Vector3[] { 
+                targetVertices[vertexIndex1], 
+                newStartPairVertex, 
+                newLastPairVertex 
+            });
+            rightUVs.AddRange(new Vector2[] { 
+                targetUVs[vertexIndex1], 
+                newUV1, 
+                newUV2 
+            });
             // 切断ポリゴン左側一つ目を生成する処理
-            leftUVs.Add(newUV1);
-            leftUVs.Add(targetUVs[vertexIndex2]);
-            leftUVs.Add(targetUVs[vertexIndex3]);
-            leftTriangles.Add(newVertexIndexSV);
-            leftTriangles.Add(vertexIndex2);
-            leftTriangles.Add(vertexIndex3);
+            leftTriangles.Add(leftOffset++);
+            leftTriangles.Add(leftOffset++);
+            leftTriangles.Add(leftOffset++);
+
+            leftVertices.AddRange(new Vector3[] {
+                newStartPairVertex,
+                targetVertices[vertexIndex2],
+                targetVertices[vertexIndex3]
+            });
+            leftUVs.AddRange(new Vector2[] {
+                newUV1,
+                targetUVs[vertexIndex2],
+                targetUVs[vertexIndex3]
+            });
             // 切断ポリゴン左側二つ目を生成する処理
-            leftUVs.Add(targetUVs[vertexIndex3]);
-            leftUVs.Add(newUV2);
-            leftUVs.Add(newUV1);
-            leftTriangles.Add(vertexIndex3);
-            leftTriangles.Add(newVertexIndexLV);
-            leftTriangles.Add(newVertexIndexSV);
+            leftTriangles.Add(leftOffset++);
+            leftTriangles.Add(leftOffset++);
+            leftTriangles.Add(leftOffset++);
+
+            leftVertices.AddRange(new Vector3[] {
+                targetVertices[vertexIndex3],
+                newLastPairVertex,
+                newStartPairVertex
+            });
+            leftUVs.AddRange(new Vector2[] {
+                targetUVs[vertexIndex3],
+                newUV2,
+                newUV1
+            });
         }
         /* ********************************* */
         /* 孤独な頂点が無限平面の左側にある場合 */
         /* ********************************* */
         else {
             // 切断ポリゴン左側を生成する処理
-            leftUVs.Add(targetUVs[vertexIndex1]);
-            leftUVs.Add(newUV1);
-            leftUVs.Add(newUV2);
-            leftTriangles.Add(vertexIndex1);
-            leftTriangles.Add(newVertexIndexLV);
-            leftTriangles.Add(newVertexIndexSV);
+            leftTriangles.Add(leftOffset++);
+            leftTriangles.Add(leftOffset++);
+            leftTriangles.Add(leftOffset++);
+
+            leftVertices.AddRange(new Vector3[] {
+                targetVertices[vertexIndex1],
+                newLastPairVertex, 
+                newStartPairVertex
+            });
+            leftUVs.AddRange(new Vector2[] {
+                targetUVs[vertexIndex1],
+                newUV1,
+                newUV2
+            });
             // 切断ポリゴン右側一つ目を生成する処理
-            rightUVs.Add(newUV1);
-            rightUVs.Add(targetUVs[vertexIndex2]);
-            rightUVs.Add(targetUVs[vertexIndex3]);
-            rightTriangles.Add(newVertexIndexLV);
-            rightTriangles.Add(vertexIndex2);
-            rightTriangles.Add(vertexIndex3);
+            rightTriangles.Add(rightOffset++);
+            rightTriangles.Add(rightOffset++);
+            rightTriangles.Add(rightOffset++);
+
+            rightVertices.AddRange(new Vector3[] {
+                newLastPairVertex,
+                targetVertices[vertexIndex2],
+                targetVertices[vertexIndex3]
+            });
+            rightUVs.AddRange(new Vector2[] {
+                newUV1,
+                targetUVs[vertexIndex2],
+                targetUVs[vertexIndex3]
+            });
             // 切断ポリゴン右側二つ目を生成する処理
-            rightUVs.Add(targetUVs[vertexIndex3]);
-            rightUVs.Add(newUV2);
-            rightUVs.Add(newUV1);
-            rightTriangles.Add(vertexIndex3);
-            rightTriangles.Add(newVertexIndexSV);
-            rightTriangles.Add(newVertexIndexLV);
+            rightTriangles.Add(rightOffset++);
+            rightTriangles.Add(rightOffset++);
+            rightTriangles.Add(rightOffset++);
+
+            rightVertices.AddRange(new Vector3[] {
+                targetVertices[vertexIndex3],
+                newStartPairVertex,
+                newLastPairVertex
+            });
+            rightUVs.AddRange(new Vector2[] {
+                targetUVs[vertexIndex3],
+                newUV2,
+                newUV1
+            });
         }
     }
 
@@ -462,20 +590,25 @@ public class ActSubdivide : MonoBehaviour {
         ) {
             Ray ray1 = new Ray(lonelyVertex, startPairVertex - lonelyVertex);
             Ray ray2 = new Ray(lonelyVertex, lastPairVertex - lonelyVertex);
-            float distance1 = 0.0f;
-            plane.Raycast(ray1, out distance1);
-            Vector3 newStartPairVertex = ray1.GetPoint(distance1);
-            float distance2 = 0.0f;
-            plane.Raycast(ray2, out distance2);
-            Vector3 newLastPairVertex = ray2.GetPoint(distance2);
+            double distance1 = 0.0;
+            plane.Raycast(ray1, out float tempDistance1);
+            distance1 = (double)tempDistance1;
+            Vector3 newStartPairVertex = ray1.GetPoint((float)distance1);
 
-            float ratio_LonelyStart = distance1 / Vector3.Distance(lonelyVertex, startPairVertex);
-            float ratio_LonelyLast = distance2 / Vector3.Distance(lonelyVertex, lastPairVertex);
+            double distance2 = 0.0;
+            plane.Raycast(ray2, out float tempDistance2);
+            distance2 = (double)tempDistance2;
+            Vector3 newLastPairVertex = ray2.GetPoint((float)distance2);
+
+            double distanceLonelyStart = Vector3.Distance(lonelyVertex, startPairVertex);
+            double distanceLonelyLast = Vector3.Distance(lonelyVertex, lastPairVertex);
+
+            float ratio_LonelyStart = (float)(distance1 / distanceLonelyStart);
+            float ratio_LonelyLast = (float)(distance2 / distanceLonelyLast);
 
             if (rtlf) {
                 return (newStartPairVertex, newLastPairVertex, ratio_LonelyStart, ratio_LonelyLast);
-            }
-            else {
+            } else {
                 return (newLastPairVertex, newStartPairVertex, ratio_LonelyStart, ratio_LonelyLast);
             }
         }
@@ -682,7 +815,7 @@ public class ActSubdivide : MonoBehaviour {
                 Vector3 pointOnPlane = vertices[i] - planePoint;
                 float x = Vector3.Dot(pointOnPlane, u);
                 float y = Vector3.Dot(pointOnPlane, v);
-                result[i] = new Vector2(x, -y);
+                result[i] = new Vector2(x, y);
             }
 
             return result;
@@ -1215,13 +1348,19 @@ public class ActSubdivide : MonoBehaviour {
 
         // 対角線リストと辺リストをもとに，トライアングルを左右のトライアングルリストに挿入する．ついでに UV も生成する
         public static void TriangulateMonotonePolygon(
+            Vector3 normal, 
             int targetVerticesLength, 
+            ref int rightOffset, 
+            ref int leftOffset,
             Vector2[] new2DVerticesArray, 
+            List<Vector3> newVerticesList, 
             List<List<int>> jointedMonotoneVertexGroupList, 
             Texture2D albedoTexture,
             List<int> rightTriangles, 
+            List<Vector3> rightVertices,
             List<Vector2> rightUVs,
-            List<int> leftTriangles, 
+            List<int> leftTriangles,
+            List<Vector3> leftVertices,
             List<Vector2> leftUVs
         ) {
             List<int[]> vertexConnection;
@@ -1233,6 +1372,8 @@ public class ActSubdivide : MonoBehaviour {
 
             float geometryWidth;
             float geometryHeight;
+
+            RemoveCollinearVertices(jointedMonotoneVertexGroupList, new2DVerticesArray);
 
             // テクスチャマッピングのための，最大値と最小値の座標を持つ頂点のインデックスを取得する
             (overallRightIndex, overallLeftIndex, overallTopIndex, overallBottomIndex) = FindOverallMaxAndMinVertexIndices(
@@ -1273,10 +1414,6 @@ public class ActSubdivide : MonoBehaviour {
                 stack.Push(vertexConnection[1]);
                 // 3番目の頂点から最後の頂点までループ
                 for (int j = 2; j < vertexConnection.Count; j++) {
-
-                    // 直前のスタック操作の保存
-                    //int[] previousElement, currentElement;
-
                     // v_j と stack.Peek() が異なる境界上の頂点同士である場合
                     if (vertexConnection[j][1] != stack.Peek()[1]) {
                         // stack のすべての頂点との間に対角線を引いた三角形を生成する
@@ -1296,22 +1433,26 @@ public class ActSubdivide : MonoBehaviour {
                                 (new2DVerticesArray[vertexConnection[j][0]].x - new2DVerticesArray[overallLeftIndex].x) / geometryWidth, (new2DVerticesArray[vertexConnection[j][0]].y - new2DVerticesArray[overallBottomIndex].y) / geometryHeight
                             );
 
-                            // 境界の左右によってトライアングルの挿入順序が異なる
-                            if (vertexConnection[j][1] == 1) {
-                                rightTriangles.AddRange(new int[] { point1[0] + targetVerticesLength, point2[0] + targetVerticesLength, vertexConnection[j][0] + targetVerticesLength });
-                                leftTriangles.AddRange(new int[] { point2[0] + targetVerticesLength, point1[0] + targetVerticesLength, vertexConnection[j][0] + targetVerticesLength });
-                                rightUVs.AddRange(new Vector2[] { uv1, uv2, uv3 });
-                                leftUVs.AddRange(new Vector2[] { uv2, uv1, uv3 });
-                            } 
-                            else {
-                                rightTriangles.AddRange(new int[] { point2[0] + targetVerticesLength, point1[0] + targetVerticesLength, vertexConnection[j][0] + targetVerticesLength });
-                                leftTriangles.AddRange(new int[] { point1[0] + targetVerticesLength, point2[0] + targetVerticesLength, vertexConnection[j][0] + targetVerticesLength });
-                                rightUVs.AddRange(new Vector2[] { uv2, uv1, uv3 });
-                                leftUVs.AddRange(new Vector2[] { uv1, uv2, uv3 });
-                            }
-                            // stack に v_j-1 と v_j を保存する
-                            //currentElement = 
-                            //previousElement = vertexConnection[j];
+                            rightTriangles.Add(rightOffset++);
+                            rightTriangles.Add(rightOffset++);
+                            rightTriangles.Add(rightOffset++);
+                            leftTriangles.Add(leftOffset++);
+                            leftTriangles.Add(leftOffset++);
+                            leftTriangles.Add(leftOffset++);
+
+                            InsertBasedOnNormal(
+                                normal,
+                                rightVertices,
+                                rightUVs,
+                                leftVertices,
+                                leftUVs,
+                                newVerticesList[point1[0]],
+                                newVerticesList[point2[0]],
+                                newVerticesList[vertexConnection[j][0]], 
+                                uv1,
+                                uv2,
+                                uv3
+                            );
                         }
                         // stack に v_j-1 と v_j を追加する
                         stack.Push(vertexConnection[j - 1]);
@@ -1327,6 +1468,7 @@ public class ActSubdivide : MonoBehaviour {
 
                             // 3点が三角形を構成する場合のみ処理を行う
                             if (MathUtils.IsTriangle(new2DVerticesArray[point1[0]], new2DVerticesArray[point2[0]], new2DVerticesArray[vertexConnection[j][0]])) {
+
                                 // 境界の右側で，v_jからの対角線が図形内部 (左) にある場合
                                 if (vertexConnection[j][1] == 1 && MathUtils.IsLeft(new2DVerticesArray[vertexConnection[j][0]], new2DVerticesArray[point1[0]], new2DVerticesArray[point2[0]])) {
 
@@ -1341,10 +1483,26 @@ public class ActSubdivide : MonoBehaviour {
                                         (new2DVerticesArray[vertexConnection[j][0]].x - new2DVerticesArray[overallLeftIndex].x) / geometryWidth, (new2DVerticesArray[vertexConnection[j][0]].y - new2DVerticesArray[overallBottomIndex].y) / geometryHeight
                                     );
 
-                                    rightTriangles.AddRange(new int[] { point1[0] + targetVerticesLength, point2[0] + targetVerticesLength, vertexConnection[j][0] + targetVerticesLength });
-                                    leftTriangles.AddRange(new int[] { point2[0] + targetVerticesLength, point1[0] + targetVerticesLength, vertexConnection[j][0] + targetVerticesLength });
-                                    rightUVs.AddRange(new Vector2[] { uv1, uv2, uv3 });
-                                    leftUVs.AddRange(new Vector2[] { uv2, uv1, uv3 });
+                                    rightTriangles.Add(rightOffset++);
+                                    rightTriangles.Add(rightOffset++);
+                                    rightTriangles.Add(rightOffset++);
+                                    leftTriangles.Add(leftOffset++);
+                                    leftTriangles.Add(leftOffset++);
+                                    leftTriangles.Add(leftOffset++);
+
+                                    InsertBasedOnNormal(
+                                        normal,
+                                        rightVertices,
+                                        rightUVs,
+                                        leftVertices,
+                                        leftUVs,
+                                        newVerticesList[point1[0]],
+                                        newVerticesList[point2[0]],
+                                        newVerticesList[vertexConnection[j][0]],
+                                        uv1,
+                                        uv2,
+                                        uv3
+                                    );
 
                                     // stack に v_k-1 と v_j を追加する
                                     if (stack.Count == 0) {
@@ -1367,10 +1525,26 @@ public class ActSubdivide : MonoBehaviour {
                                         (new2DVerticesArray[vertexConnection[j][0]].x - new2DVerticesArray[overallLeftIndex].x) / geometryWidth, (new2DVerticesArray[vertexConnection[j][0]].y - new2DVerticesArray[overallBottomIndex].y) / geometryHeight
                                     );
 
-                                    rightTriangles.AddRange(new int[] { point2[0] + targetVerticesLength, point1[0] + targetVerticesLength, vertexConnection[j][0] + targetVerticesLength });
-                                    leftTriangles.AddRange(new int[] { point1[0] + targetVerticesLength, point2[0] + targetVerticesLength, vertexConnection[j][0] + targetVerticesLength });
-                                    rightUVs.AddRange(new Vector2[] { uv2, uv1, uv3 });
-                                    leftUVs.AddRange(new Vector2[] { uv1, uv2, uv3 });
+                                    rightTriangles.Add(rightOffset++);
+                                    rightTriangles.Add(rightOffset++);
+                                    rightTriangles.Add(rightOffset++);
+                                    leftTriangles.Add(leftOffset++);
+                                    leftTriangles.Add(leftOffset++);
+                                    leftTriangles.Add(leftOffset++);
+
+                                    InsertBasedOnNormal(
+                                        normal,
+                                        rightVertices,
+                                        rightUVs,
+                                        leftVertices,
+                                        leftUVs,
+                                        newVerticesList[point1[0]],
+                                        newVerticesList[point2[0]],
+                                        newVerticesList[vertexConnection[j][0]],
+                                        uv1,
+                                        uv2,
+                                        uv3
+                                    );
 
                                     // stack に v_k-1 と v_j を追加する
                                     if (stack.Count == 0) {
@@ -1403,8 +1577,97 @@ public class ActSubdivide : MonoBehaviour {
                         }
                     }
                 }
-                // 最後の頂点との三角形を生成する
+            }
+        }
 
+        // 平面の法線と三角形の法線の向きから順番を決定して，左右に挿入する
+        public static void InsertBasedOnNormal(
+            Vector3 normal,
+            List<Vector3> rightVertices,
+            List<Vector2> rightUVs,
+            List<Vector3> leftVertices,
+            List<Vector2> leftUVs,
+            Vector3 point_1,
+            Vector3 point_2,
+            Vector3 point_j, 
+            Vector2 uv1,
+            Vector2 uv2,
+            Vector2 uv3
+        ) {
+            // 三角形の法線を計算
+            Vector3 edge1 = point_2 - point_1;
+            Vector3 edge2 = point_j - point_1;
+            Vector3 triangleNormal = Vector3.Cross(edge1, edge2).normalized;
+            // ドット積を計算
+            float dotProduct = Vector3.Dot(normal, triangleNormal);
+            // 正なら同じ向き、負なら逆向き
+            if (dotProduct > 0) {
+                rightVertices.AddRange(new Vector3[] {
+                    point_2,
+                    point_1,
+                    point_j
+                });
+                rightUVs.AddRange(new Vector2[] {
+                    uv2,
+                    uv1,
+                    uv3
+                });
+                leftVertices.AddRange(new Vector3[] {
+                    point_1,
+                    point_2,
+                    point_j
+                });
+                leftUVs.AddRange(new Vector2[] {
+                    uv1,
+                    uv2,
+                    uv3
+                });
+            } 
+            else {
+                rightVertices.AddRange(new Vector3[] {
+                    point_1,
+                    point_2,
+                    point_j
+                });
+                rightUVs.AddRange(new Vector2[] {
+                    uv1,
+                    uv2,
+                    uv3
+                });
+                leftVertices.AddRange(new Vector3[] {
+                    point_2,
+                    point_1,
+                    point_j
+                });
+                leftUVs.AddRange(new Vector2[] {
+                    uv2,
+                    uv1,
+                    uv3
+                });
+            }
+        }
+
+        // 同一直線状の頂点を削除する
+        public static void RemoveCollinearVertices(List<List<int>> jointedMonotoneVertexGroupList, Vector2[] new2DVerticesArray) {
+            for (int g = 0; g < jointedMonotoneVertexGroupList.Count; g++) {
+                List<int> group = jointedMonotoneVertexGroupList[g];
+                int count = group.Count;
+
+                for (int i = 0; i < count - 2; i++) {
+                    // 現在の点と次の点、次の次の点を取得
+                    Vector2 internalVertex = new2DVerticesArray[group[i]];
+                    Vector2 terminalVertex = new2DVerticesArray[group[i + 1]];
+                    Vector2 nextPoint = new2DVerticesArray[group[i + 2]];
+
+                    // 直線上にあるかどうかを確認
+                    if (Math.Abs(MathUtils.CrossProduct(internalVertex, terminalVertex, nextPoint)) < 1e-6) // 十分小さい値で比較
+                    {
+                        // 直線上の点を削除
+                        group.RemoveAt(i + 1);
+                        i--; // インデックスを戻して連続した点を確認
+                        count--; // リストのサイズを更新
+                    }
+                }
             }
         }
 
@@ -1503,14 +1766,13 @@ public class ActSubdivide : MonoBehaviour {
             Vector2[] new2DVerticesArray, 
             List<int[]> vertexConnection
         ) {
-            // 配列を対応する頂点の y座標 > x座標 の優先度で降順にソート
             vertexConnection.Sort((a, b) => {
-                // y 座標を比較（降順）
+                // y座標を比較（降順）
                 int compareY = new2DVerticesArray[b[0]].y.CompareTo(new2DVerticesArray[a[0]].y);
                 if (compareY != 0) {
                     return compareY;
                 }
-                // y 座標が等しければ x 座標を比較（降順）
+                // y座標が等しければx座標を比較（降順）
                 return new2DVerticesArray[b[0]].x.CompareTo(new2DVerticesArray[a[0]].x);
             });
         }
@@ -1526,21 +1788,21 @@ public class ActSubdivide : MonoBehaviour {
                 vertexConnection, 
                 top
             );
-            // rightConnection: topからbottomまでの間の右側の境界を辿る
+            // rightConnection: topからbottomまでの間の左側の境界を辿る
             for (int i = 1; i < vertexConnection.Count - 1; i++) {
                 if (vertexConnection[i][0] == bottom) {
                     break;
                 }
                 // 新しい配列を作成して追加
-                vertexConnection[i][1] = 1;
+                vertexConnection[i][1] = -1;
             }
-            // leftConnection: topからbottomまでの間の左側の境界を辿る
+            // leftConnection: topからbottomまでの間の右側の境界を辿る
             for (int i = vertexConnection.Count - 1; i > 0; i--) {
                 if (vertexConnection[i][0] == bottom) {
                     break;
                 }
                 // 新しい配列を作成して追加
-                vertexConnection[i][1] = -1;
+                vertexConnection[i][1] = 1;
             }
         }
     }
@@ -1565,7 +1827,7 @@ public class MathUtils {
         Vector2 terminalVertex, 
         Vector2 point
     ) {
-        return CrossProduct(internalVertex, terminalVertex, point) < 0;
+        return CrossProduct(internalVertex, terminalVertex, point) > 0;
     }
 
     // 頂点が右回りであることが前提
@@ -1574,7 +1836,7 @@ public class MathUtils {
         Vector2 terminalVertex, 
         Vector2 point
     ) {
-        return CrossProduct(internalVertex, terminalVertex, point) > 0;
+        return CrossProduct(internalVertex, terminalVertex, point) < 0;
     }
 
     // 三角形を構成するかどうかを判定する
