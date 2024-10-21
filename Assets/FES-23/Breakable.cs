@@ -97,8 +97,7 @@ public class Breakable : MonoBehaviour
         {
             case Type.slash:
                 // Slashクラスを呼び出す
-                Debug.Log("Destroy! : " + this.gameObject);
-                Destroy(this.gameObject);
+                this.gameObject.GetComponent<Slash_easy>().CallSlash();
                 break;
             case Type.crash:
                 // Crashクラスを呼び出す
