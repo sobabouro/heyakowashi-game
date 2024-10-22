@@ -19,7 +19,7 @@ public class StartDirector : MonoBehaviour
         if (Input.GetMouseButtonDown(0))
         {
             // ƒV[ƒ“‚ğ•ÏX
-            sceneController.ChangeToTargetScene("Title_Test2");
+            sceneController.ChangeToTargetScene("Main");
         }
     }
 }
