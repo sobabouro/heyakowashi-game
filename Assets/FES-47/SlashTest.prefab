@@ -17,6 +17,8 @@ GameObject:
   - component: {fileID: 6709340066078989922}
   - component: {fileID: 6709340066078989923}
   - component: {fileID: 6709340066078989944}
+  - component: {fileID: 5626171565854081865}
+  - component: {fileID: 6804303616402977316}
   m_Layer: 0
   m_Name: Cylinder
   m_TagString: BreakableObject
@@ -399,6 +401,37 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   _addImpulse: 1
+--- !u!114 &5626171565854081865
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6709340066078989934}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b6507cc4ac2e9274f9535b6a6a031042, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _canCallBrokenObject: 0
+  _brokenObjectPrefab: {fileID: 0}
+  onBreakEvent:
+    m_PersistentCalls:
+      m_Calls: []
+  _addImpulse: 1
+--- !u!114 &6804303616402977316
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6709340066078989934}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0cbee23cb4e3b094887d5156658febe6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  durabilityRecoveryAmount: 500
 --- !u!1 &6709340066603170694
 GameObject:
   m_ObjectHideFlags: 0
@@ -418,6 +451,8 @@ GameObject:
   - component: {fileID: 6709340066603170714}
   - component: {fileID: 6709340066603170712}
   - component: {fileID: 6709340066603170706}
+  - component: {fileID: 5845577881871026927}
+  - component: {fileID: 6733981727158415466}
   m_Layer: 0
   m_Name: Cube
   m_TagString: BreakableObject
@@ -848,6 +883,37 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   _addImpulse: 1
+--- !u!114 &5845577881871026927
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6709340066603170694}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b6507cc4ac2e9274f9535b6a6a031042, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _canCallBrokenObject: 0
+  _brokenObjectPrefab: {fileID: 0}
+  onBreakEvent:
+    m_PersistentCalls:
+      m_Calls: []
+  _addImpulse: 1
+--- !u!114 &6733981727158415466
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6709340066603170694}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0cbee23cb4e3b094887d5156658febe6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  durabilityRecoveryAmount: 100
 --- !u!1 &6709340067300384309
 GameObject:
   m_ObjectHideFlags: 0
@@ -901,6 +967,8 @@ GameObject:
   - component: {fileID: 6709340067352848873}
   - component: {fileID: 6709340067352848791}
   - component: {fileID: 6709340067352848865}
+  - component: {fileID: 7243800727379025856}
+  - component: {fileID: 2123878465784179447}
   m_Layer: 0
   m_Name: Cube (1)
   m_TagString: BreakableObject
@@ -1331,6 +1399,37 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   _addImpulse: 10
+--- !u!114 &7243800727379025856
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6709340067352848789}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b6507cc4ac2e9274f9535b6a6a031042, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _canCallBrokenObject: 0
+  _brokenObjectPrefab: {fileID: 0}
+  onBreakEvent:
+    m_PersistentCalls:
+      m_Calls: []
+  _addImpulse: 1
+--- !u!114 &2123878465784179447
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6709340067352848789}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0cbee23cb4e3b094887d5156658febe6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  durabilityRecoveryAmount: 50
 --- !u!1 &6709340067533197715
 GameObject:
   m_ObjectHideFlags: 0
