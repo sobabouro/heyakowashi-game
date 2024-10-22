@@ -100,7 +100,7 @@ public class ActSubdivide : MonoBehaviour {
     }
 
     // メインメソッド
-    public void Subdivide(Plane cutter) {
+            　　　　    public void Subdivide(Plane cutter) {
 
         if (interval == false) {
             return;
