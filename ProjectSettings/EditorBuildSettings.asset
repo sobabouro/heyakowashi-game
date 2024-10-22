@@ -5,6 +5,15 @@ EditorBuildSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Scenes:
+<<<<<<< HEAD
+=======
+  - enabled: 1
+    path: Assets/Miyashita/Scenes/Title_Test.unity
+    guid: e370ad6db611a954980fad24028c7611
+  - enabled: 1
+    path: Assets/Miyashita/Scenes/Title_Test2.unity
+    guid: f0fcc19c79282ea4d9c6d138fcaa7cfa
+>>>>>>> d752eb680544057a13981e268bef92e78bb24e31
   - enabled: 0
     path: Assets/Matsumoto/Scenes/Matsumoto_Test.unity
     guid: d15b8bf835fb6b343a0b87fa934f23c9
