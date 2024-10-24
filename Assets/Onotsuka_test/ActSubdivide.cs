@@ -6,6 +6,7 @@ using System.Linq;
 using System.Reflection;
 using System.CodeDom;
 using MixedReality.Toolkit.SpatialManipulation;
+using UnityEngine.UIElements;
 
 // 切断対象オブジェクトの参照
 
@@ -23,36 +24,36 @@ using MixedReality.Toolkit.SpatialManipulation;
 public class ActSubdivide : MonoBehaviour {
 
     [SerializeField]
-    private GameObject            newGameObjectPrefab;
+    private GameObject     newGameObjectPrefab;
 
     [SerializeField, Tooltip("切断面に適用するマテリアル")]
-    private Material              surfaceMaterial;
-    private Texture2D             albedoTexture;
+    private Material       surfaceMaterial;
+    private Texture2D      albedoTexture;
 
     // 切断対象のオブジェクトのメッシュ情報
-    private static int[]          targetTriangles;
-    private static Vector3[]      targetVertices;
-    private static Vector3[]      targetNormals;
-    private static Vector2[]      targetUVs;
+    private int[]          targetTriangles;
+    private Vector3[]      targetVertices;
+    private Vector3[]      targetNormals;
+    private Vector2[]      targetUVs;
     // 切断対象のオブジェクトの情報操作用
-    private static int            targetVerticesLength;
-    private static List<Vector3>  newVerticesList;
-    private static List<int[]>    vertexPairList;
-    public static List<List<int>> joinedVertexGroupList;
-    public static List<List<int>> jointedMonotoneVertexGroupList;
-    public static List<List<int>> nonConvexGeometryList;
-    public static Vector2[]       new2DVerticesArray;
-    public static string[]        vertexType;
+    // public int            targetVerticesLength;
+    // public List<Vector3>  newVerticesList;
+    // public List<int[]>    vertexPairList;
+    // public List<List<int>> joinedVertexGroupList;
+    // public List<List<int>> jointedMonotoneVertexGroupList;
+    // public List<List<int>> nonConvexGeometryList;
+    // public Vector2[]       new2DVerticesArray;
+    // public string[]        vertexType;
     // 切断面左側のポリゴン情報
-    public static List<int>       leftTriangles;
-    public static List<Vector3>   leftVertices;
-    public static List<Vector3>   leftNormals;
-    public static List<Vector2>   leftUVs;
+    public List<int>       leftTriangles;
+    public List<Vector3>   leftVertices;
+    public List<Vector3>   leftNormals;
+    public List<Vector2>   leftUVs;
     // 切断面右側のポリゴン情報
-    public static List<int>       rightTriangles;
-    public static List<Vector3>   rightVertices;
-    public static List<Vector3>   rightNormals;
-    public static List<Vector2>   rightUVs;
+    public List<int>       rightTriangles;
+    public List<Vector3>   rightVertices;
+    public List<Vector3>   rightNormals;
+    public List<Vector2>   rightUVs;
 
     // Degug 用
     private bool interval = false;
@@ -100,7 +101,7 @@ public class ActSubdivide : MonoBehaviour {
     }
 
     // メインメソッド
-            　　　　    public void Subdivide(Plane cutter) {
+    public void Subdivide(Plane cutter) {
 
         if (interval == false) {
             return;
@@ -114,10 +115,11 @@ public class ActSubdivide : MonoBehaviour {
         targetNormals         = targetMesh.normals;
         targetUVs             = targetMesh.uv;
         // 切断対象のオブジェクトの情報操作用
-        targetVerticesLength  = targetVertices.Length;
-        newVerticesList       = new List<Vector3>();
-        vertexPairList        = new List<int[]>();
-        joinedVertexGroupList = new List<List<int>>();
+        int targetVerticesLength = targetVertices.Length;
+        List<Vector3> newVerticesList       = new List<Vector3>();
+        List<VertexJudge> newVertexJudge = new List<VertexJudge>();
+        List<int[]> vertexPairList        = new List<int[]>();
+        List<List<int>> joinedVertexGroupList = new List<List<int>>();
         // 切断面左側のポリゴン情報
         leftTriangles         = new List<int>();
         leftVertices          = new List<Vector3>();
@@ -132,6 +134,12 @@ public class ActSubdivide : MonoBehaviour {
         // 切断対象のオブジェクトの各ポリゴンの左右判定用
         int rightSortingHat = 0, leftSortingHat = 0;
         bool vertexTruthValue1, vertexTruthValue2, vertexTruthValue3;
+
+        Debug.Log("====================");
+        Debug.Log("targetTriangles " + string.Join(", ", targetTriangles.Select(obj => obj.ToString())));
+        Debug.Log("targetVertices " + string.Join(", ", targetVertices.Select(obj => obj.ToString())));
+        Debug.Log("targetUVs " + string.Join(", ", targetUVs.Select(obj => obj.ToString())));
+        Debug.Log("====================");
 
         /* ****************************** */
         /* 断面の左右のポリゴンを生成する */
@@ -177,10 +185,12 @@ public class ActSubdivide : MonoBehaviour {
                     vertexTruthValue1,
                     vertexTruthValue2,
                     vertexTruthValue3,
+                    targetVerticesLength,
                     targetTriangles,
                     targetVertices,
                     targetUVs,
                     newVerticesList,
+                    newVertexJudge,
                     vertexPairList,
                     rightTriangles,
                     rightVertices,
@@ -195,29 +205,55 @@ public class ActSubdivide : MonoBehaviour {
         /* 断面上のポリゴンを生成する */
         /* ************************** */
 
+        if (rightTriangles.Count < 4 || leftTriangles.Count < 4) {
+            Debug.Log("rightTriangles.Count == 0 || leftTriangles.Count == 0");
+            return;
+        }
+
+        Debug.Log("newVerticesList " + string.Join(", ", newVerticesList.Select(obj => obj.ToString("F8"))));
+
+        // ひとつなぎの辺で形成されるすべての図形をリストアップする
+        joinedVertexGroupList = GeometryUtils.GroupingForDetermineGeometry(
+            vertexPairList,
+            joinedVertexGroupList
+        );
+
+        Debug.Log("joinedVertexGroupList: " + string.Join(", ", joinedVertexGroupList.Select(a => "(" + string.Join(", ", a.Select(b => b.ToString())) + ")")));
+
+        if (joinedVertexGroupList[0].Count == 0) {
+            Debug.Log("nothing joinedVertexGroupList");
+            return;
+        }
+
+        //Debug.Log("joinedVertexGroupList: " + string.Join(", ", joinedVertexGroupList.Select(a => "(" + string.Join(", ", a.Select(b => b.ToString())) + ")")));
+
         // 新頂点の二次元座標変換する
-        new2DVerticesArray = new Vector2[newVerticesList.Count];
+        Vector2[] new2DVerticesArray = new Vector2[newVerticesList.Count];
         new2DVerticesArray = GeometryUtils.ConvertCoordinates3DTo2D(
             cutter, 
             newVerticesList
         );
-        // ひとつなぎの辺で形成されるすべての図形をリストアップする
-        joinedVertexGroupList = GeometryUtils.GroupingForDetermineGeometry(
-            vertexPairList, 
-            joinedVertexGroupList
-        );
+
+        Debug.Log("new2DVerticesArray " + string.Join(", ", new2DVerticesArray.Select(obj => obj.ToString())));
+
         // 最も外郭となる処理図形 (内包図形の有無に関わらない) ごとにグループ化する
-        nonConvexGeometryList = GeometryUtils.GroupingForSegmentNonMonotoneGeometry(
+        List<List<int>> nonConvexGeometryList = GeometryUtils.GroupingForSegmentNonMonotoneGeometry(
             new2DVerticesArray, 
             joinedVertexGroupList
         );
+
+        //Debug.Log("nonConvexGeometryList: " + string.Join(", ", nonConvexGeometryList.Select(a => "(" + string.Join(", ", a.Select(b => b.ToString())) + ")")));
+
         // 処理図形に対して，単調多角形分割を行う
-        jointedMonotoneVertexGroupList = new List<List<int>>();
+        List<List<int>> jointedMonotoneVertexGroupList = new List<List<int>>();
         jointedMonotoneVertexGroupList = ComputationalGeometryAlgorithm.MakeMonotone(
             new2DVerticesArray, 
             joinedVertexGroupList, 
             nonConvexGeometryList
         );
+
+        //Debug.Log("jointedMonotoneVertexGroupList: " + string.Join(", ", jointedMonotoneVertexGroupList.Select(a => "(" + string.Join(", ", a.Select(b => b.ToString())) + ")")));
+
         // 単調多角形を三角形分割する
         ComputationalGeometryAlgorithm.TriangulateMonotonePolygon(
             cutter.normal, 
@@ -236,7 +272,7 @@ public class ActSubdivide : MonoBehaviour {
             leftUVs
         );
         // 生成したメッシュ情報を整理する
-
+        
         // 新しいオブジェクトを生成する
         CreateObject(
             rightVertices,
@@ -346,24 +382,26 @@ public class ActSubdivide : MonoBehaviour {
 
     // 切断面上メッシュ情報の挿入
     private static void ProcessMixedTriangle(
-        int           triangleOffset,
-        ref int       rightOffset,
-        ref int       leftOffset,
-        Plane         cutter, 
-        bool          vertexTruthValue1, 
-        bool          vertexTruthValue2, 
-        bool          vertexTruthValue3, 
-        int[]         targetTriangles, 
-        Vector3[]     targetVertices, 
-        Vector2[]     targetUVs, 
-        List<Vector3> newVerticesList, 
-        List<int[]>   vertexPairList, 
-        List<int>     rightTriangles, 
-        List<Vector3> rightVertices, 
-        List<Vector2> rightUVs, 
-        List<int>     leftTriangles, 
-        List<Vector3> leftVertices, 
-        List<Vector2> leftUVs
+        int               triangleOffset,
+        ref int           rightOffset,
+        ref int           leftOffset,
+        Plane             cutter, 
+        bool              vertexTruthValue1, 
+        bool              vertexTruthValue2, 
+        bool              vertexTruthValue3, 
+        int               targetVerticesLength,
+        int[]             targetTriangles, 
+        Vector3[]         targetVertices, 
+        Vector2[]         targetUVs,
+        List<Vector3>     newVerticesList,
+        List<VertexJudge> newVertexJudge, 
+        List<int[]>       vertexPairList, 
+        List<int>         rightTriangles, 
+        List<Vector3>     rightVertices, 
+        List<Vector2>     rightUVs, 
+        List<int>         leftTriangles, 
+        List<Vector3>     leftVertices, 
+        List<Vector2>     leftUVs
     ) {
         ( // ポリゴンの頂点情報を扱いやすいように整理する
             bool rtlf, 
@@ -376,19 +414,19 @@ public class ActSubdivide : MonoBehaviour {
             targetTriangles[triangleOffset + 2], vertexTruthValue3, targetVertices[targetTriangles[triangleOffset + 2]]
         );
         // 切断面上に孤独な頂点がある場合，GetSide() で判定しきれないので，ここで処理する
-        //if (rtlf == false && Mathf.Abs(cutter.GetDistanceToPoint(lonelyVertex)) < 0.0001f) {
-        //    AddToRightSide(
-        //        triangleOffset,
-        //        ref rightOffset,
-        //        targetTriangles,
-        //        targetVertices,
-        //        targetUVs,
-        //        rightTriangles,
-        //        rightVertices,
-        //        rightUVs
-        //    );
-        //    return;
-        //}
+        if (rtlf == false && Mathf.Abs(cutter.GetDistanceToPoint(lonelyVertex)) < 0.0001f) {
+            AddToRightSide(
+                triangleOffset,
+                ref rightOffset,
+                targetTriangles,
+                targetVertices,
+                targetUVs,
+                rightTriangles,
+                rightVertices,
+                rightUVs
+            );
+            return;
+        }
         ( // 新しい頂点を生成する
             Vector3 newStartPairVertex, 
             Vector3 newLastPairVertex, 
@@ -397,6 +435,9 @@ public class ActSubdivide : MonoBehaviour {
         ) = SegmentedPolygonsUtils.GenerateNewVertex(
             cutter, rtlf, lonelyVertex, startPairVertex, lastPairVertex
         );
+
+        //Debug.Log("newStartPairVertex " + newStartPairVertex.ToString());
+
         ( // 新しいUV座標を生成する
             Vector2 newUV1, 
             Vector2 newUV2
@@ -407,16 +448,27 @@ public class ActSubdivide : MonoBehaviour {
             targetUVs[vertexIndex2], 
             targetUVs[vertexIndex3]
         );
+        int[] pairVertex = new int[2] { vertexIndex1, vertexIndex2 };
         ( // 重複頂点の処理を行う (辺の始点)
-            bool deltrueSV,
+            bool deltrueSV, 
             int newVertexIndexSV
         ) = SegmentedPolygonsUtils.InsertAndDeleteVertices(
             targetVerticesLength,
-            newStartPairVertex,
+            newStartPairVertex, 
             newVerticesList
         );
-        if (deltrueSV == false)
+        if (deltrueSV == false) {
+            newVertexJudge.Add(new VertexJudge(
+                pairVertex,
+                newVertexIndexSV
+            ));
             newVerticesList.Add(newStartPairVertex);
+        }
+
+        //Debug.Log("deltrueSV " + deltrueSV.ToString());
+        //Debug.Log("newStartPairVertex " + newStartPairVertex.ToString("F8"));
+
+        pairVertex = new int[2] { vertexIndex1, vertexIndex3 };
         ( // 重複頂点の処理を行う (辺の終点)
             bool deltrueLV,
             int newVertexIndexLV
@@ -425,15 +477,26 @@ public class ActSubdivide : MonoBehaviour {
             newLastPairVertex,
             newVerticesList
         );
-        if (deltrueLV == false)
+        if (deltrueLV == false) {
+            newVertexJudge.Add(new VertexJudge(
+                pairVertex,
+                newVertexIndexLV
+            ));
             newVerticesList.Add(newLastPairVertex);
+        }
+
+        //Debug.Log("deltrueLV " + deltrueLV.ToString());
+        //Debug.Log("newLastPairVertex " + newLastPairVertex.ToString("F8"));
+
+        //Debug.Log("newVerticesList " + string.Join(", ", newVerticesList.Select(obj => obj.ToString("F8"))));
+
         // のちに頂点インデックスをもとに，こいつはこいつで頂点グルーピングするので保存しておく
         if (newStartPairVertex != newLastPairVertex)
             vertexPairList.Add(new int[] { newVertexIndexSV - targetVerticesLength, newVertexIndexLV - targetVerticesLength });
 
-        /* ********************************* */
+        /* ****************************** */
         /* 孤独な頂点が無限平面の右側にある場合 */
-        /* ********************************* */
+        /* ****************************** */
         if (rtlf) {
             // 切断ポリゴン右側を生成する処理
             rightTriangles.Add(rightOffset++);
@@ -481,9 +544,9 @@ public class ActSubdivide : MonoBehaviour {
                 newUV1
             });
         }
-        /* ********************************* */
+        /* ****************************** */
         /* 孤独な頂点が無限平面の左側にある場合 */
-        /* ********************************* */
+        /* ****************************** */
         else {
             // 切断ポリゴン左側を生成する処理
             leftTriangles.Add(leftOffset++);
@@ -641,17 +704,25 @@ public class ActSubdivide : MonoBehaviour {
             int targetVerticesLength,
             Vector3 newVertex, 
             List<Vector3> newVerticesList
+            //int[] pairVertex,
+            //List<VertexJudge> newVertexJudge
         ) {
-            int listCount = newVerticesList.Count;
-            int newVertexIndex = listCount;
+            int newVertexIndex = newVerticesList.Count;
             bool deltrue = false;
             // 新頂点リストの中に重複する頂点があれば，その頂点のインデックスを返す
-            for (int duplicateIndex = 0; duplicateIndex < listCount; duplicateIndex++) {
+            for (int duplicateIndex = 0; duplicateIndex < newVerticesList.Count; duplicateIndex++) {
                 if (newVerticesList[duplicateIndex] == newVertex) {
                     newVertexIndex = duplicateIndex;
                     deltrue = true;
                     break;
                 }
+
+                //if (pairVertex.OrderBy(v => v).SequenceEqual(newVertexJudge[duplicateIndex].PairVertices.OrderBy(v => v))) {
+                //    newVertexIndex = newVertexJudge[duplicateIndex].VertexIndex;
+                //    newVertexJudge.RemoveAt(duplicateIndex);
+                //    deltrue = true;
+                //    break;
+                //}
             }
             return (deltrue, newVertexIndex + targetVerticesLength);
         }
@@ -666,8 +737,16 @@ public class ActSubdivide : MonoBehaviour {
             List<List<int>> joinedVertexGroupList
         ) {
             HashSet<int[]> remainingVertexPairList = new HashSet<int[]>(vertexPairList);
+            int fleeze700_1 = 0;
+            int fleeze700_2 = 0;
 
             while (remainingVertexPairList.Count > 0) {
+                fleeze700_1++;
+                if (fleeze700_1> 1000) {
+                    Debug.Log("vertexPairList " + string.Join(", ", vertexPairList.Select(obj => obj.ToString())));
+                    Debug.LogError("fleeze");
+                    break;
+                }
                 List<int> geometry = new List<int>();
                 // 最初のEdgeの開始点と終点を取得
                 int[] currentEdge = remainingVertexPairList.First();
@@ -679,6 +758,12 @@ public class ActSubdivide : MonoBehaviour {
                 geometry.Add(endVertex);
                 // 頂点が一周するまでループ
                 while (startVertex != endVertex) {
+                    fleeze700_2++;
+                    if (fleeze700_2 > 1000) {
+                        Debug.Log("vertexPairList: " + string.Join(", ", vertexPairList.Select(a => "(" + string.Join(", ", a.Select(b => b.ToString())) + ")")));
+                        Debug.LogError("fleeze");
+                        break;
+                    }
                     // 残りの頂点リストから、前回の終点から始まるEdgeを探す
                     foreach (int[] edge in remainingVertexPairList) {
                         // 終点を更新、頂点グループに追加し、削除する
@@ -902,14 +987,14 @@ public class ActSubdivide : MonoBehaviour {
     */
 
         // 新頂点の種類を格納する配列
-        private static string[] vertexType;
+        // private static string[] vertexType;
         // 処理図形グループ n に属する辺リスト
-        private static List<int[]> monotoneEdgeList;
+        // private static List<int[]> monotoneEdgeList;
         // 処理図形グループを単調多角形分割するための対角線リスト
-        private static List<int[]> monotoneDiagonalList;
-        private static NodeReference[] part_nonConvexGeometryNodesJagAry;
+        // private static List<int[]> monotoneDiagonalList;
+        // private static NodeReference[] part_nonConvexGeometryNodesJagAry;
         // 各辺のヘルパー配列
-        private static RefInt[] helper;
+        // private static RefInt[] helper;
 
         // 処理図形グループの数だけ，単調多角形分割を行う
         public static List<List<int>> MakeMonotone(
@@ -917,26 +1002,29 @@ public class ActSubdivide : MonoBehaviour {
             List<List<int>> joinedVertexGroupList, 
             List<List<int>> nonConvexGeometryList
         ) {
-            vertexType = new string[new2DVerticesArray.Length];
-            jointedMonotoneVertexGroupList = new List<List<int>>();
+            string[] vertexType = new string[new2DVerticesArray.Length];
+            List<List<int>> jointedMonotoneVertexGroupList = new List<List<int>>();
 
             // 新頂点を種類ごとに分類する
             vertexType = ClusteringVertexType(
                 new2DVerticesArray, 
                 joinedVertexGroupList
             );
-
+            List<int[]> monotoneEdgeList;
+            List<int[]> monotoneDiagonalList = new List<int[]>();
+            NodeReference[] part_nonConvexGeometryNodesJagAry;
+            RefInt[] helper;
             // 処理図形グループごとに，単調多角形分割を行う
             for (int processingCount = 0; processingCount < nonConvexGeometryList.Count; processingCount++) {
-                monotoneEdgeList = new List<int[]>();
-                monotoneDiagonalList = new List<int[]>();
+
                 // ノード配列と辺リストを生成する
                 (
                     helper,
                     part_nonConvexGeometryNodesJagAry, 
                     monotoneEdgeList
                 ) = GenerateNodeReference(
-                    processingCount, 
+                    processingCount,
+                    new2DVerticesArray.Length,
                     nonConvexGeometryList, 
                     joinedVertexGroupList
                 );
@@ -1029,6 +1117,7 @@ public class ActSubdivide : MonoBehaviour {
             List<int[]> monotoneEdgeList
         ) GenerateNodeReference(
             int targetGeometry, 
+            int new2DVerticesArrayLength,
             List<List<int>> nonConvexGeometryList, 
             List<List<int>> joinedVertexGroupList
         ) {
@@ -1044,7 +1133,7 @@ public class ActSubdivide : MonoBehaviour {
             //RefInt[][] part_nonConvexGeometryNodesJagAry = new RefInt[total][];
             NodeReference[] part_nonConvexGeometryNodesJagAry = new NodeReference[total];
             // ヘルパー配列を初期化する
-            RefInt[] helper = new RefInt[new2DVerticesArray.Length];
+            RefInt[] helper = new RefInt[new2DVerticesArrayLength];
 
             // ヘルパー配列に参照を格納する
             for (int i = 0; i < nonConvexGeometryList[targetGeometry].Count; i++) {
@@ -1304,7 +1393,15 @@ public class ActSubdivide : MonoBehaviour {
             List<int[]> monotoneDiagonalList, 
             List<int[]> monotoneEdgeList
         ) {
+            int fleeze1360_1 = 0;
+            int fleeze1360_2 = 0;
             while (monotoneEdgeList.Count > 0) {
+                fleeze1360_1++;
+                if (fleeze1360_1 > 1000) {
+                    Debug.Log("monotoneEdgeList " + string.Join(", ", monotoneEdgeList.Select(obj => obj.ToString())));
+                    Debug.LogError("fleeze");
+                    break;
+                }
                 // 最初のDiagonalEdgeの開始点と終点を取得
                 int startVertex = monotoneEdgeList[0][0];
                 int endVertex = monotoneEdgeList[0][1];
@@ -1315,6 +1412,12 @@ public class ActSubdivide : MonoBehaviour {
                 MathUtils.SwapAndRemoveAt(monotoneEdgeList, 0);
                 // 頂点が一周するまでループ
                 while (startVertex != endVertex) {
+                    fleeze1360_2++;
+                    if (fleeze1360_2 > 1000) {
+                        Debug.Log("currentGroup " + string.Join(", ", currentGroup.Select(obj => obj.ToString())));
+                        Debug.LogError("fleeze");
+                        break;
+                    }
                     bool found = false;
                     // 辺リストから、前回の終点から始まる Edge を探す (in diagonal)
                     for (int i = 0; i < monotoneDiagonalList.Count; i++) {
@@ -1373,6 +1476,9 @@ public class ActSubdivide : MonoBehaviour {
             float geometryWidth;
             float geometryHeight;
 
+            int fleeze1440_1 = 0;
+            int fleeze1440_2 = 0;
+
             RemoveCollinearVertices(jointedMonotoneVertexGroupList, new2DVerticesArray);
 
             // テクスチャマッピングのための，最大値と最小値の座標を持つ頂点のインデックスを取得する
@@ -1419,6 +1525,13 @@ public class ActSubdivide : MonoBehaviour {
                         // stack のすべての頂点との間に対角線を引いた三角形を生成する
                         while (stack.Count > 0) {
 
+                            fleeze1440_1++;
+                            if (fleeze1440_1 > 1000) {
+                                Debug.Log("vertexConnection " + string.Join(", ", vertexConnection.Select(obj => obj.ToString())));
+                                Debug.LogError("fleeze");
+                                break;
+                            }
+
                             int[] point1 = stack.Pop();
                             int[] point2 = stack.Count == 1 ? stack.Pop() : stack.Peek();
 
@@ -1462,6 +1575,13 @@ public class ActSubdivide : MonoBehaviour {
                     else {
                         // stack.Peek() までの境界線が図形の内部にある限り，繰り返し三角形を生成する
                         while (stack.Count > 0) {
+
+                            fleeze1440_2++;
+                            if (fleeze1440_2 > 1000) {
+                                Debug.Log("vertexConnection " + string.Join(", ", vertexConnection.Select(obj => obj.ToString())));
+                                Debug.LogError("fleeze");
+                                break;
+                            }
 
                             int[] point1 = stack.Pop();
                             int[] point2 = stack.Count == 1 ? stack.Pop() : stack.Peek();
@@ -1864,9 +1984,18 @@ public class MathUtils {
         int target
     ) {
         int index = 0;
+        int freeze2000 = 0;
 
         // 配列の先頭から順番に確認していき、target に到達するまで繰り返す
         while (index < list.Count && list[index][0] != target) {
+
+            freeze2000++;
+            if (freeze2000 > 1000) {
+                Debug.Log("list " + string.Join(", ", list.Select(obj => obj.ToString())));
+                Debug.LogError("fleeze");
+                break;
+            }
+
             // 先頭要素を取得し、リストの最後に追加
             int[] elementToMove = list[index];
             list.Add(elementToMove);
@@ -1918,6 +2047,26 @@ public class Pointer<T> {
 }
 
 // 構造体定義
+public struct VertexJudge {
+    private int[] pairVertices;
+    private int vertexIndex;
+
+    public int[] PairVertices {
+        get => pairVertices;
+        set => pairVertices = value;
+    }
+    public int VertexIndex {
+        get => vertexIndex;
+        set => vertexIndex = value;
+    }
+    // コンストラクタを定義
+    public VertexJudge(int[] pairVertices, int vertexIndex) {
+        this.pairVertices = pairVertices;
+        this.vertexIndex = vertexIndex;
+    }
+}
+
+// 構造体定義
 public struct NodeReference {
     private RefInt previousVertex;          // 直前の頂点
     private RefInt currentVertex;           // 現在の頂点
@@ -1952,6 +2101,7 @@ public struct NodeReference {
         set => currentHelper = value;
     }
 
+    // コンストラクタを定義
     public NodeReference(RefInt previousVertex, RefInt currentVertex, Pointer<RefInt> previousHelper, Pointer<RefInt> currentHelper) {
         this.previousVertex = previousVertex;
         this.currentVertex = currentVertex;

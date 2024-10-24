@@ -232,6 +232,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   newGameObjectPrefab: {fileID: 2904058938881811521, guid: 5ca23e8908693f2438dde951ee6f13c0, type: 3}
   surfaceMaterial: {fileID: 2100000, guid: f09598de1e0c79b4a9bdb199ff896ed8, type: 2}
+  leftTriangles: 
+  leftVertices: []
+  leftNormals: []
+  leftUVs: []
+  rightTriangles: 
+  rightVertices: []
+  rightNormals: []
+  rightUVs: []
   positionOffset: {x: 1, y: 1, z: 0.1}
 --- !u!1 &324572479 stripped
 GameObject:
@@ -522,6 +530,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   newGameObjectPrefab: {fileID: 2904058938881811521, guid: 5ca23e8908693f2438dde951ee6f13c0, type: 3}
   surfaceMaterial: {fileID: 2100000, guid: f09598de1e0c79b4a9bdb199ff896ed8, type: 2}
+  leftTriangles: 
+  leftVertices: []
+  leftNormals: []
+  leftUVs: []
+  rightTriangles: 
+  rightVertices: []
+  rightNormals: []
+  rightUVs: []
   positionOffset: {x: 1, y: 1, z: 0.1}
 --- !u!65 &996465371
 BoxCollider:
@@ -1151,6 +1167,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   newGameObjectPrefab: {fileID: 2904058938881811521, guid: 5ca23e8908693f2438dde951ee6f13c0, type: 3}
   surfaceMaterial: {fileID: 2100000, guid: f09598de1e0c79b4a9bdb199ff896ed8, type: 2}
+  leftTriangles: 
+  leftVertices: []
+  leftNormals: []
+  leftUVs: []
+  rightTriangles: 
+  rightVertices: []
+  rightNormals: []
+  rightUVs: []
   positionOffset: {x: 1, y: 1, z: 0.1}
 --- !u!1001 &2127220086
 PrefabInstance:
