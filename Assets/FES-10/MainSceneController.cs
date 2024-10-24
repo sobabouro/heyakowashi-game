@@ -8,6 +8,7 @@ public class MainSceneController : MonoBehaviour
 {
     [SerializeField] public ScoreController scoreController;
     [SerializeField] public TimeController timeController;
+    [SerializeField] public SceneController sceneController;
     [SerializeField] private float _timeLimit = 120;
 
 
@@ -33,6 +34,8 @@ public class MainSceneController : MonoBehaviour
     {
         scoreController.FinishScore();
         Debug.Log("FinishGame");
+
+        sceneController.ChangeToTargetScene("Result");
     }
 
 }

@@ -22,7 +22,7 @@ public class TimeController : MonoBehaviour
 
     private bool enableTimer = false;
 
-    private void Start()
+    private void Awake()
     {
         enableTimer = false;
         SetTimeLimit(_defaultTimeLimit);
