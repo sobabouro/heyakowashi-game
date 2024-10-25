@@ -88,7 +88,7 @@ public class Breakable : MonoBehaviour
     private void Break(Breaker breaker)
     {
         Debug.Log("Break");
-        /*addScore(_score);*/
+        ScoreController.instance.AddScore(_score);
         if (container != null)
         {
             container.SetMainRegister();

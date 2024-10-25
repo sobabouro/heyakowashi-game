@@ -6,9 +6,19 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 0
-    path: Assets/Matsumoto/Scenes/Matsumoto_Test.unity
-    guid: d15b8bf835fb6b343a0b87fa934f23c9
+    path: Assets/Miyashita/Scenes/Title_Test.unity
+    guid: e370ad6db611a954980fad24028c7611
+  - enabled: 0
+    path: Assets/Miyashita/Scenes/Title_Test2.unity
+    guid: f0fcc19c79282ea4d9c6d138fcaa7cfa
+    path: Assets/BaseSystemTest/Scene/Title.unity
+    guid: a8e81b931b023f74f8c35e400cc26f77
   - enabled: 1
+    path: Assets/BaseSystemTest/Scene/Main.unity
+    guid: 2ab6448a4d263814e8279bd12df77087
+  - enabled: 1
+    path: Assets/BaseSystemTest/Scene/Result.unity
+    guid: 2eba0bdd3bdd8f44ca8bd5f5e4799031
     path: Assets/Onotsuka_test/FES-28-re.unity
     guid: 11b234f2b7f484d42b8ddced32bba9dc
   m_configObjects:
