@@ -210,7 +210,7 @@ public class ActSubdivide : MonoBehaviour {
             return;
         }
 
-        Debug.Log("newVerticesList " + string.Join(", ", newVerticesList.Select(obj => obj.ToString("F8"))));
+        //Debug.Log("newVerticesList " + string.Join(", ", newVerticesList.Select(obj => obj.ToString("F8"))));
 
         // ひとつなぎの辺で形成されるすべての図形をリストアップする
         joinedVertexGroupList = GeometryUtils.GroupingForDetermineGeometry(
@@ -293,18 +293,6 @@ public class ActSubdivide : MonoBehaviour {
         List<int> cutTriangles, 
         List<Vector2> cutUVs
     ) {
-        //GameObject newObject = Instantiate(newGameObjectPrefab);
-        //newObject.AddComponent<MeshFilter>();
-        //newObject.AddComponent<MeshRenderer>();
-        //Mesh mesh = newObject.GetComponent<MeshFilter>().mesh;
-        //mesh.Clear();
-        //mesh.SetVertices(cutVertices);
-        //mesh.uv = cutUVs.ToArray();
-        //mesh.SetTriangles(cutTriangles, 0);
-        //mesh.RecalculateNormals();
-        //mesh.RecalculateBounds();
-        //mesh.Optimize();
-
         GameObject obj = new GameObject("cut obj", typeof(MeshFilter), typeof(MeshRenderer), typeof(MeshCollider), typeof(Rigidbody), typeof(ActSubdivide));
         var mesh = new Mesh();
         mesh.vertices = cutVertices.ToArray();
@@ -428,15 +416,28 @@ public class ActSubdivide : MonoBehaviour {
             return;
         }
         ( // 新しい頂点を生成する
-            Vector3 newStartPairVertex, 
-            Vector3 newLastPairVertex, 
+            Vector3 newStartPairVertex,
+            Vector3 newLastPairVertex,
             float ratio_LonelyAsStart, 
             float ratio_LonelyAsLast
         ) = SegmentedPolygonsUtils.GenerateNewVertex(
-            cutter, rtlf, lonelyVertex, startPairVertex, lastPairVertex
+            cutter, 
+            rtlf,
+            vertexIndex1,
+            vertexIndex2,
+            vertexIndex3,
+            lonelyVertex, 
+            startPairVertex, 
+            lastPairVertex, 
+            vertexPairList,
+            newVerticesList,
+            newVertexJudge
         );
 
-        //Debug.Log("newStartPairVertex " + newStartPairVertex.ToString());
+        //Debug.Log("newStartPairVertex " + newStartPairVertex.ToString("F8"));
+        //Debug.Log("newLastPairVertex " + newLastPairVertex.ToString("F8"));
+        //Debug.Log("newVerticesList " + string.Join(", ", newVerticesList.Select(obj => obj.ToString("F8"))));
+        //Debug.Log("vertexPairList: " + string.Join(", ", vertexPairList.Select(a => "(" + string.Join(", ", a.Select(b => b.ToString())) + ")")));
 
         ( // 新しいUV座標を生成する
             Vector2 newUV1, 
@@ -448,42 +449,42 @@ public class ActSubdivide : MonoBehaviour {
             targetUVs[vertexIndex2], 
             targetUVs[vertexIndex3]
         );
-        int[] pairVertex = new int[2] { vertexIndex1, vertexIndex2 };
-        ( // 重複頂点の処理を行う (辺の始点)
-            bool deltrueSV, 
-            int newVertexIndexSV
-        ) = SegmentedPolygonsUtils.InsertAndDeleteVertices(
-            targetVerticesLength,
-            newStartPairVertex, 
-            newVerticesList
-        );
-        if (deltrueSV == false) {
-            newVertexJudge.Add(new VertexJudge(
-                pairVertex,
-                newVertexIndexSV
-            ));
-            newVerticesList.Add(newStartPairVertex);
-        }
+        //int[] pairVertex = new int[2] { vertexIndex1, vertexIndex2 };
+        //( // 重複頂点の処理を行う (辺の始点)
+        //    bool deltrueSV, 
+        //    int newVertexIndexSV
+        //) = SegmentedPolygonsUtils.InsertAndDeleteVertices(
+        //    targetVerticesLength,
+        //    newStartPairVertex, 
+        //    newVerticesList
+        //);
+        //if (deltrueSV == false) {
+        //    newVertexJudge.Add(new VertexJudge(
+        //        pairVertex,
+        //        newVertexIndexSV
+        //    ));
+        //    newVerticesList.Add(newStartPairVertex);
+        //}
 
         //Debug.Log("deltrueSV " + deltrueSV.ToString());
         //Debug.Log("newStartPairVertex " + newStartPairVertex.ToString("F8"));
 
-        pairVertex = new int[2] { vertexIndex1, vertexIndex3 };
-        ( // 重複頂点の処理を行う (辺の終点)
-            bool deltrueLV,
-            int newVertexIndexLV
-        ) = SegmentedPolygonsUtils.InsertAndDeleteVertices(
-            targetVerticesLength,
-            newLastPairVertex,
-            newVerticesList
-        );
-        if (deltrueLV == false) {
-            newVertexJudge.Add(new VertexJudge(
-                pairVertex,
-                newVertexIndexLV
-            ));
-            newVerticesList.Add(newLastPairVertex);
-        }
+        //pairVertex = new int[2] { vertexIndex1, vertexIndex3 };
+        //( // 重複頂点の処理を行う (辺の終点)
+        //    bool deltrueLV,
+        //    int newVertexIndexLV
+        //) = SegmentedPolygonsUtils.InsertAndDeleteVertices(
+        //    targetVerticesLength,
+        //    newLastPairVertex,
+        //    newVerticesList
+        //);
+        //if (deltrueLV == false) {
+        //    newVertexJudge.Add(new VertexJudge(
+        //        pairVertex,
+        //        newVertexIndexLV
+        //    ));
+        //    newVerticesList.Add(newLastPairVertex);
+        //}
 
         //Debug.Log("deltrueLV " + deltrueLV.ToString());
         //Debug.Log("newLastPairVertex " + newLastPairVertex.ToString("F8"));
@@ -491,8 +492,8 @@ public class ActSubdivide : MonoBehaviour {
         //Debug.Log("newVerticesList " + string.Join(", ", newVerticesList.Select(obj => obj.ToString("F8"))));
 
         // のちに頂点インデックスをもとに，こいつはこいつで頂点グルーピングするので保存しておく
-        if (newStartPairVertex != newLastPairVertex)
-            vertexPairList.Add(new int[] { newVertexIndexSV - targetVerticesLength, newVertexIndexLV - targetVerticesLength });
+        //if (newStartPairVertex != newLastPairVertex)
+        //    vertexPairList.Add(new int[] { newVertexIndexSV - targetVerticesLength, newVertexIndexLV - targetVerticesLength });
 
         /* ****************************** */
         /* 孤独な頂点が無限平面の右側にある場合 */
@@ -640,38 +641,123 @@ public class ActSubdivide : MonoBehaviour {
 
         // ポリゴンの切断辺の両端の頂点を，切断ポリゴンの法線・切断平面の法線とフレミングの左手の方向になるように生成する
         public static (
-            Vector3 newStartPairVertex, 
-            Vector3 newLastPairVertex,
+            Vector3 newStartPairVertex,
+            Vector3 newLastPairVertex, 
             float ratio_LonelyStart,
             float ratio_LonelyLast
         ) GenerateNewVertex(
             Plane plane, 
             bool rtlf, 
-            Vector3 lonelyVertex, 
-            Vector3 startPairVertex, 
-            Vector3 lastPairVertex
+            int lonelyIndex,
+            int startPairIndex,
+            int lastPairIndex,
+            Vector3 lonelyVertex,
+            Vector3 startPairVertex,
+            Vector3 lastPairVertex,
+            List<int[]> vertexPairList,
+            List<Vector3> newVerticesList,
+            List<VertexJudge> newVertexJudge
         ) {
-            Ray ray1 = new Ray(lonelyVertex, startPairVertex - lonelyVertex);
-            Ray ray2 = new Ray(lonelyVertex, lastPairVertex - lonelyVertex);
+            int newStartPairIndex = -1;
+            int newLastPairIndex = -1;
+            Vector3 newStartPairVertex = Vector3.zero;
+            Vector3 newLastPairVertex = Vector3.zero;
+            bool isDuplicate = false;
+            Ray ray1 = new Ray();
+            Ray ray2 = new Ray();
+            double distanceLonelyStart = Vector3.Distance(lonelyVertex, startPairVertex);
+            double distanceLonelyLast = Vector3.Distance(lonelyVertex, lastPairVertex);
+
+            if (rtlf) {
+                ray1 = new Ray(lonelyVertex, (startPairVertex - lonelyVertex).normalized);
+                ray2 = new Ray(lonelyVertex, (lastPairVertex - lonelyVertex).normalized);
+            } 
+            else {
+                ray1 = new Ray(startPairVertex, (lonelyVertex - startPairVertex).normalized);
+                ray2 = new Ray(lastPairVertex, (lonelyVertex - lastPairVertex).normalized);
+            }
+            Vector3[] pairVertex = new Vector3[2] { lonelyVertex, startPairVertex };
+
             double distance1 = 0.0;
             plane.Raycast(ray1, out float tempDistance1);
             distance1 = (double)tempDistance1;
-            Vector3 newStartPairVertex = ray1.GetPoint((float)distance1);
+            float ratio_LonelyStart = (float)(distance1 / distanceLonelyStart);
+
+            for (int i = 0; i < newVertexJudge.Count; i++) {
+                if ((pairVertex[0] == newVertexJudge[i].PairVertices[0] && pairVertex[1] == newVertexJudge[i].PairVertices[1]) || (pairVertex[0] == newVertexJudge[i].PairVertices[1] && pairVertex[1] == newVertexJudge[i].PairVertices[0])) {
+                    isDuplicate = true;
+                    newStartPairIndex = newVertexJudge[i].VertexIndex;
+                    newStartPairVertex = newVerticesList[newStartPairIndex];
+
+                    Debug.Log("lonely: " + lonelyIndex + ", " + lonelyVertex.ToString("F8") + ", start: " + startPairIndex + ", " + startPairVertex.ToString("F8"));
+                    Debug.Log("newStartPairIndex: " + newStartPairIndex.ToString());
+                    Debug.Log("newVerticesList: " + string.Join(", ", newVerticesList));
+                    newVertexJudge.RemoveAt(i);
+                    Debug.Log("removing newVertexJudge: " + string.Join(", ", newVertexJudge));
+                    break;
+                }
+            }
+            if (!isDuplicate) {
+                newStartPairVertex = ray1.GetPoint((float)distance1);
+                newVerticesList.Add(newStartPairVertex);
+                newStartPairIndex = newVerticesList.Count - 1;
+
+                Debug.Log("lonely: " + lonelyIndex + ", " + lonelyVertex.ToString("F8") + ", start: " + startPairIndex + ", " + startPairVertex.ToString("F8"));
+                Debug.Log("newStartPairIndex: " + newStartPairIndex.ToString());
+                Debug.Log("newVerticesList after adding newStartPairVertex: " + string.Join(", ", newVerticesList));
+
+                newVertexJudge.Add(new VertexJudge(
+                    pairVertex,
+                    newStartPairIndex
+                ));
+                Debug.Log("adding newVertexJudge: " + string.Join(", ", newVertexJudge));
+            }
+            isDuplicate = false;
+            pairVertex = new Vector3[2] { lonelyVertex, lastPairVertex };
 
             double distance2 = 0.0;
             plane.Raycast(ray2, out float tempDistance2);
             distance2 = (double)tempDistance2;
-            Vector3 newLastPairVertex = ray2.GetPoint((float)distance2);
-
-            double distanceLonelyStart = Vector3.Distance(lonelyVertex, startPairVertex);
-            double distanceLonelyLast = Vector3.Distance(lonelyVertex, lastPairVertex);
-
-            float ratio_LonelyStart = (float)(distance1 / distanceLonelyStart);
             float ratio_LonelyLast = (float)(distance2 / distanceLonelyLast);
 
+            for (int i = 0; i < newVertexJudge.Count; i++) {
+                if ((pairVertex[0] == newVertexJudge[i].PairVertices[0] && pairVertex[1] == newVertexJudge[i].PairVertices[1]) || (pairVertex[0] == newVertexJudge[i].PairVertices[1] && pairVertex[1] == newVertexJudge[i].PairVertices[0])) {
+                    isDuplicate = true;
+                    newLastPairIndex = newVertexJudge[i].VertexIndex;
+                    newLastPairVertex = newVerticesList[newLastPairIndex];
+
+                    Debug.Log("lonely: " + lonelyIndex + ", " + lonelyVertex.ToString("F8") + ", last: " + lastPairIndex + ", " + lastPairVertex.ToString("F8"));
+                    Debug.Log("newLastPairIndex: " + newLastPairIndex.ToString());
+                    Debug.Log("newVerticesList: " + string.Join(", ", newVerticesList));
+                    newVertexJudge.RemoveAt(i);
+                    Debug.Log("removing newVertexJudge: " + string.Join(", ", newVertexJudge));
+                    break;
+                }
+            }
+            if (!isDuplicate) {
+                newLastPairVertex = ray2.GetPoint((float)distance2);
+                newVerticesList.Add(newLastPairVertex);
+                newLastPairIndex = newVerticesList.Count - 1;
+
+                Debug.Log("lonely: " + lonelyIndex + ", " + lonelyVertex.ToString("F8") + ", last: " + lastPairIndex + ", " + lastPairVertex.ToString("F8"));
+                Debug.Log("newLastPairIndex: " + newLastPairIndex.ToString());
+                Debug.Log("newVerticesList after adding newStartPairVertex: " + string.Join(", ", newVerticesList));
+
+                newVertexJudge.Add(new VertexJudge(
+                    pairVertex,
+                    newLastPairIndex
+                ));
+                Debug.Log("adding newVertexJudge: " + string.Join(", ", newVertexJudge));
+            }
+
             if (rtlf) {
+                vertexPairList.Add(new int[] { newStartPairIndex, newLastPairIndex });
+                Debug.Log("vertexPairList: " + string.Join(", ", vertexPairList.Select(pair => "(" + string.Join(", ", pair.Select(i => i.ToString())) + ")")));
                 return (newStartPairVertex, newLastPairVertex, ratio_LonelyStart, ratio_LonelyLast);
-            } else {
+            } 
+            else {
+                vertexPairList.Add(new int[] { newLastPairIndex, newStartPairIndex });
+                Debug.Log("vertexPairList: " + string.Join(", ", vertexPairList.Select(pair => "(" + string.Join(", ", pair.Select(i => i.ToString())) + ")")));
                 return (newLastPairVertex, newStartPairVertex, ratio_LonelyStart, ratio_LonelyLast);
             }
         }
@@ -2048,10 +2134,10 @@ public class Pointer<T> {
 
 // 構造体定義
 public struct VertexJudge {
-    private int[] pairVertices;
+    private Vector3[] pairVertices;
     private int vertexIndex;
 
-    public int[] PairVertices {
+    public Vector3[] PairVertices {
         get => pairVertices;
         set => pairVertices = value;
     }
@@ -2060,9 +2146,14 @@ public struct VertexJudge {
         set => vertexIndex = value;
     }
     // コンストラクタを定義
-    public VertexJudge(int[] pairVertices, int vertexIndex) {
+    public VertexJudge(Vector3[] pairVertices, int vertexIndex) {
         this.pairVertices = pairVertices;
         this.vertexIndex = vertexIndex;
+    }
+    // ToString() メソッドのオーバーライド
+    public override string ToString() {
+        string vertices = string.Join(", ", pairVertices.Select(v => v.ToString()));
+        return $"PairVertices: ({vertices}), VertexIndex: {vertexIndex}";
     }
 }
 
