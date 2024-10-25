@@ -2,13 +2,13 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using static Joycon;
 
 public class JoyconHandler : MonoBehaviour
 {
     private List<Joycon> joycons;
 
-    [SerializeField]                                            private Transform cameraTransform;
+    [SerializeField]  
+    private Transform cameraTransform;
 
     // Values made available via Unity
     public float[] stick;

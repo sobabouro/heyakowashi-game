@@ -1,14 +1,14 @@
 using System.Collections;
 using System.Collections.Generic;
 using System;
-
-using System.Threading;
 using UnityEngine;
 
 #if WINDOWS_UWP
 using System.Threading.Tasks;
 using Windows.Devices.HumanInterfaceDevice;
 using Windows.Storage.Streams;
+#else
+using System.Threading;
 #endif
 
 
@@ -58,10 +58,11 @@ public class Joycon
 
     private float[] stick = { 0, 0 };
 
-    private IntPtr handle;
 
 #if WINDOWS_UWP
     private HidDevice dev;
+#else
+    private IntPtr handle;
 #endif
 
     byte[] default_buf = { 0x0, 0x1, 0x40, 0x40, 0x0, 0x1, 0x40, 0x40 };
@@ -211,6 +212,7 @@ public class Joycon
     private byte global_count = 0;
     private string debug_str;
 
+
 #if WINDOWS_UWP
     public Joycon(HidDevice dev_, bool imu, bool localize, float alpha, bool left)
     {
@@ -332,15 +334,41 @@ public class Joycon
         velocity_world = Vector3.zero;
     }
 
+#if WINDOWS_UWP
+    public async Task<int> AttachAsync(byte leds_ = 0x0)
+    {
+        UnityEngine.WSA.Application.InvokeOnAppThread(() =>
+        {
+            Debug.Log("AttachAsync");
+        }, true);
+        state = state_.ATTACHED;
+        byte[] a = { 0x0 };
+
+        // Input report mode
+        await SubcommandAsync(0x3, new byte[] { 0x3f }, 1, false);
+        a[0] = 0x1;
+        // dump_calibration_data();
+        // Connect
+        a[0] = 0x01;
+        await SubcommandAsync(0x1, a, 1);
+        a[0] = 0x02;
+        await SubcommandAsync(0x1, a, 1);
+        a[0] = 0x03;
+        await SubcommandAsync(0x1, a, 1);
+        a[0] = leds_;
+        await SubcommandAsync(0x30, a, 1);
+        await SubcommandAsync(0x40, new byte[] { (imu_enabled ? (byte)0x1 : (byte)0x0) }, 1, true);
+        await SubcommandAsync(0x3, new byte[] { 0x30 }, 1, true);
+        await SubcommandAsync(0x48, new byte[] { 0x1 }, 1, true);
+
+        DebugPrint("Done with init.", DebugType.COMMS);
+        return 0;
+    }
+#else
     public int Attach(byte leds_ = 0x0)
     {
         state = state_.ATTACHED;
         byte[] a = { 0x0 };
-#if WINDOWS_UWP
-        UnityEngine.WSA.Application.InvokeOnAppThread(() => {
-            Debug.Log("Attach");
-        }, true);
-#else
         // Input report mode
         Subcommand(0x3, new byte[] { 0x3f }, 1, false);
         a[0] = 0x1;
@@ -358,13 +386,35 @@ public class Joycon
         Subcommand(0x3, new byte[] { 0x30 }, 1, true);
         Subcommand(0x48, new byte[] { 0x1 }, 1, true);
         DebugPrint("Done with init.", DebugType.COMMS);
-#endif
         return 0;
     }
+#endif
     public void SetFilterCoeff(float a)
     {
         filterweight = a;
     }
+
+#if WINDOWS_UWP
+    public async void DetachAsync()
+    {
+        stop_polling = true;
+        PrintArray(max, format: "Max {0:S}", d: DebugType.IMU);
+        PrintArray(sum, format: "Sum {0:S}", d: DebugType.IMU);
+        if (state > state_.NO_JOYCONS)
+        {
+            await SubcommandAsync(0x30, new byte[] { 0x0 }, 1);
+            await SubcommandAsync(0x40, new byte[] { 0x0 }, 1);
+            await SubcommandAsync(0x48, new byte[] { 0x0 }, 1);
+            await SubcommandAsync(0x3, new byte[] { 0x3f }, 1);
+        }
+        if (state > state_.DROPPED)
+        {
+            // This member is not implemented in C#
+            // dev.Close();
+        }
+        state = state_.NOT_ATTACHED;
+    }
+#else
     public void Detach()
     {
         stop_polling = true;
@@ -381,11 +431,46 @@ public class Joycon
         {
             HIDapi.hid_close(handle);
         }
-        state = state_.NOT_ATTACHED;
+    state = state_.NOT_ATTACHED;
     }
+#endif
+
     private byte ts_en;
     private byte ts_de;
     private System.DateTime ts_prev;
+
+#if WINDOWS_UWP
+    private async void ReceiveRaw(HidDevice sender, HidInputReportReceivedEventArgs args)
+    {
+        if (dev == null) return;
+        HidInputReport inputReport = args.Report;
+        UInt16 id = inputReport.Id;
+        DataReader dr = DataReader.FromBuffer(inputReport.Data);
+        byte[] bytes = new byte[inputReport.Data.Length];
+        dr.ReadBytes(bytes);
+
+        int ret = bytes.Length;
+        UnityEngine.WSA.Application.InvokeOnAppThread(() => {
+            Debug.Log(bytes.Length + ": reports : " + BitConverter.ToString(bytes));
+        }, true);
+
+        byte[] raw_buf = new byte[report_len];
+        Array.Copy(bytes, 0, raw_buf, 0, report_len);
+
+        lock (reports)
+        {
+            reports.Enqueue(new Report(raw_buf, System.DateTime.Now));
+            Debug.Log(raw_buf.Length + ": reports : " + BitConverter.ToString(raw_buf));
+
+        }
+        if (ts_en == raw_buf[1])
+        {
+            DebugPrint(string.Format("Duplicate timestamp enqueued. TS: {0:X2}", ts_en), DebugType.THREADING);
+        }
+        ts_en = raw_buf[1];
+        DebugPrint(string.Format("Enqueue. Bytes read: {0:D}. Timestamp: {1:X2}", ret, raw_buf[1]), DebugType.THREADING);
+    }
+#else
     private int ReceiveRaw()
     {
         if (handle == IntPtr.Zero) return -2;
@@ -396,7 +481,9 @@ public class Joycon
         {
             lock (reports)
             {
-                reports.Enqueue(new Report(raw_buf, System.DateTime.Now));
+                reports.Enqueue(new Report(raw_buf, System.DateTime.Now)); 
+                Debug.Log(raw_buf.Length + ": reports : " + BitConverter.ToString(raw_buf));
+
             }
             if (ts_en == raw_buf[1])
             {
@@ -408,44 +495,10 @@ public class Joycon
         return ret;
     }
 
-#if WINDOWS_UWP
-    private Task PollTaskObj;
-#else
     private Thread PollThreadObj;
-#endif
 
     private void Poll()
     {
-#if WINDOWS_UWP
-        Task.Run(async () =>
-        {
-
-            UnityEngine.WSA.Application.InvokeOnAppThread(() => {
-                Debug.Log("Poll");
-            }, true);
-            while (!stop_polling & state > state_.NO_JOYCONS)
-            {
-                HidInputReport inputReport = await dev.GetInputReportAsync();
-                if (inputReport != null)
-                {
-                    UInt16 id = inputReport.Id;
-                    DataReader dr = DataReader.FromBuffer(inputReport.Data);
-                    byte[] bytes = new byte[inputReport.Data.Length];
-                    dr.ReadBytes(bytes);
-
-                    UnityEngine.WSA.Application.InvokeOnAppThread(() => {
-                        Debug.Log(System.Text.Encoding.ASCII.GetString(bytes));
-                    }, true);
-                }
-                else
-                {
-                    UnityEngine.WSA.Application.InvokeOnAppThread(() => {
-                        Debug.Log("Invalid input report received");
-                    }, true);
-                }
-            }
-        });
-#else
         int attempts = 0;
         while (!stop_polling & state > state_.NO_JOYCONS)
         {
@@ -471,8 +524,9 @@ public class Joycon
             ++attempts;
         }
         DebugPrint("End poll loop.", DebugType.THREADING);
-#endif
     }
+#endif
+
     float[] max = { 0, 0, 0 };
     float[] sum = { 0, 0, 0 };
     public void Update()
@@ -582,17 +636,6 @@ public class Joycon
         gyr_r[1] = (Int16)(report_buf[21 + n * 12] | ((report_buf[22 + n * 12] << 8) & 0xff00));
         gyr_r[2] = (Int16)(report_buf[23 + n * 12] | ((report_buf[24 + n * 12] << 8) & 0xff00));
 
-        // ローパスフィルタで重力加速度を抽出
-        // acc_lowpass[0] = lowpassalpha * acc_lowpass[0] + (1.0f - lowpassalpha) * acc_r[0];
-        // acc_lowpass[1] = lowpassalpha * acc_lowpass[1] + (1.0f - lowpassalpha) * acc_r[1];
-        // acc_lowpass[2] = lowpassalpha * acc_lowpass[2] + (1.0f - lowpassalpha) * acc_r[2];
-        // acc_gravity_world = ChangeAxisToWorld(ChangeAxisToUnity(acc_lowpass));
-        // ハイフィルタで動的加速度を抽出
-        // acc_highpass[0] = acc_r[0] - acc_lowpass[0];
-        // acc_highpass[1] = acc_r[1] - acc_lowpass[1];
-        // acc_highpass[2] = acc_r[2] - acc_lowpass[2];
-        // acc_ac_world = ChangeAxisToWorld(ChangeAxisToUnity(acc_highpass));
-
         // ワールド座標軸に変換
         acc_r_world = ChangeAxisToWorld(ChangeAxisToUnity(new Vector3(acc_r[0], acc_r[1], acc_r[2])));
 
@@ -698,44 +741,6 @@ public class Joycon
         timestamp = report_buf[1] + 2;
         return 0;
     }
-    /*
-    private ExtendedKalmanFilter extendedKalmanFilter = new ExtendedKalmanFilter();
-    private Matrix Q;
-    private Matrix R;
-    double[] u = new double[3];
-    double[] z= new double[2];
-    double[] ekf_x;
-    private Quaternion rotation;
-    public Quaternion Rotation { get=>rotation; }
-
-    private int ProcessEKF(float dt_sec)
-    {
-        u[0] = gyr_g_copy.x * dt_sec;
-        u[1] = gyr_g_copy.y * dt_sec;
-        u[2] = gyr_g_copy.z * dt_sec;
-
-        
-        z[0] = Math.Atan(acc_g_copy.y / acc_g_copy.z);
-        z[1] = -Math.Atan(acc_g_copy.x / Math.Sqrt(acc_g_copy.y * acc_g_copy.y + acc_g_copy.z * acc_g_copy.z));
-
-        Debug.Log(acc_g);
-        R = new Matrix(new double[2, 2] {
-                { 1.0*dt_sec*dt_sec, 0},
-                { 0, 1.0*dt_sec*dt_sec}
-            });
-        Q = new Matrix(new double[3, 3] {
-                { 0.174*dt_sec*dt_sec, 0,0},
-                { 0, 0.174*dt_sec*dt_sec,0},
-                { 0, 0,0.174*dt_sec*dt_sec}
-            });
-
-        // ekf
-        ekf_x = extendedKalmanFilter.ekf(u, z, R, Q);
-        //Debug.Log($"{ekf_x[0]}, {ekf_x[1]}, {ekf_x[2]}");
-        rotation = Quaternion.Euler((float)ekf_x[0], (float)ekf_x[1], (float)ekf_x[2]);
-        return 0;
-    }
-    */
 
     public void Begin()
     {
@@ -743,27 +748,9 @@ public class Joycon
         UnityEngine.WSA.Application.InvokeOnAppThread(() => {
             Debug.Log("Begin");
         }, true);
-
+        
         // Input reports contain data from the device.
-        dev.InputReportReceived += async (sender, args) =>
-        {
-            HidInputReport inputReport = args.Report;
-            UInt16 id = inputReport.Id;
-            DataReader dr = DataReader.FromBuffer(inputReport.Data);
-            byte[] bytes = new byte[inputReport.Data.Length];
-            dr.ReadBytes(bytes);
-
-            UnityEngine.WSA.Application.InvokeOnAppThread(() => {
-                Debug.Log($"Length: {inputReport.Data.Length.ToString()}\n{inputReport.ToString()}");
-            }, true);
-        };
-        /*
-        if (PollTaskObj == null)
-        {
-            PollTaskObj = new Task(() => Poll());
-            PollTaskObj.Start();
-        }
-        */
+        dev.InputReportReceived += ReceiveRaw;
 #else
         if (PollThreadObj == null)
         {
@@ -795,6 +782,7 @@ public class Joycon
         }
         return s;
     }
+
     public void SetRumble(float low_freq, float high_freq, float amp, int time = 0)
     {
         if (state <= Joycon.state_.ATTACHED) return;
@@ -803,6 +791,54 @@ public class Joycon
             rumble_obj = new Rumble(low_freq, high_freq, amp, time);
         }
     }
+
+#if WINDOWS_UWP
+    private async Task<UInt32> SendOutputReportAsync(byte[] buf)
+    {
+        HidOutputReport outReport = dev.CreateOutputReport();
+        /// Initialize the data buffer and fill it in
+        DataWriter dataWriter = new DataWriter();
+        dataWriter.WriteBytes(buf);
+        outReport.Data = dataWriter.DetachBuffer();
+        // Send the output report asynchronously
+        UInt32 res = await dev.SendOutputReportAsync(outReport);
+
+        UnityEngine.WSA.Application.InvokeOnAppThread(() => {
+            Debug.Log("Subcommand SendOutputReportAsync");
+        }, true);
+        return res;
+    }
+
+    private async void SendRumbleAsync(byte[] buf)
+    {
+        byte[] buf_ = new byte[report_len];
+        buf_[0] = 0x10;
+        buf_[1] = global_count;
+        if (global_count == 0xf) global_count = 0;
+        else ++global_count;
+        Array.Copy(buf, 0, buf_, 2, 8);
+        PrintArray(buf_, DebugType.RUMBLE, format: "Rumble data sent: {0:S}");
+        await SendOutputReportAsync(buf_);
+    }
+
+    private async Task<byte[]> SubcommandAsync(byte sc, byte[] buf, uint len, bool print = true)
+    {
+        byte[] buf_ = new byte[report_len];
+        byte[] response = new byte[report_len];
+        Array.Copy(default_buf, 0, buf_, 2, 8);
+        Array.Copy(buf, 0, buf_, 11, len);
+        buf_[10] = sc;
+        buf_[1] = global_count;
+        buf_[0] = 0x1;
+        if (global_count == 0xf) global_count = 0;
+        else ++global_count;
+        if (print) { PrintArray(buf_, DebugType.COMMS, len, 11, "Subcommand 0x" + string.Format("{0:X2}", sc) + " sent. Data: 0x{0:S}"); };
+
+        await SendOutputReportAsync(buf_);
+
+        return response;
+    }
+#else
     private void SendRumble(byte[] buf)
     {
         byte[] buf_ = new byte[report_len];
@@ -814,6 +850,7 @@ public class Joycon
         PrintArray(buf_, DebugType.RUMBLE, format: "Rumble data sent: {0:S}");
         HIDapi.hid_write(handle, buf_, new UIntPtr(report_len));
     }
+
     private byte[] Subcommand(byte sc, byte[] buf, uint len, bool print = true)
     {
         byte[] buf_ = new byte[report_len];
@@ -826,12 +863,15 @@ public class Joycon
         if (global_count == 0xf) global_count = 0;
         else ++global_count;
         if (print) { PrintArray(buf_, DebugType.COMMS, len, 11, "Subcommand 0x" + string.Format("{0:X2}", sc) + " sent. Data: 0x{0:S}"); };
+
         HIDapi.hid_write(handle, buf_, new UIntPtr(len + 11));
         int res = HIDapi.hid_read_timeout(handle, response, new UIntPtr(report_len), 50);
         if (res < 1) DebugPrint("No response.", DebugType.COMMS);
         else if (print) { PrintArray(response, DebugType.COMMS, report_len - 1, 1, "Response ID 0x" + string.Format("{0:X2}", response[0]) + ". Data: 0x{0:S}"); }
         return response;
     }
+#endif
+
     private void dump_calibration_data()
     {
         byte[] buf_ = ReadSPI(0x80, (isLeft ? (byte)0x12 : (byte)0x1d), 9); // get user calibration data if possible
@@ -902,10 +942,10 @@ public class Joycon
             gyr_neutral[1] = (Int16)(buf_[2] | ((buf_[3] << 8) & 0xff00));
             gyr_neutral[2] = (Int16)(buf_[4] | ((buf_[5] << 8) & 0xff00));
             // なんで先頭を4つ前にずらして3番目から参照してんの？？？？？
-            //buf_ = ReadSPI(0x60, 0x29, 10);
-            //gyr_neutral[0] = (Int16)(buf_[3] | ((buf_[4] << 8) & 0xff00));
-            //gyr_neutral[1] = (Int16)(buf_[5] | ((buf_[6] << 8) & 0xff00));
-            //gyr_neutral[2] = (Int16)(buf_[7] | ((buf_[8] << 8) & 0xff00));
+            // buf_ = ReadSPI(0x60, 0x29, 10);
+            // gyr_neutral[0] = (Int16)(buf_[3] | ((buf_[4] << 8) & 0xff00));
+            // gyr_neutral[1] = (Int16)(buf_[5] | ((buf_[6] << 8) & 0xff00));
+            // gyr_neutral[2] = (Int16)(buf_[7] | ((buf_[8] << 8) & 0xff00));
             PrintArray(gyr_neutral, len: 3, d: DebugType.IMU, format: "Factory gyro neutral position: {0:S}");
         }
 
@@ -931,7 +971,10 @@ public class Joycon
 
         for (int i = 0; i < 100; ++i)
         {
+#if WINDOWS_UWP
+#else
             buf_ = Subcommand(0x10, buf, 5, false);
+#endif
             if (buf_[15] == addr2 && buf_[16] == addr1)
             {
                 break;
