@@ -10,6 +10,23 @@ public class ScoreController : MonoBehaviour
     
     private int _score;
 
+    public static ScoreController instance;
+
+    private void Awake()
+    {
+        // シングルトンの呪文
+        if (instance == null)
+        {
+            // 自身をインスタンスとする
+            instance = this;
+        }
+        else
+        {
+            // インスタンスが複数存在しないように、既に存在していたら自身を消去する
+            Destroy(gameObject);
+        }
+    }
+
     // Start is called before the first frame update
     void Start()
     {

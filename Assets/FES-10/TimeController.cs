@@ -15,6 +15,8 @@ public class TimeController : MonoBehaviour
 
     private float _nowTime;
 
+    public static TimeController instance;
+
     public float NowTime
     {
         get => _nowTime;
@@ -24,6 +26,18 @@ public class TimeController : MonoBehaviour
 
     private void Awake()
     {
+        // シングルトンの呪文
+        if (instance == null)
+        {
+            // 自身をインスタンスとする
+            instance = this;
+        }
+        else
+        {
+            // インスタンスが複数存在しないように、既に存在していたら自身を消去する
+            Destroy(gameObject);
+        }
+
         enableTimer = false;
         SetTimeLimit(_defaultTimeLimit);
     }

@@ -6,14 +6,35 @@ using UnityEngine.UI;
 
 public class MainSceneController : MonoBehaviour
 {
-    [SerializeField] public ScoreController scoreController;
-    [SerializeField] public TimeController timeController;
-    [SerializeField] public SceneController sceneController;
+    private ScoreController scoreController;
+    private TimeController timeController;
+    private SceneController sceneController;
     [SerializeField] private float _timeLimit = 120;
+
+    private static MainSceneController instance;
+
+    private void Awake()
+    {
+        // シングルトンの呪文
+        if (instance == null)
+        {
+            // 自身をインスタンスとする
+            instance = this;
+        }
+        else
+        {
+            // インスタンスが複数存在しないように、既に存在していたら自身を消去する
+            Destroy(gameObject);
+        }
+    }
 
 
     private void Start()
     {
+        scoreController = ScoreController.instance;
+        timeController = TimeController.instance;
+        sceneController = SceneController.instance;
+
         timeController.SetTimeLimit(_timeLimit);
         timeController.timerFinishedEvent.AddListener(FinishGame);
     }
