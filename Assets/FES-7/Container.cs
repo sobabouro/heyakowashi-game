@@ -10,7 +10,7 @@ public class Container : MonoBehaviour
     [SerializeField]
     private GameObject registeredObject;
     private CollisionEvent collisionEvent;
-    private Rigidbody rigidbody;
+    private new Rigidbody rigidbody;
 
     private void Start()
     {
