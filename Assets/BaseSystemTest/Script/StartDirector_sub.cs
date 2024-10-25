@@ -4,12 +4,12 @@ using UnityEngine;
 
 public class StartDirector_sub : MonoBehaviour
 {
-    private SceneController sceneController = SceneController.instance;
+    private SceneController sceneController;
 
     // Start is called before the first frame update
     void Start()
     {
-
+        sceneController = SceneController.instance;
     }
 
     // Update is called once per frame
