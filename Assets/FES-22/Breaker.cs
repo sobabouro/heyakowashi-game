@@ -22,11 +22,23 @@ public class Breaker : MonoBehaviour
     [SerializeField]
     private float _velocity_threshold = 0;
 
+    // 動く方向で切断する場合に必要な現在と一フレ前の座標
+    private Vector3 prePos = Vector3.zero;
+    private Vector3 prePos2 = Vector3.zero;
+
+    private Plane cutter;
+
     public Type Type { get { return _type; } }
 
     private void Start()
     {
 
+    }
+
+    void FixedUpdate()
+    {
+        prePos = prePos2;
+        prePos2 = transform.position;
     }
 
     private int CalcATK(Vector3 other_velocity)
@@ -58,6 +70,17 @@ public class Breaker : MonoBehaviour
 
         Rigidbody otherRigitbody = collision.gameObject.GetComponent<Rigidbody>();
         int finalATK = CalcATK(otherRigitbody.velocity);
+
+        // 衝突点のワールド座標を取得
+        ContactPoint contactPoint = collision.contacts[0];
+        Vector3 collisionPositionWorld = contactPoint.point;
+
+        // 衝突相手のローカル座標に変換
+        Vector3 collisionPositionLocal = collision.transform.InverseTransformPoint(collisionPositionWorld);
+
+        // カッターの平面を相手のローカル座標で設定
+        cutter = new Plane(Vector3.Cross(transform.forward.normalized, prePos - transform.position).normalized, collisionPositionLocal);
+
         breakable.ReciveAttack(finalATK, this);
 
         Debug.Log("Attack! : " + this.gameObject + " to " + breakable + " : " + finalATK + " : " + otherRigitbody.velocity + " : " + my_rigidbody.velocity);
@@ -71,5 +94,10 @@ public class Breaker : MonoBehaviour
     public void SetRigidbody(Rigidbody rigidbody)
     {
         my_rigidbody = rigidbody;
+    }
+
+    public Plane GetCutter()
+    {
+        return cutter;
     }
 }

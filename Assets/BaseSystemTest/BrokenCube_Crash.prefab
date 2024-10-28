@@ -49,6 +49,18 @@ PrefabInstance:
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 4038646514024504500, guid: 6165bea23924141459a12b8c689d842a, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 0.15
+      objectReference: {fileID: 0}
+    - target: {fileID: 4038646514024504500, guid: 6165bea23924141459a12b8c689d842a, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 0.15
+      objectReference: {fileID: 0}
+    - target: {fileID: 4038646514024504500, guid: 6165bea23924141459a12b8c689d842a, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 0.15
+      objectReference: {fileID: 0}
+    - target: {fileID: 4038646514024504500, guid: 6165bea23924141459a12b8c689d842a, type: 3}
       propertyPath: m_LocalPosition.x
       value: -0.2
       objectReference: {fileID: 0}
@@ -91,7 +103,7 @@ PrefabInstance:
     - target: {fileID: 4038646514024504511, guid: 6165bea23924141459a12b8c689d842a, type: 3}
       propertyPath: _brokenObjectPrefab
       value: 
-      objectReference: {fileID: 4038646514024504449, guid: 6165bea23924141459a12b8c689d842a, type: 3}
+      objectReference: {fileID: 0}
     - target: {fileID: 4038646514024504511, guid: 6165bea23924141459a12b8c689d842a, type: 3}
       propertyPath: _canCallBrokenObject
       value: 0
@@ -103,6 +115,19 @@ GameObject:
   m_CorrespondingSourceObject: {fileID: 4038646514024504449, guid: 6165bea23924141459a12b8c689d842a, type: 3}
   m_PrefabInstance: {fileID: 7646656831374567385}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &3469732262387599390
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5913866520721226584}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0cbee23cb4e3b094887d5156658febe6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  durabilityRecoveryAmount: 15
 --- !u!114 &5582864544052527225
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -121,19 +146,6 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   _addImpulse: 1
---- !u!114 &3469732262387599390
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5913866520721226584}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0cbee23cb4e3b094887d5156658febe6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  durabilityRecoveryAmount: 15
 --- !u!4 &5913866520721226605 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 4038646514024504500, guid: 6165bea23924141459a12b8c689d842a, type: 3}
@@ -153,6 +165,18 @@ PrefabInstance:
     - target: {fileID: 4038646514024504500, guid: 6165bea23924141459a12b8c689d842a, type: 3}
       propertyPath: m_RootOrder
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4038646514024504500, guid: 6165bea23924141459a12b8c689d842a, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 0.15
+      objectReference: {fileID: 0}
+    - target: {fileID: 4038646514024504500, guid: 6165bea23924141459a12b8c689d842a, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 0.15
+      objectReference: {fileID: 0}
+    - target: {fileID: 4038646514024504500, guid: 6165bea23924141459a12b8c689d842a, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 0.15
       objectReference: {fileID: 0}
     - target: {fileID: 4038646514024504500, guid: 6165bea23924141459a12b8c689d842a, type: 3}
       propertyPath: m_LocalPosition.x
@@ -197,7 +221,7 @@ PrefabInstance:
     - target: {fileID: 4038646514024504511, guid: 6165bea23924141459a12b8c689d842a, type: 3}
       propertyPath: _brokenObjectPrefab
       value: 
-      objectReference: {fileID: 4038646514024504449, guid: 8a1d0bbf4b7719642ba7acef84b71e2b, type: 3}
+      objectReference: {fileID: 0}
     - target: {fileID: 4038646514024504511, guid: 6165bea23924141459a12b8c689d842a, type: 3}
       propertyPath: _canCallBrokenObject
       value: 0
