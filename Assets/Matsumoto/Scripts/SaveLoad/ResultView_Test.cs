@@ -44,7 +44,6 @@ public class ResultView_Test : MonoBehaviour
         InitializeScoreData();
         ShowScore();
         scoreDataList = createNewData.GetSaveData().GetScoreDataList();
-        Debug.Log("scoreDateList : " + scoreDataList);
         receivedCommentController.CreateReceivedComment(scoreDataList);
         scoreDataList.Add(scoreData);
         ShowRanking3Score();
