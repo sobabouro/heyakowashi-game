@@ -51,5 +51,6 @@ public class CreateNewData : MonoBehaviour
             JsonUtility.FromJsonOverwrite(data, saveData);
             Debug.Log(saveData.GetJsonData());
         }
+
     }
 }

@@ -23,6 +23,7 @@ public class ReceivedCommentController : MonoBehaviour
 
     public void CreateReceivedComment(List<ScoreData> scoreDataList)
     {
+        Debug.Log(scoreDataList.Count + " : " + scoreDataList);
         if (scoreDataList.Count == 0) return;
         float x, y, z = 0;
         foreach (ScoreData scoreData in scoreDataList)
@@ -34,7 +35,8 @@ public class ReceivedCommentController : MonoBehaviour
             Debug.Log("Objectê∂ê¨");
             obj.transform.LookAt(player.transform);
             obj.transform.Rotate(0, 180, 0);
-            obj.GetComponent<TMPro.TMP_Text>().SetText(scoreData.GetUserComment());
+            Debug.Log(scoreData);
+            obj.GetComponent<TMP_Text>().SetText(scoreData.GetUserComment());
         }
     }
 }
