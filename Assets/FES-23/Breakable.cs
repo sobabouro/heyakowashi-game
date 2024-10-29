@@ -82,7 +82,7 @@ public class Breakable : MonoBehaviour
     }
 
     /// <summary>
-    /// 耐久値が０になり壊れるときのメソッド
+    /// 耐久値が0になり壊れるときのメソッド
     /// </summary>
     /// <param name="breaker">`攻撃した側の情報</param>
     private void Break(Breaker breaker)
@@ -97,7 +97,7 @@ public class Breakable : MonoBehaviour
         {
             case Type.slash:
                 // Slashクラスを呼び出す
-                this.gameObject.GetComponent<Slash_easy>().CallSlash();
+                this.gameObject.GetComponent<ActSubdivide>().Subdivide(breaker.GetCutter());
                 break;
             case Type.crash:
                 // Crashクラスを呼び出す

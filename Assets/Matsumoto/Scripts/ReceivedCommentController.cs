@@ -23,6 +23,7 @@ public class ReceivedCommentController : MonoBehaviour
 
     public void CreateReceivedComment(List<ScoreData> scoreDataList)
     {
+        if (scoreDataList.Count == 0) return;
         float x, y, z = 0;
         foreach (ScoreData scoreData in scoreDataList)
         {

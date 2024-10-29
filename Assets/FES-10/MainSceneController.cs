@@ -35,6 +35,8 @@ public class MainSceneController : MonoBehaviour
         timeController = TimeController.instance;
         sceneController = SceneController.instance;
 
+        CollisionEvent.canEventCall = false;
+
         timeController.SetTimeLimit(_timeLimit);
         timeController.timerFinishedEvent.AddListener(FinishGame);
     }
@@ -46,6 +48,7 @@ public class MainSceneController : MonoBehaviour
     {
         timeController.SetTimeLimit(_timeLimit);
         timeController.StartTimer();
+        CollisionEvent.canEventCall = true;
     }
 
     /// <summary>

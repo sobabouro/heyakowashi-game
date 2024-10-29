@@ -27,7 +27,7 @@ public class ResultView_Test : MonoBehaviour
     [SerializeField]
     private CreateNewData createNewData;
 
-    private List<ScoreData> scoreDataList;
+    private List<ScoreData> scoreDataList = new List<ScoreData>();
 
     private ScoreData scoreData;
 
@@ -76,6 +76,7 @@ public class ResultView_Test : MonoBehaviour
     // ¡‰ñ‚ÌƒvƒŒƒC‚ÌuserComment‚ğİ’è‚·‚é
     public void SetUserComment(string userComment)
     {
+        if (userComment == null) userComment = "";
         playerComment.SetText(userComment);
         scoreData.SetUserComment(userComment);
         scoreDataList[playerRankingIndex] = scoreData;
@@ -127,7 +128,7 @@ public class ResultView_Test : MonoBehaviour
     {
         SortScoreDataList();
         Debug.Log(scoreDataList[0].GetScore());
-        for (int i = 0; i < 3; i++)
+        for (int i = 0; i < 3 && i < scoreDataList.Count ; i++)
         {
             Debug.Log("Ranking" + i+1 + " : " + scoreDataList[i].GetScore());
             rankingScoreList[i].SetText(scoreDataList[i].GetScore().ToString());
