@@ -34,7 +34,7 @@ public class ReceivedCommentController : MonoBehaviour
             Debug.Log("Objectê∂ê¨");
             obj.transform.LookAt(player.transform);
             obj.transform.Rotate(0, 180, 0);
-            obj.GetComponent<TMPro.TMP_Text>().SetText(scoreData.GetUserComment());
+            obj.GetComponent<TMP_Text>().SetText(scoreData.GetUserComment());
         }
     }
 }

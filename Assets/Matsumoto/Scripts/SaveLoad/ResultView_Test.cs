@@ -100,6 +100,7 @@ public class ResultView_Test : MonoBehaviour
     {
         Debug.Log("SaveDataDeleate!");
         PlayerPrefs.DeleteKey("PlayerData");
+        createNewData.GetSaveData().SetScoreDataList(new List<ScoreData>());
     }
 
     // ScoreData‚Ì‰Šú‰»
@@ -130,7 +131,7 @@ public class ResultView_Test : MonoBehaviour
         Debug.Log(scoreDataList[0].GetScore());
         for (int i = 0; i < 3 && i < scoreDataList.Count ; i++)
         {
-            Debug.Log("Ranking" + i+1 + " : " + scoreDataList[i].GetScore());
+            Debug.Log("Ranking" + (i+1) + " : " + scoreDataList[i].GetScore());
             rankingScoreList[i].SetText(scoreDataList[i].GetScore().ToString());
         }
     }
