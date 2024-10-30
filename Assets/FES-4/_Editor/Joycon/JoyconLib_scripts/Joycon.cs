@@ -5,6 +5,7 @@ using UnityEngine;
 
 using System.Threading;
 using System.Net.Sockets;
+using System.Reflection;
 
 
 public class Joycon
@@ -428,10 +429,18 @@ public class Joycon
         udpCliant = new UDPCliant(port);
         Debug.Log($"port:{port}");
     }
-    private void SendDate()
+    private void SendOrientation()
     {
         orientation = GetVector();
         udpCliant.SendMessage(orientation);
+    }
+    private void SendButton()
+    {
+        bool[] buttons_data = new bool[39];
+        Array.Copy(buttons_down, 0, buttons_data, 0, 13);
+        Array.Copy(buttons_up, 0, buttons_data, 13, 13);
+        Array.Copy(buttons, 0, buttons_data, 26, 13);
+        udpCliant.SendMessage(buttons_data);
     }
 
     public void Update()
@@ -457,7 +466,7 @@ public class Joycon
                     {
                         ExtractIMUValues(report_buf, 0);
                     }
-                    SendDate();
+                    SendOrientation(); ; // UDPëóêM
                 }
                 if (ts_de == report_buf[1])
                 {
@@ -527,6 +536,7 @@ public class Joycon
                 }
             }
         }
+        SendButton(); // UDPëóêM
         return 0;
     }
 

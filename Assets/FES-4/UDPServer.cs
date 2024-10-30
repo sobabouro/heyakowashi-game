@@ -32,7 +32,7 @@ public class UDPServer : MonoBehaviour
     public struct Message
     {
         public byte[] bytes;
-        System.DateTime time;
+        public System.DateTime time;
 
         public Message(byte[] b, System.DateTime t)
         {
@@ -41,13 +41,27 @@ public class UDPServer : MonoBehaviour
         }
         public Message(Quaternion q, System.DateTime t)
         {
-            bytes = new byte[sizeof(float) * 4];
-            Array.Copy(BitConverter.GetBytes(q.x), 0, bytes, 0 * sizeof(float), sizeof(float));
-            Array.Copy(BitConverter.GetBytes(q.y), 0, bytes, 1 * sizeof(float), sizeof(float));
-            Array.Copy(BitConverter.GetBytes(q.z), 0, bytes, 2 * sizeof(float), sizeof(float));
-            Array.Copy(BitConverter.GetBytes(q.w), 0, bytes, 3 * sizeof(float), sizeof(float));
+            bytes = new byte[1 + sizeof(float) * 4];
+            bytes[0] = 0x02;
+            Array.Copy(BitConverter.GetBytes(q.x), 0, bytes, 1 + 0 * sizeof(float), sizeof(float));
+            Array.Copy(BitConverter.GetBytes(q.y), 0, bytes, 1 + 1 * sizeof(float), sizeof(float));
+            Array.Copy(BitConverter.GetBytes(q.z), 0, bytes, 1 + 2 * sizeof(float), sizeof(float));
+            Array.Copy(BitConverter.GetBytes(q.w), 0, bytes, 1 + 3 * sizeof(float), sizeof(float));
             time = t;
         }
+
+        public Message(bool[] buttons_data, System.DateTime t)
+        {
+            bytes = new byte[1 + sizeof(bool) * 39];
+            bytes[0] = 0x03;
+
+            for (int index = 0; index < buttons_data.Length; index++)
+            {
+                Array.Copy(BitConverter.GetBytes(buttons_data[index]), 0, bytes, 1 + index * sizeof(bool), sizeof(bool));
+            }
+            time = t;
+        }
+
 
         public override string ToString()
         {
@@ -58,10 +72,10 @@ public class UDPServer : MonoBehaviour
         public Quaternion ToQuaternion()
         {
             Quaternion q = Quaternion.identity;
-            q.x = BitConverter.ToSingle(bytes, 0 * sizeof(float));
-            q.y = BitConverter.ToSingle(bytes, 1 * sizeof(float));
-            q.z = BitConverter.ToSingle(bytes, 2 * sizeof(float));
-            q.w = BitConverter.ToSingle(bytes, 3 * sizeof(float));
+            q.x = BitConverter.ToSingle(bytes, 1 + 0 * sizeof(float));
+            q.y = BitConverter.ToSingle(bytes, 1 + 1 * sizeof(float));
+            q.z = BitConverter.ToSingle(bytes, 1 + 2 * sizeof(float));
+            q.w = BitConverter.ToSingle(bytes, 1 + 3 * sizeof(float));
             return q;
         }
     }

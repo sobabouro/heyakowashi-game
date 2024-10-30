@@ -7,8 +7,6 @@ public class JoyconHandler : MonoBehaviour
 {
     private List<Joycon> joycons;
 
-    [SerializeField]  
-    private Transform cameraTransform;
     [SerializeField]
     public int jc_ind = 0;
 
@@ -101,7 +99,7 @@ public class JoyconHandler : MonoBehaviour
             }
 
             // ‰ñ“]
-            gameObject.transform.rotation = cameraTransform.rotation * j.GetVector();
+            gameObject.transform.rotation = j.GetVector();
         }
     }
 

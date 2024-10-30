@@ -32,4 +32,13 @@ public class UDPCliant
         });
         thread.Start();
     }
+    public void SendMessage(bool[] button_data)
+    {
+        UDPServer.Message mes = new UDPServer.Message(button_data, System.DateTime.Now);
+        Thread thread = new Thread(() =>
+        {
+            udpclient.Send(mes.bytes, mes.bytes.Length);
+        });
+        thread.Start();
+    }
 }
