@@ -500,6 +500,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Sphere_kata
       objectReference: {fileID: 0}
+    - target: {fileID: 5426060844419805523, guid: 61502256e6d09bf4da80e67c257719db, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 8172695666989447224, guid: 61502256e6d09bf4da80e67c257719db, type: 3}
       propertyPath: cameraTransform
       value: 
@@ -741,6 +745,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   EnableIMU: 1
   EnableLocalize: 1
+  isFinishedAwake: 0
 --- !u!4 &1773580653
 Transform:
   m_ObjectHideFlags: 0
