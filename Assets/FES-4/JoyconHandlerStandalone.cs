@@ -4,22 +4,19 @@ using UnityEngine;
 
 public class JoyconHandlerStandalone : MonoBehaviour
 {
-    [SerializeField]
-    private Transform cameraTransform;
+    private Transform m_transform;
 
     // Values made available via Unity
     public float[] stick;
     public Quaternion orientation;
 
-    public void UpdateData(UDPServer.Message message)
+    private void Start()
     {
-        orientation = cameraTransform.rotation * message.ToQuaternion();
+        m_transform = gameObject.transform;
     }
 
-    // Update is called once per frame
-    void Update()
+    public void UpdateData(UDPServer.Message message)
     {
-        // ‰ñ“]
-        gameObject.transform.rotation = orientation;
+        m_transform.rotation = message.ToQuaternion();
     }
 }
