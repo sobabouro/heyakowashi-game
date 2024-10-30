@@ -6,12 +6,6 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 0
-    path: Assets/Miyashita/Scenes/Title_Test.unity
-    guid: e370ad6db611a954980fad24028c7611
-  - enabled: 0
-    path: Assets/Miyashita/Scenes/Title_Test2.unity
-    guid: f0fcc19c79282ea4d9c6d138fcaa7cfa
-  - enabled: 1
     path: Assets/BaseSystemTest/Scene/Title.unity
     guid: a8e81b931b023f74f8c35e400cc26f77
   - enabled: 1

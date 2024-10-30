@@ -748,6 +748,8 @@ PlayerSettings:
   platformCapabilities:
     WindowsStoreApps:
       GazeInput: True
+      HumanInterfaceDevice: True
+      Bluetooth: True
       SpatialPerception: True
       WebCam: True
       Microphone: True
