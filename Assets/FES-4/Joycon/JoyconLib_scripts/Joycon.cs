@@ -3,13 +3,8 @@ using System.Collections.Generic;
 using System;
 using UnityEngine;
 
-#if WINDOWS_UWP
-using System.Threading.Tasks;
-using Windows.Devices.HumanInterfaceDevice;
-using Windows.Storage.Streams;
-#else
 using System.Threading;
-#endif
+using System.Net.Sockets;
 
 
 public class Joycon
@@ -58,12 +53,7 @@ public class Joycon
 
     private float[] stick = { 0, 0 };
 
-
-#if WINDOWS_UWP
-    private HidDevice dev;
-#else
     private IntPtr handle;
-#endif
 
     byte[] default_buf = { 0x0, 0x1, 0x40, 0x40, 0x0, 0x1, 0x40, 0x40 };
 
@@ -213,17 +203,6 @@ public class Joycon
     private string debug_str;
 
 
-#if WINDOWS_UWP
-    public Joycon(HidDevice dev_, bool imu, bool localize, float alpha, bool left)
-    {
-        dev = dev_;
-        imu_enabled = imu;
-        do_localize = localize;
-        rumble_obj = new Rumble(160, 320, 0);
-        filterweight = alpha;
-        isLeft = left;
-    }
-#else
     public Joycon(IntPtr handle_, bool imu, bool localize, float alpha, bool left)
     {
         handle = handle_;
@@ -233,8 +212,6 @@ public class Joycon
         filterweight = alpha;
         isLeft = left;
     }
-#endif
-
     public void DebugPrint(String s, DebugType d)
     {
         if (debug_type == DebugType.NONE) return;
@@ -333,38 +310,6 @@ public class Joycon
     {
         velocity_world = Vector3.zero;
     }
-
-#if WINDOWS_UWP
-    public async Task<int> AttachAsync(byte leds_ = 0x0)
-    {
-        UnityEngine.WSA.Application.InvokeOnAppThread(() =>
-        {
-            Debug.Log("AttachAsync");
-        }, true);
-        state = state_.ATTACHED;
-        byte[] a = { 0x0 };
-
-        // Input report mode
-        await SubcommandAsync(0x3, new byte[] { 0x3f }, 1, false);
-        a[0] = 0x1;
-        // dump_calibration_data();
-        // Connect
-        a[0] = 0x01;
-        await SubcommandAsync(0x1, a, 1);
-        a[0] = 0x02;
-        await SubcommandAsync(0x1, a, 1);
-        a[0] = 0x03;
-        await SubcommandAsync(0x1, a, 1);
-        a[0] = leds_;
-        await SubcommandAsync(0x30, a, 1);
-        await SubcommandAsync(0x40, new byte[] { (imu_enabled ? (byte)0x1 : (byte)0x0) }, 1, true);
-        await SubcommandAsync(0x3, new byte[] { 0x30 }, 1, true);
-        await SubcommandAsync(0x48, new byte[] { 0x1 }, 1, true);
-
-        DebugPrint("Done with init.", DebugType.COMMS);
-        return 0;
-    }
-#else
     public int Attach(byte leds_ = 0x0)
     {
         state = state_.ATTACHED;
@@ -388,33 +333,10 @@ public class Joycon
         DebugPrint("Done with init.", DebugType.COMMS);
         return 0;
     }
-#endif
     public void SetFilterCoeff(float a)
     {
         filterweight = a;
     }
-
-#if WINDOWS_UWP
-    public async void DetachAsync()
-    {
-        stop_polling = true;
-        PrintArray(max, format: "Max {0:S}", d: DebugType.IMU);
-        PrintArray(sum, format: "Sum {0:S}", d: DebugType.IMU);
-        if (state > state_.NO_JOYCONS)
-        {
-            await SubcommandAsync(0x30, new byte[] { 0x0 }, 1);
-            await SubcommandAsync(0x40, new byte[] { 0x0 }, 1);
-            await SubcommandAsync(0x48, new byte[] { 0x0 }, 1);
-            await SubcommandAsync(0x3, new byte[] { 0x3f }, 1);
-        }
-        if (state > state_.DROPPED)
-        {
-            // This member is not implemented in C#
-            // dev.Close();
-        }
-        state = state_.NOT_ATTACHED;
-    }
-#else
     public void Detach()
     {
         stop_polling = true;
@@ -433,44 +355,11 @@ public class Joycon
         }
     state = state_.NOT_ATTACHED;
     }
-#endif
 
     private byte ts_en;
     private byte ts_de;
     private System.DateTime ts_prev;
 
-#if WINDOWS_UWP
-    private async void ReceiveRaw(HidDevice sender, HidInputReportReceivedEventArgs args)
-    {
-        if (dev == null) return;
-        HidInputReport inputReport = args.Report;
-        UInt16 id = inputReport.Id;
-        DataReader dr = DataReader.FromBuffer(inputReport.Data);
-        byte[] bytes = new byte[inputReport.Data.Length];
-        dr.ReadBytes(bytes);
-
-        int ret = bytes.Length;
-        UnityEngine.WSA.Application.InvokeOnAppThread(() => {
-            Debug.Log(bytes.Length + ": reports : " + BitConverter.ToString(bytes));
-        }, true);
-
-        byte[] raw_buf = new byte[report_len];
-        Array.Copy(bytes, 0, raw_buf, 0, report_len);
-
-        lock (reports)
-        {
-            reports.Enqueue(new Report(raw_buf, System.DateTime.Now));
-            Debug.Log(raw_buf.Length + ": reports : " + BitConverter.ToString(raw_buf));
-
-        }
-        if (ts_en == raw_buf[1])
-        {
-            DebugPrint(string.Format("Duplicate timestamp enqueued. TS: {0:X2}", ts_en), DebugType.THREADING);
-        }
-        ts_en = raw_buf[1];
-        DebugPrint(string.Format("Enqueue. Bytes read: {0:D}. Timestamp: {1:X2}", ret, raw_buf[1]), DebugType.THREADING);
-    }
-#else
     private int ReceiveRaw()
     {
         if (handle == IntPtr.Zero) return -2;
@@ -482,7 +371,7 @@ public class Joycon
             lock (reports)
             {
                 reports.Enqueue(new Report(raw_buf, System.DateTime.Now)); 
-                Debug.Log(raw_buf.Length + ": reports : " + BitConverter.ToString(raw_buf));
+                //Debug.Log(raw_buf.Length + ": reports : " + BitConverter.ToString(raw_buf));
 
             }
             if (ts_en == raw_buf[1])
@@ -525,10 +414,26 @@ public class Joycon
         }
         DebugPrint("End poll loop.", DebugType.THREADING);
     }
-#endif
 
     float[] max = { 0, 0, 0 };
     float[] sum = { 0, 0, 0 };
+
+    
+    private UDPCliant udpCliant;
+    int port = 8000;
+    Quaternion orientation;
+    string send_data;
+    public void SetUDP(int port)
+    {
+        udpCliant = new UDPCliant(port);
+        Debug.Log($"port:{port}");
+    }
+    private void SendDate()
+    {
+        orientation = GetVector();
+        udpCliant.SendMessage(orientation);
+    }
+
     public void Update()
     {
         if (state > state_.NO_JOYCONS)
@@ -552,6 +457,7 @@ public class Joycon
                     {
                         ExtractIMUValues(report_buf, 0);
                     }
+                    SendDate();
                 }
                 if (ts_de == report_buf[1])
                 {
@@ -744,21 +650,13 @@ public class Joycon
 
     public void Begin()
     {
-#if WINDOWS_UWP
-        UnityEngine.WSA.Application.InvokeOnAppThread(() => {
-            Debug.Log("Begin");
-        }, true);
-        
-        // Input reports contain data from the device.
-        dev.InputReportReceived += ReceiveRaw;
-#else
         if (PollThreadObj == null)
         {
             PollThreadObj = new Thread(new ThreadStart(Poll));
             PollThreadObj.Start();
         }
-#endif
     }
+
     public void Recenter()
     {
         first_imu_packet = true;
@@ -791,54 +689,6 @@ public class Joycon
             rumble_obj = new Rumble(low_freq, high_freq, amp, time);
         }
     }
-
-#if WINDOWS_UWP
-    private async Task<UInt32> SendOutputReportAsync(byte[] buf)
-    {
-        HidOutputReport outReport = dev.CreateOutputReport();
-        /// Initialize the data buffer and fill it in
-        DataWriter dataWriter = new DataWriter();
-        dataWriter.WriteBytes(buf);
-        outReport.Data = dataWriter.DetachBuffer();
-        // Send the output report asynchronously
-        UInt32 res = await dev.SendOutputReportAsync(outReport);
-
-        UnityEngine.WSA.Application.InvokeOnAppThread(() => {
-            Debug.Log("Subcommand SendOutputReportAsync");
-        }, true);
-        return res;
-    }
-
-    private async void SendRumbleAsync(byte[] buf)
-    {
-        byte[] buf_ = new byte[report_len];
-        buf_[0] = 0x10;
-        buf_[1] = global_count;
-        if (global_count == 0xf) global_count = 0;
-        else ++global_count;
-        Array.Copy(buf, 0, buf_, 2, 8);
-        PrintArray(buf_, DebugType.RUMBLE, format: "Rumble data sent: {0:S}");
-        await SendOutputReportAsync(buf_);
-    }
-
-    private async Task<byte[]> SubcommandAsync(byte sc, byte[] buf, uint len, bool print = true)
-    {
-        byte[] buf_ = new byte[report_len];
-        byte[] response = new byte[report_len];
-        Array.Copy(default_buf, 0, buf_, 2, 8);
-        Array.Copy(buf, 0, buf_, 11, len);
-        buf_[10] = sc;
-        buf_[1] = global_count;
-        buf_[0] = 0x1;
-        if (global_count == 0xf) global_count = 0;
-        else ++global_count;
-        if (print) { PrintArray(buf_, DebugType.COMMS, len, 11, "Subcommand 0x" + string.Format("{0:X2}", sc) + " sent. Data: 0x{0:S}"); };
-
-        await SendOutputReportAsync(buf_);
-
-        return response;
-    }
-#else
     private void SendRumble(byte[] buf)
     {
         byte[] buf_ = new byte[report_len];
@@ -870,7 +720,6 @@ public class Joycon
         else if (print) { PrintArray(response, DebugType.COMMS, report_len - 1, 1, "Response ID 0x" + string.Format("{0:X2}", response[0]) + ". Data: 0x{0:S}"); }
         return response;
     }
-#endif
 
     private void dump_calibration_data()
     {
@@ -971,10 +820,7 @@ public class Joycon
 
         for (int i = 0; i < 100; ++i)
         {
-#if WINDOWS_UWP
-#else
             buf_ = Subcommand(0x10, buf, 5, false);
-#endif
             if (buf_[15] == addr2 && buf_[16] == addr1)
             {
                 break;
@@ -984,6 +830,7 @@ public class Joycon
         if (print) PrintArray(read_buf, DebugType.COMMS, len);
         return read_buf;
     }
+
     private void PrintArray<T>(T[] arr, DebugType d = DebugType.NONE, uint len = 0, uint start = 0, string format = "{0:S}")
     {
         if (d != debug_type && debug_type != DebugType.ALL) return;

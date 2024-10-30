@@ -11,6 +11,9 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/FES-4/FES-4-TestScene.unity
     guid: 8c56e0fc9eb24db4aa84062bbd3f111f
+  - enabled: 0
+    path: 
+    guid: 00000000000000000000000000000000
   m_configObjects:
     com.unity.xr.arfoundation.simulation_settings: {fileID: 11400000, guid: bb74a5e0e3ed2034d85e77be0973c784, type: 2}
     com.unity.xr.management.loader_settings: {fileID: 11400000, guid: 4c62d00aa7bb6af4489f2e296d3231b4, type: 2}

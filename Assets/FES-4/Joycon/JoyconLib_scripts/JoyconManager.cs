@@ -40,97 +40,6 @@ public class JoyconManager : MonoBehaviour
 	{
 		get { return instance; }
 	}
-#if WINDOWS_UWP
-	private void Awake()
-	{
-		if (instance != null) Destroy(gameObject);
-		instance = this;
-
-		j = new List<Joycon>();
-		bool isLeft = false;
-
-		Task.Run(async () =>
-		{
-			Debug.Log("WINDOWS_UWP");
-			try
-			{
-				string selector = "System.Devices.InterfaceEnabled:=System.StructuredQueryType.Boolean#True AND System.DeviceInterface.Hid.VendorId:=1406 AND (System.DeviceInterface.Hid.ProductId:=8198 OR System.DeviceInterface.Hid.ProductId:=8199)";
-				UnityEngine.WSA.Application.InvokeOnAppThread(() =>
-				{
-					Debug.Log($"selector: {selector}");
-				}, true);
-
-				DeviceInformationCollection collection = await DeviceInformation.FindAllAsync(selector);
-
-				foreach (DeviceInformation inf in collection)
-				{
-					UnityEngine.WSA.Application.InvokeOnAppThread(() =>
-					{
-						Debug.Log($"Id: {inf.Id}\nName: {inf.Name}\nKind: {inf.Kind}");
-					}, true);
-
-					HidDevice dev = await HidDevice.FromIdAsync(inf.Id, FileAccessMode.ReadWrite);
-
-					if (dev != null)
-					{
-						UnityEngine.WSA.Application.InvokeOnAppThread(() =>
-						{
-							Debug.Log($"Succeeded to open HID, File access mode: ReadWrite");
-						}, true);
-					}
-					else
-					{
-						dev = await HidDevice.FromIdAsync(inf.Id, FileAccessMode.Read);
-
-						if (dev != null)
-						{
-							UnityEngine.WSA.Application.InvokeOnAppThread(() =>
-							{
-								Debug.Log($"Succeeded to open HID, File access mode: Read");
-							}, true);
-						}
-					}
-
-					if (dev != null)
-					{
-						j.Add(new Joycon(dev, EnableIMU, EnableLocalize & EnableIMU, 0.05f, isLeft));
-					}
-					else
-					{
-						UnityEngine.WSA.Application.InvokeOnAppThread(() =>
-						{
-							Debug.Log($"Failed to open HID");
-						}, true);
-
-						var dai = DeviceAccessInformation.CreateFromId(inf.Id);
-
-						UnityEngine.WSA.Application.InvokeOnAppThread(() =>
-						{
-							Debug.Log($"CurrentStatus:{dai.CurrentStatus.ToString()}");
-						}, true);
-					}
-
-
-				}
-			}
-			catch (Exception e)
-			{
-				UnityEngine.WSA.Application.InvokeOnAppThread(() =>
-				{
-					Debug.Log($"Exception: {e.ToString()}");
-				}, true);
-			}
-			isFinishedAwake = true;
-			UnityEngine.WSA.Application.InvokeOnAppThread(() =>
-			{
-				Debug.Log("FinishedAwake");
-			}, true);
-        });
-    }
-
-
-#else
-
     private void Awake()
 	{
 		if (instance != null) Destroy(gameObject);
@@ -183,43 +92,14 @@ public class JoyconManager : MonoBehaviour
 				IntPtr handle = HIDapi.hid_open_path(enumerate.path);
 				HIDapi.hid_set_nonblocking(handle, 1);
 				j.Add(new Joycon(handle, EnableIMU, EnableLocalize & EnableIMU, 0.05f, isLeft));
+				j[i].SetUDP(8000 + i);
 				++i;
 			}
 			ptr = enumerate.next;
 		}
 		HIDapi.hid_free_enumeration(top_ptr);
 	}
-#endif
 
-#if WINDOWS_UWP
-	private void Start()
-	{
-        Task.Run(async() =>
-		{
-			while (!isFinishedAwake)
-			{
-				await Task.Yield();
-			}
-			for (int i = 0; i < j.Count; ++i)
-			{
-				UnityEngine.WSA.Application.InvokeOnAppThread(() =>
-				{
-					Debug.Log(i);
-				}, true);
-				Joycon jc = j[i];
-				byte LEDs = 0x0;
-				LEDs |= (byte)(0x1 << i);
-				await jc.AttachAsync(leds_: LEDs);
-				jc.Begin();
-			}
-			UnityEngine.WSA.Application.InvokeOnAppThread(() =>
-			{
-				Debug.Log("FinishedStart");
-			}, true);
-		});
-	}
-
-#else
 	private void Start()
 	{
 
@@ -233,7 +113,6 @@ public class JoyconManager : MonoBehaviour
 			jc.Begin ();
         }
     }
-#endif
 
 void Update()
     {
@@ -247,11 +126,7 @@ void Update()
 	{
 		for (int i = 0; i < j.Count; ++i)
 		{
-#if WINDOWS_UWP
-            j[i].DetachAsync();
-#else
             j[i].Detach();
-#endif
         }
     }
 }

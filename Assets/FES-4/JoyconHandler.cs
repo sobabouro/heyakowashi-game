@@ -9,20 +9,15 @@ public class JoyconHandler : MonoBehaviour
 
     [SerializeField]  
     private Transform cameraTransform;
+    [SerializeField]
+    public int jc_ind = 0;
 
     // Values made available via Unity
     public float[] stick;
-    public Vector3 gyro;
-    public Vector3 accel;
-    public Vector3 velocity;
-    public int jc_ind = 0;
     public Quaternion orientation;
 
     void Start()
     {
-        gyro = new Vector3(0, 0, 0);
-        accel = new Vector3(0, 0, 0);
-        velocity = new Vector3(0, 0, 0);
         // get the public Joycon array attached to the JoyconManager in scene
         joycons = JoyconManager.Instance.j;
         if (joycons.Count < jc_ind + 1)
@@ -85,13 +80,6 @@ public class JoyconHandler : MonoBehaviour
 
             stick = j.GetStick();
 
-            // Gyro values: x, y, z axis values (in radians per second)
-            gyro = j.GetGyro();
-
-            // Accel values:  x, y, z axis values (in Gs)
-            accel = j.GetAccel();
-
-
             if (j.GetButton(Joycon.Button.DPAD_UP))
             {
                 gameObject.GetComponent<Renderer>().material.color = Color.green;
@@ -113,12 +101,7 @@ public class JoyconHandler : MonoBehaviour
             }
 
             // ‰ñ“]
-            orientation = cameraTransform.rotation * j.GetVector();
-            gameObject.transform.rotation = orientation;
-
-            // ˆÚ“®
-            velocity = j.GetVelocityInWorld();
-            //gameObject.transform.Translate(velocity * Time.deltaTime, Space.World);
+            gameObject.transform.rotation = cameraTransform.rotation * j.GetVector();
         }
     }
 
