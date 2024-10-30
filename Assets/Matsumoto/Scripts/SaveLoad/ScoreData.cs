@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 
 [System.Serializable]
-public class ScoreData : MonoBehaviour
+public class ScoreData : object
 {
     [SerializeField]
     private int score;
@@ -28,6 +28,7 @@ public class ScoreData : MonoBehaviour
 
     public string GetUserComment()
     {
+        if (userComment == null) return "";
         return userComment;
     }
 
