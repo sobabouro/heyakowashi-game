@@ -12,6 +12,7 @@ public class EquipWeapons : MonoBehaviour
     private bool isEquipWeapon = false;
     private int breakableObject_mass = 1000;
     private Color originalColor;  // 元の色を保持
+    private Transform originalParent;
 
     // Start is called before the first frame update
     void Start()
@@ -22,7 +23,10 @@ public class EquipWeapons : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        
+        if (Input.GetMouseButtonDown(0))
+        {
+            EquipWeapon();
+        }
     }
 
     public void EquipWeapon()
@@ -32,24 +36,42 @@ public class EquipWeapons : MonoBehaviour
             // 既に武器を装備している場合の処理（武器を捨てる）
             foreach (Transform child in container.transform)
             {
-                // Rigidbodyの追加と調整
-                Rigidbody rigidbody = child.gameObject.AddComponent<Rigidbody>();
-                rigidbody.useGravity = true;
-                rigidbody.mass = breakableObject_mass;
+                Transform hostTransform;
+                Rigidbody rigidbody;
+                if (originalParent.gameObject.GetComponent<Container>() == null)
+                {
+                    // Rigidbodyの追加と調整
+                    rigidbody = child.gameObject.AddComponent<Rigidbody>();
+                    rigidbody.useGravity = true;
+                    rigidbody.mass = breakableObject_mass;
+
+                    hostTransform = child.gameObject.transform;
+                }
+                else
+                {
+                    rigidbody = originalParent.GetComponent<Rigidbody>();
+
+                    originalParent.position = child.position;
+                    originalParent.rotation = child.rotation;
+                    hostTransform = originalParent;
+                }
+                
 
                 // HoloLens2での操作での座標移動の対象をcontainerにする
                 if (child.gameObject.GetComponent<ObjectManipulator>() != null)
                 {
-                    child.gameObject.GetComponent<ObjectManipulator>().HostTransform = child.gameObject.transform;
+                    child.gameObject.GetComponent<ObjectManipulator>().HostTransform = hostTransform;
                 }
 
                 // Breakerクラスに保存されるrigidbodyに登録
                 child.gameObject.GetComponent<Breaker>().SetRigidbody(rigidbody);
 
-                child.transform.parent = null;
+                child.transform.SetParent(originalParent);
             }
 
             this.gameObject.GetComponent<MeshRenderer>().material.SetColor("_Color", originalColor);
+
+            isEquipWeapon = false;
         }
         else
         {
@@ -58,10 +80,11 @@ public class EquipWeapons : MonoBehaviour
             if (weaponCollider.gameObject.GetComponent<Breaker>() == null) return;
 
             // コンテナの子オブジェクトにされるrigidbodyの破棄
-            Rigidbody rigidbody = this.gameObject.GetComponent<Rigidbody>();
+            Rigidbody rigidbody = weaponCollider.gameObject.GetComponent<Rigidbody>();
             Destroy(rigidbody);
             // 自身の親の設定
-            weaponCollider.gameObject.transform.parent = container.transform;
+            originalParent = weaponCollider.gameObject.transform.parent;
+            weaponCollider.gameObject.transform.SetParent(container.transform);
             // 座標の調整
             weaponCollider.gameObject.transform.position = container.transform.position;
             weaponCollider.gameObject.transform.rotation = container.transform.rotation;
@@ -69,6 +92,8 @@ public class EquipWeapons : MonoBehaviour
             container.GetComponent<Container>().SetRegisteredObject(weaponCollider.gameObject);
 
             this.gameObject.GetComponent<MeshRenderer>().material.SetColor("_Color", new Color(originalColor.r, originalColor.g, originalColor.b, 0.0f));
+
+            isEquipWeapon = true;
         }
     }
 
@@ -81,4 +106,5 @@ public class EquipWeapons : MonoBehaviour
     {
         weaponCollider = null;
     }
+
 }

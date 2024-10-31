@@ -1895,6 +1895,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: WeaponSelector
       objectReference: {fileID: 0}
+    - target: {fileID: 7464629707582660159, guid: 61502256e6d09bf4da80e67c257719db, type: 3}
+      propertyPath: m_Layer
+      value: 7
+      objectReference: {fileID: 0}
     - target: {fileID: 7758308068944008225, guid: 61502256e6d09bf4da80e67c257719db, type: 3}
       propertyPath: m_Enabled
       value: 0
@@ -4432,7 +4436,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8582149202028883427, guid: cdf4c1a5a10e08a4d90a0845632a2ad8, type: 3}
       propertyPath: _timeLimit
-      value: 10
+      value: 60
       objectReference: {fileID: 0}
     - target: {fileID: 8582149202028883427, guid: cdf4c1a5a10e08a4d90a0845632a2ad8, type: 3}
       propertyPath: collisionEvent
@@ -4698,14 +4702,14 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1771680855}
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalRotation: {x: 0.7071068, y: 0, z: 0, w: 0.7071068}
   m_LocalPosition: {x: 0, y: 0, z: 9}
   m_LocalScale: {x: 20, y: 20, z: 20}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 425211189}
   m_RootOrder: 1
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 90, y: 0, z: 0}
 --- !u!114 &1771680857
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4962,7 +4966,7 @@ MonoBehaviour:
   rotateLerpTime: 0.001
   scaleLerpTime: 0.001
   enableConstraints: 1
-  constraintsManager: {fileID: 0}
+  constraintsManager: {fileID: 1771680860}
   manipulationLogicTypes:
     moveLogicType:
       reference: MixedReality.Toolkit.SpatialManipulation.MoveLogic, MixedReality.Toolkit.SpatialManipulation
@@ -4996,10 +5000,10 @@ Rigidbody:
   m_Drag: 0
   m_AngularDrag: 0.05
   m_UseGravity: 0
-  m_IsKinematic: 0
+  m_IsKinematic: 1
   m_Interpolate: 0
-  m_Constraints: 126
-  m_CollisionDetection: 0
+  m_Constraints: 0
+  m_CollisionDetection: 1
 --- !u!4 &1823140234 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: a99be6175e5f94e4992f5390ac99cfa2, type: 3}
