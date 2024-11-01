@@ -31,19 +31,11 @@ public class ActSubdivide : MonoBehaviour {
     private Texture2D      albedoTexture;
 
     // 切断対象のオブジェクトのメッシュ情報
+    private List<Vector3> tmpVertices;
     private int[]          targetTriangles;
     private Vector3[]      targetVertices;
     private Vector3[]      targetNormals;
     private Vector2[]      targetUVs;
-    // 切断対象のオブジェクトの情報操作用
-    // public int            targetVerticesLength;
-    // public List<Vector3>  newVerticesList;
-    // public List<int[]>    vertexPairList;
-    // public List<List<int>> joinedVertexGroupList;
-    // public List<List<int>> jointedMonotoneVertexGroupList;
-    // public List<List<int>> nonConvexGeometryList;
-    // public Vector2[]       new2DVerticesArray;
-    // public string[]        vertexType;
     // 切断面左側のポリゴン情報
     public List<int>       leftTriangles;
     public List<Vector3>   leftVertices;
@@ -56,45 +48,50 @@ public class ActSubdivide : MonoBehaviour {
     public List<Vector2>   rightUVs;
 
     // Degug 用
+    private static bool debugMode;
+
     private bool interval = false;
-    private const float X_ROTATION     = 20f; 
-    private const float Y_ROTATION     = 30f; 
-    private const float Z_ROTATION     = 0f;
-    public Vector3      positionOffset = new Vector3(1f, 1f, 0.1f);
+    private const float X_ROTATION = 20f;
+    private const float Y_ROTATION = 30f;
+    private const float Z_ROTATION = 0f;
+    public Vector3 positionOffset = new Vector3(1f, 1f, 0.1f);
 
     private void Start() {
         Invoke("CutOK", 0.5f);
-        //    // x軸、y軸、z軸の回転をそれぞれ作成
-        //    Quaternion xRotationQuaternion = Quaternion.Euler(X_ROTATION, 0f, 0f);
-        //    Quaternion yRotationQuaternion = Quaternion.Euler(0f, Y_ROTATION, 0f);
-        //    Quaternion zRotationQuaternion = Quaternion.Euler(0f, 0f, Z_ROTATION);
+        //DebugUtils.ToggleDebugMode();
 
-        //    Quaternion combinedRotation = xRotationQuaternion * yRotationQuaternion * zRotationQuaternion;
-        //    Vector3 rotatedNormal = combinedRotation * transform.right;
-        //    Vector3 customPosition = transform.position + positionOffset;
+        if (debugMode) {
+            // x軸、y軸、z軸の回転をそれぞれ作成
+            Quaternion xRotationQuaternion = Quaternion.Euler(X_ROTATION, 0f, 0f);
+            Quaternion yRotationQuaternion = Quaternion.Euler(0f, Y_ROTATION, 0f);
+            Quaternion zRotationQuaternion = Quaternion.Euler(0f, 0f, Z_ROTATION);
 
-        //    Plane cutter = new Plane(rotatedNormal, customPosition);
+            Quaternion combinedRotation = xRotationQuaternion * yRotationQuaternion * zRotationQuaternion;
+            Vector3 rotatedNormal = combinedRotation * transform.right;
+            Vector3 customPosition = transform.position + positionOffset;
 
-        //    // surfaceMaterial が null でないかを確認
-        //    if (surfaceMaterial == null) {
-        //        Debug.LogError("surfaceMaterial is null");
-        //        return;
-        //    }
+            Plane cutter = new Plane(rotatedNormal, customPosition);
 
-        //    // mainTexture が null でないかを確認
-        //    if (surfaceMaterial.mainTexture == null) {
-        //        Debug.LogError("surfaceMaterial.mainTexture is null");
-        //        return;
-        //    }
+            // surfaceMaterial が null でないかを確認
+            if (surfaceMaterial == null) {
+                Debug.LogError("surfaceMaterial is null");
+                return;
+            }
 
-        //    // mainTexture を Texture2D にキャスト
-        //    albedoTexture = surfaceMaterial.mainTexture as Texture2D;
-        //    if (albedoTexture == null) {
-        //        Debug.LogError("mainTexture is not a Texture2D");
-        //        return;
-        //    }
+            // mainTexture が null でないかを確認
+            if (surfaceMaterial.mainTexture == null) {
+                Debug.LogError("surfaceMaterial.mainTexture is null");
+                return;
+            }
 
-        //    Subdivide(cutter);
+            // mainTexture を Texture2D にキャスト
+            albedoTexture = surfaceMaterial.mainTexture as Texture2D;
+            if (albedoTexture == null) {
+                Debug.LogError("mainTexture is not a Texture2D");
+                return;
+            }
+            Subdivide(cutter);
+        }
     }
     private void CutOK() {
         interval = true;
@@ -110,16 +107,12 @@ public class ActSubdivide : MonoBehaviour {
 
         // 切断対象のオブジェクトのメッシュ情報
         Mesh targetMesh       = this.GetComponent<MeshFilter>().mesh;
+        tmpVertices = new List<Vector3>();
+        targetMesh.GetVertices(tmpVertices);
         targetTriangles       = targetMesh.triangles;
         targetVertices        = targetMesh.vertices;
         targetNormals         = targetMesh.normals;
         targetUVs             = targetMesh.uv;
-        // 切断対象のオブジェクトの情報操作用
-        int targetVerticesLength = targetVertices.Length;
-        List<Vector3> newVerticesList       = new List<Vector3>();
-        List<VertexJudge> newVertexJudge = new List<VertexJudge>();
-        List<int[]> vertexPairList        = new List<int[]>();
-        List<List<int>> joinedVertexGroupList = new List<List<int>>();
         // 切断面左側のポリゴン情報
         leftTriangles         = new List<int>();
         leftVertices          = new List<Vector3>();
@@ -130,22 +123,28 @@ public class ActSubdivide : MonoBehaviour {
         rightVertices         = new List<Vector3>();
         rightNormals          = new List<Vector3>();
         rightUVs              = new List<Vector2>();
+        // 切断対象のオブジェクトの情報操作用
+        int               targetVerticesLength  = targetVertices.Length;
+        List<Vector3>     newVerticesList       = new List<Vector3>();
+        List<VertexJudge> newVertexJudge        = new List<VertexJudge>();
+        List<int[]>       vertexPairList        = new List<int[]>();
+        List<List<int>>   joinedVertexGroupList = new List<List<int>>();
+
+        Vector2[]       new2DVerticesArray;
+        List<List<int>> nonConvexGeometryList;
+        List<List<int>> jointedMonotoneVertexGroupList;
 
         // 切断対象のオブジェクトの各ポリゴンの左右判定用
         int rightSortingHat = 0, leftSortingHat = 0;
         bool vertexTruthValue1, vertexTruthValue2, vertexTruthValue3;
-
-        Debug.Log("====================");
-        Debug.Log("targetTriangles " + string.Join(", ", targetTriangles.Select(obj => obj.ToString())));
-        Debug.Log("targetVertices " + string.Join(", ", targetVertices.Select(obj => obj.ToString())));
-        Debug.Log("targetUVs " + string.Join(", ", targetUVs.Select(obj => obj.ToString())));
-        Debug.Log("====================");
 
         /* ****************************** */
         /* 断面の左右のポリゴンを生成する */
         /* ****************************** */
 
         for (int i = 0; i < targetTriangles.Length; i += 3) {
+            if (!MathUtils.IsTriangle(targetVertices[targetTriangles[i]], targetVertices[targetTriangles[i + 1]], targetVertices[targetTriangles[i + 2]]))
+                continue;
             vertexTruthValue1 = cutter.GetSide(targetVertices[targetTriangles[i]]);
             vertexTruthValue2 = cutter.GetSide(targetVertices[targetTriangles[i + 1]]);
             vertexTruthValue3 = cutter.GetSide(targetVertices[targetTriangles[i + 2]]);
@@ -205,54 +204,51 @@ public class ActSubdivide : MonoBehaviour {
         /* 断面上のポリゴンを生成する */
         /* ************************** */
 
+        // 右側と左側のポリゴンがそれぞれ4つ以上ない場合は，立体を形成しないため終了する
         if (rightTriangles.Count < 4 || leftTriangles.Count < 4) {
-            Debug.Log("rightTriangles.Count == 0 || leftTriangles.Count == 0");
+            Debug.Log("rightTriangles.Count < 4 || leftTriangles.Count < 4");
             return;
         }
 
-        //Debug.Log("newVerticesList " + string.Join(", ", newVerticesList.Select(obj => obj.ToString("F8"))));
+        DebugUtils.ToggleDebugMode();
+        DebugUtils.PrintList(vertexPairList, nameof(vertexPairList));
 
         // ひとつなぎの辺で形成されるすべての図形をリストアップする
         joinedVertexGroupList = GeometryUtils.GroupingForDetermineGeometry(
-            vertexPairList,
-            joinedVertexGroupList
+            vertexPairList
         );
 
-        Debug.Log("joinedVertexGroupList: " + string.Join(", ", joinedVertexGroupList.Select(a => "(" + string.Join(", ", a.Select(b => b.ToString())) + ")")));
-
-        if (joinedVertexGroupList[0].Count == 0) {
-            Debug.Log("nothing joinedVertexGroupList");
+        if (joinedVertexGroupList == null)
             return;
-        }
-
-        //Debug.Log("joinedVertexGroupList: " + string.Join(", ", joinedVertexGroupList.Select(a => "(" + string.Join(", ", a.Select(b => b.ToString())) + ")")));
+        DebugUtils.PrintList(joinedVertexGroupList, nameof(joinedVertexGroupList));
 
         // 新頂点の二次元座標変換する
-        Vector2[] new2DVerticesArray = new Vector2[newVerticesList.Count];
+        new2DVerticesArray = new Vector2[newVerticesList.Count];
         new2DVerticesArray = GeometryUtils.ConvertCoordinates3DTo2D(
             cutter, 
             newVerticesList
         );
 
-        Debug.Log("new2DVerticesArray " + string.Join(", ", new2DVerticesArray.Select(obj => obj.ToString())));
+        DebugUtils.PrintArray(new2DVerticesArray, nameof(new2DVerticesArray));
 
         // 最も外郭となる処理図形 (内包図形の有無に関わらない) ごとにグループ化する
-        List<List<int>> nonConvexGeometryList = GeometryUtils.GroupingForSegmentNonMonotoneGeometry(
+        nonConvexGeometryList = GeometryUtils.GroupingForSegmentNonMonotoneGeometry(
             new2DVerticesArray, 
             joinedVertexGroupList
         );
 
-        //Debug.Log("nonConvexGeometryList: " + string.Join(", ", nonConvexGeometryList.Select(a => "(" + string.Join(", ", a.Select(b => b.ToString())) + ")")));
+        DebugUtils.PrintList(nonConvexGeometryList, nameof(nonConvexGeometryList));
 
         // 処理図形に対して，単調多角形分割を行う
-        List<List<int>> jointedMonotoneVertexGroupList = new List<List<int>>();
         jointedMonotoneVertexGroupList = ComputationalGeometryAlgorithm.MakeMonotone(
             new2DVerticesArray, 
             joinedVertexGroupList, 
             nonConvexGeometryList
         );
+        if (jointedMonotoneVertexGroupList == null)
+            return;
 
-        //Debug.Log("jointedMonotoneVertexGroupList: " + string.Join(", ", jointedMonotoneVertexGroupList.Select(a => "(" + string.Join(", ", a.Select(b => b.ToString())) + ")")));
+        DebugUtils.PrintList(jointedMonotoneVertexGroupList, nameof(jointedMonotoneVertexGroupList));
 
         // 単調多角形を三角形分割する
         ComputationalGeometryAlgorithm.TriangulateMonotonePolygon(
@@ -271,8 +267,6 @@ public class ActSubdivide : MonoBehaviour {
             leftVertices,
             leftUVs
         );
-        // 生成したメッシュ情報を整理する
-        
         // 新しいオブジェクトを生成する
         CreateObject(
             rightVertices,
@@ -391,6 +385,11 @@ public class ActSubdivide : MonoBehaviour {
         List<Vector3>     leftVertices, 
         List<Vector2>     leftUVs
     ) {
+        float distance1 = 0.0f;
+        float distance2 = 0.0f;
+        float distance3 = 0.0f;
+        float epsilon = 0.0001f;
+
         ( // ポリゴンの頂点情報を扱いやすいように整理する
             bool rtlf, 
             int vertexIndex1, Vector3 lonelyVertex, 
@@ -401,8 +400,12 @@ public class ActSubdivide : MonoBehaviour {
             targetTriangles[triangleOffset + 1], vertexTruthValue2, targetVertices[targetTriangles[triangleOffset + 1]],
             targetTriangles[triangleOffset + 2], vertexTruthValue3, targetVertices[targetTriangles[triangleOffset + 2]]
         );
-        // 切断面上に孤独な頂点がある場合，GetSide() で判定しきれないので，ここで処理する
-        if (rtlf == false && Mathf.Abs(cutter.GetDistanceToPoint(lonelyVertex)) < 0.0001f) {
+        distance1 = Mathf.Abs(cutter.GetDistanceToPoint(lonelyVertex));
+        distance2 = Mathf.Abs(cutter.GetDistanceToPoint(startPairVertex));
+        distance3 = Mathf.Abs(cutter.GetDistanceToPoint(lastPairVertex));
+
+        // 「切断面上に孤独な頂点が存在する場合」と「切断面上にペア頂点の両方が存在する場合」はGetSide() で判定しきれないので，ここで処理する
+        if ((rtlf && distance2 < epsilon && distance3 < epsilon) || (!rtlf && distance1 < epsilon)) {
             AddToRightSide(
                 triangleOffset,
                 ref rightOffset,
@@ -415,6 +418,20 @@ public class ActSubdivide : MonoBehaviour {
             );
             return;
         }
+        else if ((rtlf && distance1 < epsilon) || (!rtlf && distance2 < epsilon && distance3 < epsilon)) {
+            AddToLeftSide(
+                triangleOffset,
+                ref leftOffset,
+                targetTriangles,
+                targetVertices,
+                targetUVs,
+                leftTriangles,
+                leftVertices,
+                leftUVs
+            );
+            return;
+        }
+
         ( // 新しい頂点を生成する
             Vector3 newStartPairVertex,
             Vector3 newLastPairVertex,
@@ -434,11 +451,6 @@ public class ActSubdivide : MonoBehaviour {
             newVertexJudge
         );
 
-        //Debug.Log("newStartPairVertex " + newStartPairVertex.ToString("F8"));
-        //Debug.Log("newLastPairVertex " + newLastPairVertex.ToString("F8"));
-        //Debug.Log("newVerticesList " + string.Join(", ", newVerticesList.Select(obj => obj.ToString("F8"))));
-        //Debug.Log("vertexPairList: " + string.Join(", ", vertexPairList.Select(a => "(" + string.Join(", ", a.Select(b => b.ToString())) + ")")));
-
         ( // 新しいUV座標を生成する
             Vector2 newUV1, 
             Vector2 newUV2
@@ -449,52 +461,7 @@ public class ActSubdivide : MonoBehaviour {
             targetUVs[vertexIndex2], 
             targetUVs[vertexIndex3]
         );
-        //int[] pairVertex = new int[2] { vertexIndex1, vertexIndex2 };
-        //( // 重複頂点の処理を行う (辺の始点)
-        //    bool deltrueSV, 
-        //    int newVertexIndexSV
-        //) = SegmentedPolygonsUtils.InsertAndDeleteVertices(
-        //    targetVerticesLength,
-        //    newStartPairVertex, 
-        //    newVerticesList
-        //);
-        //if (deltrueSV == false) {
-        //    newVertexJudge.Add(new VertexJudge(
-        //        pairVertex,
-        //        newVertexIndexSV
-        //    ));
-        //    newVerticesList.Add(newStartPairVertex);
-        //}
-
-        //Debug.Log("deltrueSV " + deltrueSV.ToString());
-        //Debug.Log("newStartPairVertex " + newStartPairVertex.ToString("F8"));
-
-        //pairVertex = new int[2] { vertexIndex1, vertexIndex3 };
-        //( // 重複頂点の処理を行う (辺の終点)
-        //    bool deltrueLV,
-        //    int newVertexIndexLV
-        //) = SegmentedPolygonsUtils.InsertAndDeleteVertices(
-        //    targetVerticesLength,
-        //    newLastPairVertex,
-        //    newVerticesList
-        //);
-        //if (deltrueLV == false) {
-        //    newVertexJudge.Add(new VertexJudge(
-        //        pairVertex,
-        //        newVertexIndexLV
-        //    ));
-        //    newVerticesList.Add(newLastPairVertex);
-        //}
-
-        //Debug.Log("deltrueLV " + deltrueLV.ToString());
-        //Debug.Log("newLastPairVertex " + newLastPairVertex.ToString("F8"));
-
-        //Debug.Log("newVerticesList " + string.Join(", ", newVerticesList.Select(obj => obj.ToString("F8"))));
-
-        // のちに頂点インデックスをもとに，こいつはこいつで頂点グルーピングするので保存しておく
-        //if (newStartPairVertex != newLastPairVertex)
-        //    vertexPairList.Add(new int[] { newVertexIndexSV - targetVerticesLength, newVertexIndexLV - targetVerticesLength });
-
+       
         /* ****************************** */
         /* 孤独な頂点が無限平面の右側にある場合 */
         /* ****************************** */
@@ -660,106 +627,59 @@ public class ActSubdivide : MonoBehaviour {
         ) {
             int newStartPairIndex = -1;
             int newLastPairIndex = -1;
-            Vector3 newStartPairVertex = Vector3.zero;
-            Vector3 newLastPairVertex = Vector3.zero;
-            bool isDuplicate = false;
-            Ray ray1 = new Ray();
-            Ray ray2 = new Ray();
+            Vector3 newStartPairVertex;
+            Vector3 newLastPairVertex;
+            Ray ray1;
+            Ray ray2;
+            bool isDuplicateStart = false;
+            bool isDuplicateLast = false;
+            double distance1 = 0.0;
+            double distance2 = 0.0;
             double distanceLonelyStart = Vector3.Distance(lonelyVertex, startPairVertex);
             double distanceLonelyLast = Vector3.Distance(lonelyVertex, lastPairVertex);
+            float ratio_LonelyStart = (float)(distance1 / distanceLonelyStart);
+            float ratio_LonelyLast = (float)(distance2 / distanceLonelyLast);
 
             if (rtlf) {
                 ray1 = new Ray(lonelyVertex, (startPairVertex - lonelyVertex).normalized);
                 ray2 = new Ray(lonelyVertex, (lastPairVertex - lonelyVertex).normalized);
-            } 
-            else {
-                ray1 = new Ray(startPairVertex, (lonelyVertex - startPairVertex).normalized);
-                ray2 = new Ray(lastPairVertex, (lonelyVertex - lastPairVertex).normalized);
+            } else {
+                ray1 = new Ray(lastPairVertex, (lonelyVertex - lastPairVertex).normalized);
+                ray2 = new Ray(startPairVertex, (lonelyVertex - startPairVertex).normalized);
             }
-            Vector3[] pairVertex = new Vector3[2] { lonelyVertex, startPairVertex };
-
-            double distance1 = 0.0;
             plane.Raycast(ray1, out float tempDistance1);
             distance1 = (double)tempDistance1;
-            float ratio_LonelyStart = (float)(distance1 / distanceLonelyStart);
-
-            for (int i = 0; i < newVertexJudge.Count; i++) {
-                if ((pairVertex[0] == newVertexJudge[i].PairVertices[0] && pairVertex[1] == newVertexJudge[i].PairVertices[1]) || (pairVertex[0] == newVertexJudge[i].PairVertices[1] && pairVertex[1] == newVertexJudge[i].PairVertices[0])) {
-                    isDuplicate = true;
-                    newStartPairIndex = newVertexJudge[i].VertexIndex;
-                    newStartPairVertex = newVerticesList[newStartPairIndex];
-
-                    Debug.Log("lonely: " + lonelyIndex + ", " + lonelyVertex.ToString("F8") + ", start: " + startPairIndex + ", " + startPairVertex.ToString("F8"));
-                    Debug.Log("newStartPairIndex: " + newStartPairIndex.ToString());
-                    Debug.Log("newVerticesList: " + string.Join(", ", newVerticesList));
-                    newVertexJudge.RemoveAt(i);
-                    Debug.Log("removing newVertexJudge: " + string.Join(", ", newVertexJudge));
-                    break;
-                }
-            }
-            if (!isDuplicate) {
-                newStartPairVertex = ray1.GetPoint((float)distance1);
-                newVerticesList.Add(newStartPairVertex);
-                newStartPairIndex = newVerticesList.Count - 1;
-
-                Debug.Log("lonely: " + lonelyIndex + ", " + lonelyVertex.ToString("F8") + ", start: " + startPairIndex + ", " + startPairVertex.ToString("F8"));
-                Debug.Log("newStartPairIndex: " + newStartPairIndex.ToString());
-                Debug.Log("newVerticesList after adding newStartPairVertex: " + string.Join(", ", newVerticesList));
-
-                newVertexJudge.Add(new VertexJudge(
-                    pairVertex,
-                    newStartPairIndex
-                ));
-                Debug.Log("adding newVertexJudge: " + string.Join(", ", newVertexJudge));
-            }
-            isDuplicate = false;
-            pairVertex = new Vector3[2] { lonelyVertex, lastPairVertex };
-
-            double distance2 = 0.0;
+            newStartPairVertex = ray1.GetPoint((float)distance1);
             plane.Raycast(ray2, out float tempDistance2);
             distance2 = (double)tempDistance2;
-            float ratio_LonelyLast = (float)(distance2 / distanceLonelyLast);
+            newLastPairVertex = ray2.GetPoint((float)distance2);
 
-            for (int i = 0; i < newVertexJudge.Count; i++) {
-                if ((pairVertex[0] == newVertexJudge[i].PairVertices[0] && pairVertex[1] == newVertexJudge[i].PairVertices[1]) || (pairVertex[0] == newVertexJudge[i].PairVertices[1] && pairVertex[1] == newVertexJudge[i].PairVertices[0])) {
-                    isDuplicate = true;
-                    newLastPairIndex = newVertexJudge[i].VertexIndex;
-                    newLastPairVertex = newVerticesList[newLastPairIndex];
-
-                    Debug.Log("lonely: " + lonelyIndex + ", " + lonelyVertex.ToString("F8") + ", last: " + lastPairIndex + ", " + lastPairVertex.ToString("F8"));
-                    Debug.Log("newLastPairIndex: " + newLastPairIndex.ToString());
-                    Debug.Log("newVerticesList: " + string.Join(", ", newVerticesList));
-                    newVertexJudge.RemoveAt(i);
-                    Debug.Log("removing newVertexJudge: " + string.Join(", ", newVertexJudge));
+            for (int i = 0; i < newVerticesList.Count; i++) {
+                if (newVerticesList[i] == newStartPairVertex) {
+                    isDuplicateStart = true;
+                    newStartPairIndex = i;
                     break;
                 }
             }
-            if (!isDuplicate) {
-                newLastPairVertex = ray2.GetPoint((float)distance2);
+            if (!isDuplicateStart) {
+                newVerticesList.Add(newStartPairVertex);
+                newStartPairIndex = newVerticesList.Count - 1;
+            }
+
+            for (int i = 0; i < newVerticesList.Count; i++) {
+                if (newVerticesList[i] == newLastPairVertex) {
+                    isDuplicateLast = true;
+                    newLastPairIndex = i;
+                    break;
+                }
+            }
+            if (!isDuplicateLast) {
                 newVerticesList.Add(newLastPairVertex);
                 newLastPairIndex = newVerticesList.Count - 1;
-
-                Debug.Log("lonely: " + lonelyIndex + ", " + lonelyVertex.ToString("F8") + ", last: " + lastPairIndex + ", " + lastPairVertex.ToString("F8"));
-                Debug.Log("newLastPairIndex: " + newLastPairIndex.ToString());
-                Debug.Log("newVerticesList after adding newStartPairVertex: " + string.Join(", ", newVerticesList));
-
-                newVertexJudge.Add(new VertexJudge(
-                    pairVertex,
-                    newLastPairIndex
-                ));
-                Debug.Log("adding newVertexJudge: " + string.Join(", ", newVertexJudge));
             }
 
-            if (rtlf) {
-                vertexPairList.Add(new int[] { newStartPairIndex, newLastPairIndex });
-                Debug.Log("vertexPairList: " + string.Join(", ", vertexPairList.Select(pair => "(" + string.Join(", ", pair.Select(i => i.ToString())) + ")")));
-                return (newStartPairVertex, newLastPairVertex, ratio_LonelyStart, ratio_LonelyLast);
-            } 
-            else {
-                vertexPairList.Add(new int[] { newLastPairIndex, newStartPairIndex });
-                Debug.Log("vertexPairList: " + string.Join(", ", vertexPairList.Select(pair => "(" + string.Join(", ", pair.Select(i => i.ToString())) + ")")));
-                return (newLastPairVertex, newStartPairVertex, ratio_LonelyStart, ratio_LonelyLast);
-            }
+            vertexPairList.Add(new int[] { newStartPairIndex, newLastPairIndex });
+            return (newStartPairVertex, newLastPairVertex, ratio_LonelyStart, ratio_LonelyLast);
         }
 
         // 新頂点のUV座標を生成する
@@ -781,37 +701,6 @@ public class ActSubdivide : MonoBehaviour {
             );
             return (newUV1, newUV2);
         }
-
-        // 重複する頂点を削除する
-        public static (
-            bool deltrue, 
-            int newVertexIndex
-        ) InsertAndDeleteVertices(
-            int targetVerticesLength,
-            Vector3 newVertex, 
-            List<Vector3> newVerticesList
-            //int[] pairVertex,
-            //List<VertexJudge> newVertexJudge
-        ) {
-            int newVertexIndex = newVerticesList.Count;
-            bool deltrue = false;
-            // 新頂点リストの中に重複する頂点があれば，その頂点のインデックスを返す
-            for (int duplicateIndex = 0; duplicateIndex < newVerticesList.Count; duplicateIndex++) {
-                if (newVerticesList[duplicateIndex] == newVertex) {
-                    newVertexIndex = duplicateIndex;
-                    deltrue = true;
-                    break;
-                }
-
-                //if (pairVertex.OrderBy(v => v).SequenceEqual(newVertexJudge[duplicateIndex].PairVertices.OrderBy(v => v))) {
-                //    newVertexIndex = newVertexJudge[duplicateIndex].VertexIndex;
-                //    newVertexJudge.RemoveAt(duplicateIndex);
-                //    deltrue = true;
-                //    break;
-                //}
-            }
-            return (deltrue, newVertexIndex + targetVerticesLength);
-        }
     }
 
     // 切断平面上の頂点と，それらが構成する図形に対する処理系
@@ -819,19 +708,20 @@ public class ActSubdivide : MonoBehaviour {
 
         // 新頂点リストから，ペア同士の探索を行い，頂点グループを生成する
         public static List<List<int>> GroupingForDetermineGeometry(
-            List<int[]> vertexPairList,
-            List<List<int>> joinedVertexGroupList
+            List<int[]> vertexPairList
         ) {
             HashSet<int[]> remainingVertexPairList = new HashSet<int[]>(vertexPairList);
+            List<List<int>> joinedVertexGroupList = new List<List<int>>();
+            int errorCode = 0;
             int fleeze700_1 = 0;
             int fleeze700_2 = 0;
 
             while (remainingVertexPairList.Count > 0) {
                 fleeze700_1++;
-                if (fleeze700_1> 1000) {
-                    Debug.Log("vertexPairList " + string.Join(", ", vertexPairList.Select(obj => obj.ToString())));
-                    Debug.LogError("fleeze");
-                    break;
+                if (fleeze700_1> 5000) {
+                    errorCode = 1;
+                    DebugUtils.PrintNumber(errorCode,nameof(errorCode));
+                    return null;
                 }
                 List<int> geometry = new List<int>();
                 // 最初のEdgeの開始点と終点を取得
@@ -845,10 +735,11 @@ public class ActSubdivide : MonoBehaviour {
                 // 頂点が一周するまでループ
                 while (startVertex != endVertex) {
                     fleeze700_2++;
-                    if (fleeze700_2 > 1000) {
-                        Debug.Log("vertexPairList: " + string.Join(", ", vertexPairList.Select(a => "(" + string.Join(", ", a.Select(b => b.ToString())) + ")")));
-                        Debug.LogError("fleeze");
-                        break;
+                    if (fleeze700_2 > 5000) {
+                        errorCode = 2;
+                        DebugUtils.PrintList(geometry, nameof(geometry));
+                        DebugUtils.PrintNumber(errorCode, nameof(errorCode));
+                        return null;
                     }
                     // 残りの頂点リストから、前回の終点から始まるEdgeを探す
                     foreach (int[] edge in remainingVertexPairList) {
@@ -1088,18 +979,24 @@ public class ActSubdivide : MonoBehaviour {
             List<List<int>> joinedVertexGroupList, 
             List<List<int>> nonConvexGeometryList
         ) {
+            int errorCode = 0;
             string[] vertexType = new string[new2DVerticesArray.Length];
+            List<int[]> monotoneEdgeList;
+            List<int[]> monotoneDiagonalList = new List<int[]>();
             List<List<int>> jointedMonotoneVertexGroupList = new List<List<int>>();
+            NodeReference[] part_nonConvexGeometryNodesJagAry;
+            RefInt[] helper;
+
+            // 処理図形グループごとに，一直線上にある余分な頂点を削除する
+            
 
             // 新頂点を種類ごとに分類する
             vertexType = ClusteringVertexType(
                 new2DVerticesArray, 
                 joinedVertexGroupList
             );
-            List<int[]> monotoneEdgeList;
-            List<int[]> monotoneDiagonalList = new List<int[]>();
-            NodeReference[] part_nonConvexGeometryNodesJagAry;
-            RefInt[] helper;
+            DebugUtils.PrintArray(vertexType, nameof(vertexType));
+
             // 処理図形グループごとに，単調多角形分割を行う
             for (int processingCount = 0; processingCount < nonConvexGeometryList.Count; processingCount++) {
 
@@ -1128,11 +1025,14 @@ public class ActSubdivide : MonoBehaviour {
                     monotoneEdgeList
                 );
                 // 対角線リストから，単調多角形に分割し，多角形の辺リストに格納する
-                AssortmentToMonotone(
+                errorCode = AssortmentToMonotone(
                     jointedMonotoneVertexGroupList, 
                     monotoneDiagonalList, 
                     monotoneEdgeList
                 );
+                if (errorCode != 0) {
+                    return null;
+                }
             }
             return jointedMonotoneVertexGroupList;
         }
@@ -1266,7 +1166,7 @@ public class ActSubdivide : MonoBehaviour {
                 for (int j = 0; j < joinedVertexGroupList[i].Count - 1; j++) {
                     Vector2 internalVertex = new2DVerticesArray[joinedVertexGroupList[i][j]];
                     Vector2 terminalVertex = new2DVerticesArray[joinedVertexGroupList[i][j + 1]];
-                    Vector2 point = j == 0 ? new2DVerticesArray[joinedVertexGroupList[i][joinedVertexGroupList[i].Count - 2]] : new2DVerticesArray[joinedVertexGroupList[i][j - 1]];
+                    Vector2 point = j == 0 ? new2DVerticesArray[joinedVertexGroupList[i][joinedVertexGroupList[j].Count - 2]] : new2DVerticesArray[joinedVertexGroupList[i][j - 1]];
                     // y座標が前後の頂点と比較して対象の点が大きいとき
                     if (internalVertex.y >= point.y && internalVertex.y > terminalVertex.y) {
                         // 部分最大の場合: 出発点
@@ -1474,19 +1374,21 @@ public class ActSubdivide : MonoBehaviour {
         }
 
         // 対角線リストと辺リストをもとに，単調多角形リストを生成する
-        private static void AssortmentToMonotone(
+        private static int AssortmentToMonotone(
             List<List<int>> jointedMonotoneVertexGroupList, 
             List<int[]> monotoneDiagonalList, 
             List<int[]> monotoneEdgeList
         ) {
             int fleeze1360_1 = 0;
             int fleeze1360_2 = 0;
+            int errorCode = 0;
+
             while (monotoneEdgeList.Count > 0) {
                 fleeze1360_1++;
-                if (fleeze1360_1 > 1000) {
-                    Debug.Log("monotoneEdgeList " + string.Join(", ", monotoneEdgeList.Select(obj => obj.ToString())));
-                    Debug.LogError("fleeze");
-                    break;
+                if (fleeze1360_1 > 2000) {
+                    errorCode = 3;
+                    Debug.Log("errorCode: " + errorCode);
+                    return errorCode;
                 }
                 // 最初のDiagonalEdgeの開始点と終点を取得
                 int startVertex = monotoneEdgeList[0][0];
@@ -1499,10 +1401,10 @@ public class ActSubdivide : MonoBehaviour {
                 // 頂点が一周するまでループ
                 while (startVertex != endVertex) {
                     fleeze1360_2++;
-                    if (fleeze1360_2 > 1000) {
-                        Debug.Log("currentGroup " + string.Join(", ", currentGroup.Select(obj => obj.ToString())));
-                        Debug.LogError("fleeze");
-                        break;
+                    if (fleeze1360_2 > 2000) {
+                        errorCode = 4;
+                        Debug.Log("errorCode: " + errorCode);
+                        return errorCode;
                     }
                     bool found = false;
                     // 辺リストから、前回の終点から始まる Edge を探す (in diagonal)
@@ -1533,6 +1435,7 @@ public class ActSubdivide : MonoBehaviour {
                 }
                 jointedMonotoneVertexGroupList.Add(currentGroup);
             }
+            return errorCode;
         }
 
         // 対角線リストと辺リストをもとに，トライアングルを左右のトライアングルリストに挿入する．ついでに UV も生成する
@@ -1565,8 +1468,6 @@ public class ActSubdivide : MonoBehaviour {
             int fleeze1440_1 = 0;
             int fleeze1440_2 = 0;
 
-            RemoveCollinearVertices(jointedMonotoneVertexGroupList, new2DVerticesArray);
-
             // テクスチャマッピングのための，最大値と最小値の座標を持つ頂点のインデックスを取得する
             (overallRightIndex, overallLeftIndex, overallTopIndex, overallBottomIndex) = FindOverallMaxAndMinVertexIndices(
                 new2DVerticesArray,
@@ -1596,6 +1497,9 @@ public class ActSubdivide : MonoBehaviour {
                     topIndex,
                     bottomIndex
                 );
+                // 一直線上にある余分な頂点を削除する
+                RemoveCollinearVertices(vertexConnection, new2DVerticesArray);
+
                 // 境界情報を持った単調多角形頂点リストを y 座標の降順にソートする
                 SortMonotoneVertexByCoordinateY(
                     new2DVerticesArray, 
@@ -1854,25 +1758,22 @@ public class ActSubdivide : MonoBehaviour {
         }
 
         // 同一直線状の頂点を削除する
-        public static void RemoveCollinearVertices(List<List<int>> jointedMonotoneVertexGroupList, Vector2[] new2DVerticesArray) {
-            for (int g = 0; g < jointedMonotoneVertexGroupList.Count; g++) {
-                List<int> group = jointedMonotoneVertexGroupList[g];
-                int count = group.Count;
+        public static void RemoveCollinearVertices(List<int[]> vertexConnection, Vector2[] new2DVerticesArray) {
+            int count = vertexConnection.Count;
 
-                for (int i = 0; i < count - 2; i++) {
-                    // 現在の点と次の点、次の次の点を取得
-                    Vector2 internalVertex = new2DVerticesArray[group[i]];
-                    Vector2 terminalVertex = new2DVerticesArray[group[i + 1]];
-                    Vector2 nextPoint = new2DVerticesArray[group[i + 2]];
+            for (int i = 0; i < count - 2; i++) {
+                // 現在の点と次の点、次の次の点を取得
+                Vector2 internalVertex = new2DVerticesArray[vertexConnection[i][0]];
+                Vector2 terminalVertex = new2DVerticesArray[vertexConnection[i + 1][0]];
+                Vector2 nextPoint = new2DVerticesArray[vertexConnection[i + 2][0]];
 
-                    // 直線上にあるかどうかを確認
-                    if (Math.Abs(MathUtils.CrossProduct(internalVertex, terminalVertex, nextPoint)) < 1e-6) // 十分小さい値で比較
-                    {
-                        // 直線上の点を削除
-                        group.RemoveAt(i + 1);
-                        i--; // インデックスを戻して連続した点を確認
-                        count--; // リストのサイズを更新
-                    }
+                // 直線上にあるかどうかを確認
+                if (Math.Abs(MathUtils.CrossProduct(internalVertex, terminalVertex, nextPoint)) < 1e-6) // 十分小さい値で比較
+                {
+                    // 直線上の点を削除
+                    vertexConnection.RemoveAt(i + 1);
+                    i--; // インデックスを戻して連続した点を確認
+                    count--; // リストのサイズを更新
                 }
             }
         }
@@ -2053,6 +1954,21 @@ public class MathUtils {
         return area > 0;
     }
 
+    public static bool IsTriangle(Vector3 v1, Vector3 v2, Vector3 v3) {
+        // ベクトルを計算
+        Vector3 vec1 = v2 - v1;
+        Vector3 vec2 = v3 - v1;
+
+        // 外積を計算
+        Vector3 crossProduct = Vector3.Cross(vec1, vec2);
+
+        // 外積の大きさを計算し、面積を求める
+        float area = 0.5f * crossProduct.magnitude;
+
+        // 面積がゼロでない場合は三角形を構成する
+        return area > 0;
+    }
+
     // 消したい要素を末尾の要素と入れ替えて、末尾を削除する処理関数
     public static void SwapAndRemoveAt<T>(List<T> list, int indexToRemove) {
         int lastIndex = list.Count - 1;
@@ -2134,26 +2050,33 @@ public class Pointer<T> {
 
 // 構造体定義
 public struct VertexJudge {
-    private Vector3[] pairVertices;
+    private Vector3 keyVertex;
+    private string vertexLabel;
     private int vertexIndex;
 
-    public Vector3[] PairVertices {
-        get => pairVertices;
-        set => pairVertices = value;
+    public Vector3 KeyVertex {
+        get => keyVertex;
+        set => keyVertex = value;
+    }
+    public string VertexLabel {
+        get => vertexLabel;
+        set => vertexLabel = value;
     }
     public int VertexIndex {
         get => vertexIndex;
         set => vertexIndex = value;
     }
     // コンストラクタを定義
-    public VertexJudge(Vector3[] pairVertices, int vertexIndex) {
-        this.pairVertices = pairVertices;
+    public VertexJudge(Vector3 keyVertex, string vertexLabel, int vertexIndex) {
+        this.keyVertex = keyVertex;
+        this.vertexLabel = vertexLabel;
         this.vertexIndex = vertexIndex;
     }
     // ToString() メソッドのオーバーライド
     public override string ToString() {
-        string vertices = string.Join(", ", pairVertices.Select(v => v.ToString()));
-        return $"PairVertices: ({vertices}), VertexIndex: {vertexIndex}";
+        //string vertices = string.Join(", ", pairVertices.Select(v => v.ToString()));
+        string vertices = keyVertex.ToString();
+        return $"PairVertices: ({vertices}), VertexLabel: {vertexLabel}, VertexIndex: {vertexIndex}";
     }
 }
 
@@ -2208,6 +2131,97 @@ public struct NodeReference {
         // 現在の頂点でヘルパを更新
         if (currentHelper.Value != null) {
             currentHelper.Value = CurrentVertex;
+        }
+    }
+}
+
+// Debug用
+public static class DebugUtils {
+    public static bool debugMode { get; private set; } = false;
+
+    public static void ToggleDebugMode() {
+        debugMode = !debugMode;
+    }
+    public static void PrintNumber<T>(T value, string variableName) where T : struct, IConvertible {
+        if (debugMode) {
+            string formattedValue = Convert.ToString(value);
+            Debug.Log($"{variableName} ({typeof(T).Name}): {formattedValue}");
+        }
+    }
+    public static void PrintVector(Vector3 vector, string variableName) {
+        if (debugMode)
+            Debug.Log($"{variableName} (Vector3): {vector}");
+    }
+
+    public static void PrintVector(Vector2 vector, string variableName) {
+        if (debugMode)
+            Debug.Log($"{variableName} (Vector2): {vector}");
+    }
+
+    public static void PrintArray(Vector2[] vectorArray, string arrayName) {
+        if (debugMode) {
+            Debug.Log($"{arrayName}: [" + string.Join(", ", vectorArray.Select(v => v.ToString())) + "]");
+        }
+    }
+    public static void PrintArray(Vector3[] vectorArray, string arrayName) {
+        if (debugMode) {
+            Debug.Log($"{arrayName}: [" + string.Join(", ", vectorArray.Select(v => v.ToString())) + "]");
+        }
+    }
+    public static void PrintArray(int[] intArray, string arrayName) {
+        if (debugMode) {
+            Debug.Log($"{arrayName}: [{string.Join(", ", intArray.Select(v => v.ToString()))}]");
+        }
+    }
+    public static void PrintArray(string[] stringArray, string arrayName) {
+        if (debugMode) {
+            Debug.Log($"{arrayName}: [{string.Join(", ", stringArray.Select(v => v.ToString()))}]");
+        }
+    }
+    public static void PrintArray(RefInt[] refIntArray, string arrayName) {
+        if (debugMode) {
+            Debug.Log($"{arrayName}: [{string.Join(", ", refIntArray.Select(v => v.ToString()))}]");
+        }
+    }
+    public static void PrintArray(RefInt[][] refIntArray, string arrayName) {
+        if (debugMode) {
+            Debug.Log($"{arrayName}: [" + string.Join(" | ", refIntArray.Select(arr => $"[{string.Join(", ", arr.Select(v => v.ToString()))}]")) + "]");
+        }
+    }
+    public static void PrintArray(NodeReference[] nodeReferenceArray, string arrayName) {
+        if (debugMode) {
+            Debug.Log($"{arrayName}: [" + string.Join(", ", nodeReferenceArray.Select(v => v.ToString())) + "]");
+        }
+    }
+    public static void PrintArray(VertexJudge[] vertexJudgeArray, string arrayName) {
+        if (debugMode) {
+            Debug.Log($"{arrayName}: [" + string.Join(", ", vertexJudgeArray.Select(v => v.ToString())) + "]");
+        }
+    }
+    public static void PrintList<T>(List<T> list, string listName) {
+        if (debugMode) {
+            Debug.Log($"{listName}: [{string.Join(", ", list.Select(item => item.ToString()))}]");
+        }
+    }
+    public static void PrintList<T>(List<T[]> list, string listName) {
+        if (debugMode) {
+            Debug.Log($"{listName}: [" + string.Join(" | ", list.Select(arr => $"[{string.Join(", ", arr.Select(item => item.ToString()))}]")) + "]");
+        }
+    }
+    public static void PrintList<T>(List<List<T>> list, string listName) {
+        if (debugMode) {
+            Debug.Log($"{listName}: [" + string.Join(" | ", list.Select(innerList => $"[{string.Join(", ", innerList.Select(item => item.ToString()))}]")) + "]");
+        }
+    }
+    public static void PrintList<T>(List<List<T[]>> list, string listName) {
+        if (debugMode) {
+            Debug.Log($"{listName}: [" +
+                      string.Join(" | ", list.Select(innerList => "[" + string.Join(" | ", innerList.Select(arr => $"[{string.Join(", ", arr.Select(item => item.ToString()))}]")) + "]")) + "]");
+        }
+    }
+    public static void PrintList<T>(List<List<List<T>>> list, string listName) {
+        if (debugMode) {
+            Debug.Log($"{listName}: [" + string.Join(" | ", list.Select(innerList => "[" + string.Join(" | ", innerList.Select(nestedList => $"[{string.Join(", ", nestedList.Select(item => item.ToString()))}]")) + "]")) + "]");
         }
     }
 }
