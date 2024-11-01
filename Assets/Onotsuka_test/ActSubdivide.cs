@@ -461,44 +461,7 @@ public class ActSubdivide : MonoBehaviour {
             targetUVs[vertexIndex2], 
             targetUVs[vertexIndex3]
         );
-        //int[] pairVertex = new int[2] { vertexIndex1, vertexIndex2 };
-        //( // 重複頂点の処理を行う (辺の始点)
-        //    bool deltrueSV, 
-        //    int newVertexIndexSV
-        //) = SegmentedPolygonsUtils.InsertAndDeleteVertices(
-        //    targetVerticesLength,
-        //    newStartPairVertex, 
-        //    newVerticesList
-        //);
-        //if (deltrueSV == false) {
-        //    newVertexJudge.Add(new VertexJudge(
-        //        pairVertex,
-        //        newVertexIndexSV
-        //    ));
-        //    newVerticesList.Add(newStartPairVertex);
-        //}
-
-        //pairVertex = new int[2] { vertexIndex1, vertexIndex3 };
-        //( // 重複頂点の処理を行う (辺の終点)
-        //    bool deltrueLV,
-        //    int newVertexIndexLV
-        //) = SegmentedPolygonsUtils.InsertAndDeleteVertices(
-        //    targetVerticesLength,
-        //    newLastPairVertex,
-        //    newVerticesList
-        //);
-        //if (deltrueLV == false) {
-        //    newVertexJudge.Add(new VertexJudge(
-        //        pairVertex,
-        //        newVertexIndexLV
-        //    ));
-        //    newVerticesList.Add(newLastPairVertex);
-        //}
-
-        // のちに頂点インデックスをもとに，こいつはこいつで頂点グルーピングするので保存しておく
-        //if (newStartPairVertex != newLastPairVertex)
-        //    vertexPairList.Add(new int[] { newVertexIndexSV - targetVerticesLength, newVertexIndexLV - targetVerticesLength });
-
+       
         /* ****************************** */
         /* 孤独な頂点が無限平面の右側にある場合 */
         /* ****************************** */
@@ -662,88 +625,6 @@ public class ActSubdivide : MonoBehaviour {
             List<Vector3> newVerticesList,
             List<VertexJudge> newVertexJudge
         ) {
-            //int newStartPairIndex = -1;
-            //int newLastPairIndex = -1;
-            //Vector3 newStartPairVertex = Vector3.zero;
-            //Vector3 newLastPairVertex = Vector3.zero;
-            //Vector3 keyVertex = Vector3.zero;
-            //bool isDuplicate = false;
-            //bool startAdded = false;
-            //Ray ray1;
-            //Ray ray2;
-            //double distanceLonelyStart = Vector3.Distance(lonelyVertex, startPairVertex);
-            //double distanceLonelyLast = Vector3.Distance(lonelyVertex, lastPairVertex);
-
-            //if (rtlf) {
-            //    ray1 = new Ray(lonelyVertex, (startPairVertex - lonelyVertex).normalized);
-            //    ray2 = new Ray(lonelyVertex, (lastPairVertex - lonelyVertex).normalized);
-            //    keyVertex = startPairVertex;
-            //} 
-            //else {
-            //    ray1 = new Ray(lastPairVertex, (lonelyVertex - lastPairVertex).normalized);
-            //    ray2 = new Ray(startPairVertex, (lonelyVertex - startPairVertex).normalized);
-            //    keyVertex = lonelyVertex;
-            //}
-
-            //double distance1 = 0.0;
-            //plane.Raycast(ray1, out float tempDistance1);
-            //distance1 = (double)tempDistance1;
-            //float ratio_LonelyStart = (float)(distance1 / distanceLonelyStart);
-
-            //for (int i = 0; i < newVertexJudge.Count; i++) {
-            //    if (newVertexJudge[i].VertexLabel == "last" && newVertexJudge[i].KeyVertex == keyVertex) {
-            //        isDuplicate = true;
-            //        newStartPairIndex = newVertexJudge[i].VertexIndex;
-            //        newStartPairVertex = newVerticesList[newStartPairIndex];
-            //        newVertexJudge.RemoveAt(i);
-            //        break;
-            //    }
-            //}
-            //if (!isDuplicate) {
-            //    newStartPairVertex = ray1.GetPoint((float)distance1);
-            //    newVerticesList.Add(newStartPairVertex);
-            //    newStartPairIndex = newVerticesList.Count - 1;
-            //    newVertexJudge.Add(new VertexJudge(
-            //        keyVertex,
-            //        "start",
-            //        newStartPairIndex
-            //    ));
-            //    startAdded = true;
-            //}
-            //isDuplicate = false;
-            //if (rtlf)
-            //    keyVertex = lastPairVertex;
-
-            //double distance2 = 0.0;
-            //plane.Raycast(ray2, out float tempDistance2);
-            //distance2 = (double)tempDistance2;
-            //float ratio_LonelyLast = (float)(distance2 / distanceLonelyLast);
-
-            //int condition = startAdded ? newVertexJudge.Count - 1 : newVertexJudge.Count;
-
-            //for (int i = 0; i < condition; i++) {
-            //    if (newVertexJudge[i].VertexLabel == "start" && newVertexJudge[i].KeyVertex == keyVertex) {
-            //        isDuplicate = true;
-            //        newLastPairIndex = newVertexJudge[i].VertexIndex;
-            //        newLastPairVertex = newVerticesList[newLastPairIndex];
-            //        newVertexJudge.RemoveAt(i);
-            //        break;
-            //    }
-            //}
-            //if (!isDuplicate) {
-            //    newLastPairVertex = ray2.GetPoint((float)distance2);
-            //    newVerticesList.Add(newLastPairVertex);
-            //    newLastPairIndex = newVerticesList.Count - 1;
-            //    newVertexJudge.Add(new VertexJudge(
-            //        keyVertex,
-            //        "last",
-            //        newLastPairIndex
-            //    ));
-            //}
-            //vertexPairList.Add(new int[] { newStartPairIndex, newLastPairIndex });
-            //return (newStartPairVertex, newLastPairVertex, ratio_LonelyStart, ratio_LonelyLast);
-
-
             int newStartPairIndex = -1;
             int newLastPairIndex = -1;
             Vector3 newStartPairVertex;
@@ -819,37 +700,6 @@ public class ActSubdivide : MonoBehaviour {
                 uv1.y + (uv3.y - uv1.y) * ratio_LonelyAsLast
             );
             return (newUV1, newUV2);
-        }
-
-        // 重複する頂点を削除する
-        public static (
-            bool deltrue, 
-            int newVertexIndex
-        ) InsertAndDeleteVertices(
-            int targetVerticesLength,
-            Vector3 newVertex, 
-            List<Vector3> newVerticesList
-            //int[] pairVertex,
-            //List<VertexJudge> newVertexJudge
-        ) {
-            int newVertexIndex = newVerticesList.Count;
-            bool deltrue = false;
-            // 新頂点リストの中に重複する頂点があれば，その頂点のインデックスを返す
-            for (int duplicateIndex = 0; duplicateIndex < newVerticesList.Count; duplicateIndex++) {
-                if (newVerticesList[duplicateIndex] == newVertex) {
-                    newVertexIndex = duplicateIndex;
-                    deltrue = true;
-                    break;
-                }
-
-                //if (pairVertex.OrderBy(v => v).SequenceEqual(newVertexJudge[duplicateIndex].PairVertices.OrderBy(v => v))) {
-                //    newVertexIndex = newVertexJudge[duplicateIndex].VertexIndex;
-                //    newVertexJudge.RemoveAt(duplicateIndex);
-                //    deltrue = true;
-                //    break;
-                //}
-            }
-            return (deltrue, newVertexIndex + targetVerticesLength);
         }
     }
 
