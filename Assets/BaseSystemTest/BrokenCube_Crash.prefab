@@ -100,6 +100,14 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 4038646514024504504, guid: 6165bea23924141459a12b8c689d842a, type: 3}
+      propertyPath: m_Mass
+      value: 0.3
+      objectReference: {fileID: 0}
+    - target: {fileID: 4038646514024504504, guid: 6165bea23924141459a12b8c689d842a, type: 3}
+      propertyPath: m_UseGravity
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 4038646514024504511, guid: 6165bea23924141459a12b8c689d842a, type: 3}
       propertyPath: _brokenObjectPrefab
       value: 
@@ -128,24 +136,29 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   durabilityRecoveryAmount: 15
---- !u!114 &5582864544052527225
+--- !u!114 &4794836973917780054
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 5913866520721226584}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 27c445d2b0b958f4b9af90c3c21d877b, type: 3}
+  m_Script: {fileID: 11500000, guid: 6171fc0a0da87d54999b2eb6f27d319d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _canCallBrokenObject: 0
-  _brokenObjectPrefab: {fileID: 0}
-  onBreakEvent:
-    m_PersistentCalls:
-      m_Calls: []
-  _addImpulse: 1
+  newGameObjectPrefab: {fileID: 2904058938881811521, guid: 5ca23e8908693f2438dde951ee6f13c0, type: 3}
+  surfaceMaterial: {fileID: 0}
+  leftTriangles: 
+  leftVertices: []
+  leftNormals: []
+  leftUVs: []
+  rightTriangles: 
+  rightVertices: []
+  rightNormals: []
+  rightUVs: []
+  positionOffset: {x: 1, y: 1, z: 0.1}
 --- !u!4 &5913866520721226605 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 4038646514024504500, guid: 6165bea23924141459a12b8c689d842a, type: 3}
@@ -218,6 +231,14 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 4038646514024504504, guid: 6165bea23924141459a12b8c689d842a, type: 3}
+      propertyPath: m_Mass
+      value: 0.3
+      objectReference: {fileID: 0}
+    - target: {fileID: 4038646514024504504, guid: 6165bea23924141459a12b8c689d842a, type: 3}
+      propertyPath: m_UseGravity
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 4038646514024504511, guid: 6165bea23924141459a12b8c689d842a, type: 3}
       propertyPath: _brokenObjectPrefab
       value: 
@@ -233,24 +254,29 @@ GameObject:
   m_CorrespondingSourceObject: {fileID: 4038646514024504449, guid: 6165bea23924141459a12b8c689d842a, type: 3}
   m_PrefabInstance: {fileID: 8315766069304064851}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &1358795998474147155
+--- !u!114 &2219438753390699402
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 5434629468802099154}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 27c445d2b0b958f4b9af90c3c21d877b, type: 3}
+  m_Script: {fileID: 11500000, guid: 6171fc0a0da87d54999b2eb6f27d319d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _canCallBrokenObject: 0
-  _brokenObjectPrefab: {fileID: 0}
-  onBreakEvent:
-    m_PersistentCalls:
-      m_Calls: []
-  _addImpulse: 1
+  newGameObjectPrefab: {fileID: 2904058938881811521, guid: 5ca23e8908693f2438dde951ee6f13c0, type: 3}
+  surfaceMaterial: {fileID: 0}
+  leftTriangles: 
+  leftVertices: []
+  leftNormals: []
+  leftUVs: []
+  rightTriangles: 
+  rightVertices: []
+  rightNormals: []
+  rightUVs: []
+  positionOffset: {x: 1, y: 1, z: 0.1}
 --- !u!114 &8861792640256077529
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -30,4 +30,19 @@ public class Pierce : MonoBehaviour
     {
 
     }
+
+    // 刺突属性による結合の開始
+    public int Connect(Breaker breaker)
+    {
+        /*
+                // ここで結合するオブジェクトの座標を調整する
+        */
+
+        // オブジェクトの動きの依存対象の設定
+        FixedJoint fixedJoint = this.gameObject.AddComponent<FixedJoint>();
+        fixedJoint.connectedBody = breaker.GetRigidbody();
+
+        // 回復する耐久値を返す
+        return durabilityRecoveryAmount;
+    }
 }
