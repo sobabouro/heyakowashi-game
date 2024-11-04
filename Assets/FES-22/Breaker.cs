@@ -7,10 +7,6 @@ using UnityEngine;
 
 public class Breaker : MonoBehaviour
 {
-    // 自分の親オブジェクト
-    [SerializeField]
-    private Container _container = null;
-
     [SerializeField, Tooltip("基礎攻撃力")]
     private int _baseATK = default;
     [SerializeField, Tooltip("属性")]
@@ -55,16 +51,7 @@ public class Breaker : MonoBehaviour
     /// <param name="collision">衝突データ全般</param>
     public void Attack(Collision collision)
     {
-        Container container = collision.gameObject.GetComponent<Container>();
-        Breakable breakable;
-        if (container != null)
-        {
-            breakable = container.GetRegisteredObject().GetComponent<Breakable>();
-        }
-        else
-        {
-            breakable = collision.gameObject.GetComponent<Breakable>();
-        }
+        Breakable breakable = collision.gameObject.GetComponent<Breakable>();
         
         if (breakable == null) return;
 
@@ -86,14 +73,14 @@ public class Breaker : MonoBehaviour
         Debug.Log("Attack! : " + this.gameObject + " to " + breakable + " : " + finalATK + " : " + otherRigitbody.velocity + " : " + my_rigidbody.velocity);
     }
 
-    public Container GetContainer()
-    {
-        return _container;
-    }
-
     public void SetRigidbody(Rigidbody rigidbody)
     {
         my_rigidbody = rigidbody;
+    }
+
+    public Rigidbody GetRigidbody()
+    {
+        return my_rigidbody;
     }
 
     public Plane GetCutter()

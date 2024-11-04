@@ -16,18 +16,21 @@ public class CollisionEvent : MonoBehaviour
 
     private void OnCollisionEnter(Collision collision)
     {
+        if (collision == null) return;
         if (!canEventCall) return;
         collisionEvnetEnter.Invoke(collision);
     }
 
     private void OnCollisionStay(Collision collision)
     {
+        if (collision == null) return;
         if (!canEventCall) return;
         collisionEvnetEnter.Invoke(collision);
     }
 
     private void OnCollisionExit(Collision collision)
     {
+        if (collision == null) return;
         if (!canEventCall) return;
         collisionEvnetEnter.Invoke(collision);
     }
