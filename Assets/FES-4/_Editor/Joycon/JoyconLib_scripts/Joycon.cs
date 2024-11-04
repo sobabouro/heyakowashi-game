@@ -19,7 +19,7 @@ public class Joycon
         IMU,
         RUMBLE,
     };
-    public DebugType debug_type = DebugType.IMU;
+    public DebugType debug_type = DebugType.NONE;
     public bool isLeft;
     public enum state_ : uint
     {
@@ -466,7 +466,6 @@ public class Joycon
                     {
                         ExtractIMUValues(report_buf, 0);
                     }
-                    SendOrientation(); ; // UDPëóêM
                 }
                 if (ts_de == report_buf[1])
                 {
@@ -655,6 +654,8 @@ public class Joycon
             dt = 1;
         }
         timestamp = report_buf[1] + 2;
+
+        SendOrientation(); ; // UDPëóêM
         return 0;
     }
 

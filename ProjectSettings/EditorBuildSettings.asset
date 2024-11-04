@@ -8,12 +8,15 @@ EditorBuildSettings:
   - enabled: 0
     path: Assets/BaseSystemTest/Scene/Title.unity
     guid: a8e81b931b023f74f8c35e400cc26f77
-  - enabled: 1
+  - enabled: 0
     path: Assets/BaseSystemTest/Scene/Main.unity
     guid: 2ab6448a4d263814e8279bd12df77087
-  - enabled: 1
+  - enabled: 0
     path: Assets/BaseSystemTest/Scene/Result.unity
     guid: 2eba0bdd3bdd8f44ca8bd5f5e4799031
+  - enabled: 1
+    path: Assets/FES-4/FES-4-TestScene.unity
+    guid: 8c56e0fc9eb24db4aa84062bbd3f111f
   m_configObjects:
     com.unity.xr.arfoundation.simulation_settings: {fileID: 11400000, guid: bb74a5e0e3ed2034d85e77be0973c784, type: 2}
     com.unity.xr.management.loader_settings: {fileID: 11400000, guid: 4c62d00aa7bb6af4489f2e296d3231b4, type: 2}

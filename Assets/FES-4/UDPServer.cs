@@ -1,9 +1,7 @@
-using UnityEngine;
-using System.Text;
-using System.Collections.Generic;
 using System;
+using System.Collections.Generic;
 using UnityEngine.Events;
-
+using UnityEngine;
 
 #if UNITY_EDITOR
 using System.Net;
@@ -14,81 +12,23 @@ using Windows.Networking.Sockets;
 using System.Threading.Tasks;
 #endif
 
-[System.Serializable]
-public class ReceiveEvent : UnityEvent<UDPServer.Message>
+public class UDPServer: MonoBehaviour
 {
-}
-public class UDPServer : MonoBehaviour
-{
-    [SerializeField]
-    private int listenPort = 8000;
+    [SerializeField] private int listenPort = 8000;
 
-    [SerializeField, Tooltip("UDPメッセージ受信時実行処理")]
-    private ReceiveEvent receiveEvent;
+    [SerializeField] public event Action<Message> receiveAction;
 
     private Queue<Message> queue = new Queue<Message>();
-    private Message msg;
+    private Message message;
 
-    public struct Message
+    public void AddReceiveEvent(Action<Message> action)
     {
-        public byte[] bytes;
-        public System.DateTime time;
-
-        public Message(byte[] b, System.DateTime t)
-        {
-            bytes = b;
-            time = t;
-        }
-        public Message(Quaternion q, System.DateTime t)
-        {
-            bytes = new byte[1 + sizeof(float) * 4];
-            bytes[0] = 0x02;
-            Array.Copy(BitConverter.GetBytes(q.x), 0, bytes, 1 + 0 * sizeof(float), sizeof(float));
-            Array.Copy(BitConverter.GetBytes(q.y), 0, bytes, 1 + 1 * sizeof(float), sizeof(float));
-            Array.Copy(BitConverter.GetBytes(q.z), 0, bytes, 1 + 2 * sizeof(float), sizeof(float));
-            Array.Copy(BitConverter.GetBytes(q.w), 0, bytes, 1 + 3 * sizeof(float), sizeof(float));
-            time = t;
-        }
-
-        public Message(bool[] buttons_data, System.DateTime t)
-        {
-            bytes = new byte[1 + sizeof(bool) * 39];
-            bytes[0] = 0x03;
-
-            for (int index = 0; index < buttons_data.Length; index++)
-            {
-                Array.Copy(BitConverter.GetBytes(buttons_data[index]), 0, bytes, 1 + index * sizeof(bool), sizeof(bool));
-            }
-            time = t;
-        }
-
-
-        public override string ToString()
-        {
-            string temp = Encoding.UTF8.GetString(bytes);
-            return temp;
-        }
-
-        public Quaternion ToQuaternion()
-        {
-            Quaternion q = Quaternion.identity;
-            q.x = BitConverter.ToSingle(bytes, 1 + 0 * sizeof(float));
-            q.y = BitConverter.ToSingle(bytes, 1 + 1 * sizeof(float));
-            q.z = BitConverter.ToSingle(bytes, 1 + 2 * sizeof(float));
-            q.w = BitConverter.ToSingle(bytes, 1 + 3 * sizeof(float));
-            return q;
-        }
-    }
-
-    public void OnMessage(Message msg)
-    {
-        // ここで適当に処理する
-        Debug.LogFormat(msg.ToQuaternion().ToString());
+        receiveAction += action;
     }
 
 #if UNITY_EDITOR
-    private UdpClient udpClient;
     private IPEndPoint endPoint;
+    private UdpClient udpClient;
 
     private void Start()
     {
@@ -100,14 +40,21 @@ public class UDPServer : MonoBehaviour
     {
         while (udpClient.Available > 0)
         {
-            byte[] bytes = udpClient.Receive(ref endPoint);
-            queue.Enqueue(new Message(bytes, System.DateTime.Now));
+            try
+            {
+                byte[] bytes = udpClient.Receive(ref endPoint);
+                queue.Enqueue(new Message(bytes, System.DateTime.Now));
+            }
+            catch (Exception e)
+            {
+                Debug.Log(e.ToString());
+            }
         }
 
         while (queue.Count > 0)
         {
-            msg = queue.Dequeue();
-            receiveEvent.Invoke(msg);
+            message = queue.Dequeue();
+            receiveAction.Invoke(message);
         }   
     }
 
@@ -127,7 +74,7 @@ public class UDPServer : MonoBehaviour
                 socket.MessageReceived += MessageReceived;
                 await socket.BindServiceNameAsync(listenPort.ToString());
             }
-            catch (System.Exception e)
+            catch (Exception e)
             {
                 Debug.LogError(e.ToString());
             }
@@ -139,8 +86,8 @@ public class UDPServer : MonoBehaviour
         lock (lockObject) {
             while (queue.Count > 0)
             {
-                msg = queue.Dequeue();
-                receiveEvent.Invoke(msg);
+                message = queue.Dequeue();
+                receiveAction.Invoke(message);
             }
         }
     }

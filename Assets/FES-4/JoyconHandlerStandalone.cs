@@ -3,15 +3,25 @@ using System.Collections;
 using System.Collections.Generic;
 using Unity.VisualScripting;
 using UnityEngine;
+using UnityEngine.Events;
 
 public class JoyconHandlerStandalone : MonoBehaviour
 {
+    [Header("Button Eventt")]
+    [SerializeField] private UnityEvent UpPushEventt;
+    [SerializeField] private UnityEvent DownPushEventt;
+    [SerializeField] private UnityEvent LeftPushEventt;
+    [SerializeField] private UnityEvent RightPushEventt;
+    [SerializeField] private UnityEvent Shoulder1PushEventt;
+    [SerializeField] private UnityEvent Shoulder2PushEventt;
+
     private Transform m_transform;
 
     // Values made available via Unity
-    public float[] stick;
-    public Quaternion orientation;
+    private float[] stick;
+    private Quaternion orientation;
 
+    // ボタンの状態
     private bool[] buttons_down = new bool[13];
     private bool[] buttons_up = new bool[13];
     private bool[] buttons = new bool[13];
@@ -19,16 +29,22 @@ public class JoyconHandlerStandalone : MonoBehaviour
     private void Start()
     {
         m_transform = gameObject.transform;
+        UDPServer server = GetComponent<UDPServer>();
+        if (server != null) server.AddReceiveEvent(GetMessage);
     }
 
-    public void UpdateData(UDPServer.Message message)
+    // UDPで受信したデータを取り出す
+    public void GetMessage(Message message)
     {
-        if(message.bytes[0] == 0x02)
+        // 傾きデータなら
+        if (message.bytes[0] == 0x02)
         {
-            m_transform.rotation = message.ToQuaternion();
+            orientation = message.ToQuaternion();
         }
-        else if(message.bytes[0] == 0x03)
+        // ボタンの状態データなら
+        else if (message.bytes[0] == 0x03)
         {
+            // いい感じにデコード
             for (int index = 0; index < 13; index++)
             {
                 buttons_down[index] = BitConverter.ToBoolean(message.bytes, 1 + index * sizeof(bool));
@@ -44,62 +60,57 @@ public class JoyconHandlerStandalone : MonoBehaviour
         }
     }
 
-    public bool GetButtonDown(Joycon.Button b)
+    private bool GetButtonDown(Joycon.Button b)
     {
         bool result = buttons_down[(int)b];
         buttons_down[(int)b] = false;
         return result;
     }
-    public bool GetButton(Joycon.Button b)
+    private bool GetButton(Joycon.Button b)
     {
         return buttons[(int)b];
     }
-    public bool GetButtonUp(Joycon.Button b)
+    private bool GetButtonUp(Joycon.Button b)
     {
         bool result = buttons_up[(int)b];
         buttons_up[(int)b] = false;
-        return result;
+        return buttons_up[(int)b];
     }
 
-    void Update()
+    private void Update()
     {
-        // GetButtonDown checks if a button has been pressed (not held)
-        if (GetButtonDown(Joycon.Button.SHOULDER_2))
-        {
-            Debug.Log("Shoulder button 2 pressed");
-  
-        }
-        // GetButtonDown checks if a button has been released
-        if (GetButtonUp(Joycon.Button.SHOULDER_2))
-        {
-            Debug.Log("Shoulder button 2 released");
-        }
-        // GetButtonDown checks if a button is currently down (pressed or held)
-        if (GetButton(Joycon.Button.SHOULDER_2))
-        {
-            Debug.Log("Shoulder button 2 held");
-        }
-
-        if (GetButtonDown(Joycon.Button.HOME) || GetButtonDown(Joycon.Button.CAPTURE))
-        {
-            Debug.Log("HOME");
-        }
-
-        if (GetButtonDown(Joycon.Button.DPAD_DOWN))
-        {
-            Debug.Log("DPAD_DOWN");
-        }
         if (GetButtonDown(Joycon.Button.DPAD_UP))
         {
-            Debug.Log("DPAD_UP");
+            Debug.Log("Up button pressed");
+            UpPushEventt.Invoke();
+        }
+        if (GetButtonDown(Joycon.Button.DPAD_DOWN))
+        {
+            Debug.Log("Down button pressed");
+            DownPushEventt.Invoke();
         }
         if (GetButtonDown(Joycon.Button.DPAD_LEFT))
         {
-            Debug.Log("DPAD_LEFT");
+            Debug.Log("Left button pressed");
+            LeftPushEventt.Invoke();
         }
         if (GetButtonDown(Joycon.Button.DPAD_RIGHT))
         {
-            Debug.Log("DPAD_RIGHT");
+            Debug.Log("Right button pressed");
+            RightPushEventt.Invoke();
         }
+        if (GetButtonDown(Joycon.Button.SHOULDER_1))
+        {
+            Debug.Log("Shoulder button 1 pressed");
+            Shoulder1PushEventt.Invoke();
+        }
+        if (GetButtonDown(Joycon.Button.SHOULDER_2))
+        {
+            Debug.Log("Shoulder button 2 pressed");
+            Shoulder2PushEventt.Invoke();
+        }
+
+        m_transform.rotation = orientation;
     }
+
 }
