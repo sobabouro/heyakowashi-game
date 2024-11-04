@@ -31,7 +31,8 @@ public class Container : MonoBehaviour
 
     public void SetRegisteredObject(GameObject targetObject)
     {
-        if (targetObject != registeredObject) collisionEvent.collisionEvnetEnter.RemoveListener(registeredObject.GetComponent<Breaker>().Attack);
+        // コンテナの子オブジェクトにされるrigidbodyの破棄
+        if (targetObject != registeredObject) collisionEvent.collisionEvnetEnter.RemoveAllListeners();
         registeredObject = targetObject;
         collisionEvent.collisionEvnetEnter.AddListener(registeredObject.GetComponent<Breaker>().Attack);
 
