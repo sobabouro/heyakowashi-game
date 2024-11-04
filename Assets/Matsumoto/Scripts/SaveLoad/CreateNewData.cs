@@ -51,6 +51,13 @@ public class CreateNewData : MonoBehaviour
             JsonUtility.FromJsonOverwrite(data, saveData);
             Debug.Log(saveData.GetJsonData());
         }
+        else
+        {
+            ScoreData scoreData_empty = new ScoreData(0, "");
+            List<ScoreData> scoreDataList = new List<ScoreData>();
+            scoreDataList.Add(scoreData_empty);
+            saveData.SetScoreDataList(scoreDataList);
+        }
 
     }
 }
