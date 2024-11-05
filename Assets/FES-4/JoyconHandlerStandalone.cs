@@ -19,12 +19,14 @@ public class JoyconHandlerStandalone : MonoBehaviour
 
     // Values made available via Unity
     private float[] stick;
-    private Quaternion orientation;
+    private Quaternion orientation = Quaternion.identity;
+    int quaternion_size = 4 * sizeof(float);
 
     // ボタンの状態
     private bool[] buttons_down = new bool[13];
     private bool[] buttons_up = new bool[13];
     private bool[] buttons = new bool[13];
+    int index = 0;
 
     private void Start()
     {
@@ -36,33 +38,31 @@ public class JoyconHandlerStandalone : MonoBehaviour
     // UDPで受信したデータを取り出す
     public void GetMessage(Message message)
     {
-        // 傾きデータなら
-        if (message.bytes[0] == 0x02)
+        // いい感じにデコード
+        // 傾きデータ
+        orientation.x = BitConverter.ToSingle(message.bytes, 0 * sizeof(float));
+        orientation.y = BitConverter.ToSingle(message.bytes, 1 * sizeof(float));
+        orientation.z = BitConverter.ToSingle(message.bytes, 2 * sizeof(float));
+        orientation.w = BitConverter.ToSingle(message.bytes, 3 * sizeof(float));
+        // ボタンの状態データ
+        for (index = 0; index < 13; index++)
         {
-            orientation = message.ToQuaternion();
+            buttons_down[index] = BitConverter.ToBoolean(message.bytes, quaternion_size + index * sizeof(bool));
         }
-        // ボタンの状態データなら
-        else if (message.bytes[0] == 0x03)
+        for (index = 0; index < 13; index++)
         {
-            // いい感じにデコード
-            for (int index = 0; index < 13; index++)
-            {
-                buttons_down[index] = BitConverter.ToBoolean(message.bytes, 1 + index * sizeof(bool));
-            }
-            for (int index = 0; index < 13; index++)
-            {
-                buttons_up[index] = BitConverter.ToBoolean(message.bytes, 14 + index * sizeof(bool));
-            }
-            for (int index = 0; index < 13; index++)
-            {
-                buttons[index] = BitConverter.ToBoolean(message.bytes, 27 + index * sizeof(bool));
-            }
+            buttons_up[index] = BitConverter.ToBoolean(message.bytes, quaternion_size + (13 + index) * sizeof(bool));
+        }
+        for (index = 0; index < 13; index++)
+        {
+            buttons[index] = BitConverter.ToBoolean(message.bytes, quaternion_size + (26 + index) * sizeof(bool));
         }
     }
 
+    bool result = false;
     private bool GetButtonDown(Joycon.Button b)
     {
-        bool result = buttons_down[(int)b];
+        result = buttons_down[(int)b];
         buttons_down[(int)b] = false;
         return result;
     }
@@ -72,9 +72,9 @@ public class JoyconHandlerStandalone : MonoBehaviour
     }
     private bool GetButtonUp(Joycon.Button b)
     {
-        bool result = buttons_up[(int)b];
+        result = buttons_up[(int)b];
         buttons_up[(int)b] = false;
-        return buttons_up[(int)b];
+        return result;
     }
 
     private void Update()

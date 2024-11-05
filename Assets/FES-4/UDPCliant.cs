@@ -22,18 +22,9 @@ public class UDPCliant
         }
     }
 
-    public void SendMessage(Quaternion q)
+    public void SendMessage(byte[] bytes)
     {
-        Message mes = new Message(0x02, q, System.DateTime.Now);
-        Thread thread = new Thread(() =>
-        {
-            udpclient.Send(mes.bytes, mes.bytes.Length);
-        });
-        thread.Start();
-    }
-    public void SendMessage(bool[] boolean_data)
-    {
-        Message mes = new Message(0x03, boolean_data, System.DateTime.Now);
+        Message mes = new Message(bytes, System.DateTime.Now);
         Thread thread = new Thread(() =>
         {
             udpclient.Send(mes.bytes, mes.bytes.Length);

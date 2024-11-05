@@ -288,19 +288,26 @@ public class Joycon
         return acc_ac_mps_world;
     }
 
+    private Vector3 v1 = Vector3.zero;
+    private Vector3 v2 = Vector3.zero;
+    private Quaternion euler_x_90 = Quaternion.Euler(90, 0, 0);
     public Quaternion GetVector()
     {
-        Vector3 v1 = new Vector3(j_b.x, i_b.x, k_b.x);
-        Vector3 v2 = -(new Vector3(j_b.z, i_b.z, k_b.z));
+        v1.x = j_b.x;
+        v1.y = i_b.x;
+        v1.z = k_b.x;
+        v2.x = -j_b.z;
+        v2.y = -i_b.z;
+        v2.z = -k_b.z;
         // Debug.DrawLine(ChangeAxisToUnity(v1), ChangeAxisToUnity(v2));
 
         if (v2 != Vector3.zero)
         {
-            return Quaternion.Euler(90, 0, 0) * Quaternion.LookRotation(v1, v2);
+            return euler_x_90 * Quaternion.LookRotation(v1, v2);
         }
         else
         {
-            return Quaternion.Euler(90, 0, 0) * Quaternion.identity;
+            return euler_x_90 * Quaternion.identity;
         }
     }
     public Vector3 GetVelocityInWorld()
@@ -419,30 +426,74 @@ public class Joycon
     float[] max = { 0, 0, 0 };
     float[] sum = { 0, 0, 0 };
 
-    
+
     private UDPCliant udpCliant;
     int port = 8000;
     Quaternion orientation;
-    string send_data;
+    int quaternion_size = 4 * sizeof(float);
+    bool[] buttons_data = new bool[39];
+    // byte[] send_quaternion_bytes = new byte[1 + 4 * sizeof(float)];
+    // byte[] send_buttons_bytes = new byte[1 + 39 * sizeof(bool)];
+    byte[] send_bytes = new byte[4 * sizeof(float) + 39 * sizeof(bool)];
+    int index = 0; 
+
     public void SetUDP(int port)
     {
         udpCliant = new UDPCliant(port);
         Debug.Log($"port:{port}");
     }
-    private void SendOrientation()
+
+    private void SendJoyconMessage()
     {
         orientation = GetVector();
-        udpCliant.SendMessage(orientation);
-    }
-    private void SendButton()
-    {
-        bool[] buttons_data = new bool[39];
-        Array.Copy(buttons_down, 0, buttons_data, 0, 13);
-        Array.Copy(buttons_up, 0, buttons_data, 13, 13);
-        Array.Copy(buttons, 0, buttons_data, 26, 13);
-        udpCliant.SendMessage(buttons_data);
-    }
+        Array.Copy(BitConverter.GetBytes(orientation.x), 0, send_bytes, 0 * sizeof(float), sizeof(float));
+        Array.Copy(BitConverter.GetBytes(orientation.y), 0, send_bytes, 1 * sizeof(float), sizeof(float));
+        Array.Copy(BitConverter.GetBytes(orientation.z), 0, send_bytes, 2 * sizeof(float), sizeof(float));
+        Array.Copy(BitConverter.GetBytes(orientation.w), 0, send_bytes, 3 * sizeof(float), sizeof(float));
 
+        for (index = 0; index < 13; index++)
+        {
+            Array.Copy(BitConverter.GetBytes(buttons_down[index]), 0, send_bytes, quaternion_size + index * sizeof(bool), sizeof(bool));
+        }
+        for (index = 0; index < 13; index++)
+        {
+            Array.Copy(BitConverter.GetBytes(buttons_up[index]), 0, send_bytes, quaternion_size + (13 + index) * sizeof(bool), sizeof(bool));
+        }
+        for (index = 0; index < 13; index++)
+        {
+            Array.Copy(BitConverter.GetBytes(buttons[index]), 0, send_bytes, quaternion_size + (26 + index) * sizeof(bool), sizeof(bool));
+        }
+        udpCliant.SendMessage(send_bytes);
+    }
+    /*
+        private void SendOrientation()
+        {
+            orientation = GetVector();
+            send_quaternion_bytes[0] = 0x01;
+            Array.Copy(BitConverter.GetBytes(orientation.x), 0, send_quaternion_bytes, 1 + 0 * sizeof(float), sizeof(float));
+            Array.Copy(BitConverter.GetBytes(orientation.y), 0, send_quaternion_bytes, 1 + 1 * sizeof(float), sizeof(float));
+            Array.Copy(BitConverter.GetBytes(orientation.z), 0, send_quaternion_bytes, 1 + 2 * sizeof(float), sizeof(float));
+            Array.Copy(BitConverter.GetBytes(orientation.w), 0, send_quaternion_bytes, 1 + 3 * sizeof(float), sizeof(float));
+            udpCliant.SendMessage(send_quaternion_bytes);
+        }
+        private void SendButtons()
+        {
+            send_buttons_bytes[0] = 0x02;
+            for (index = 0; index < 13; index++)
+            {
+                Array.Copy(BitConverter.GetBytes(buttons_down[index]), 0, send_buttons_bytes, 1 + index * sizeof(bool), sizeof(bool));
+            }
+            for (index = 0; index < 13; index++)
+            {
+                Array.Copy(BitConverter.GetBytes(buttons_up[index]), 0, send_buttons_bytes, 1 + (13 +index)*sizeof(bool), sizeof(bool));
+            }
+            for (index = 0; index < 13; index++)
+            {
+                Array.Copy(BitConverter.GetBytes(buttons[index]), 0, send_buttons_bytes, 1 + (26 +index)*sizeof(bool), sizeof(bool));
+            }
+            udpCliant.SendMessage(send_buttons_bytes);
+        }
+    */
     public void Update()
     {
         if (state > state_.NO_JOYCONS)
@@ -475,6 +526,8 @@ public class Joycon
                 DebugPrint(string.Format("Dequeue. Queue length: {0:d}. Packet ID: {1:X2}. Timestamp: {2:X2}. Lag to dequeue: {3:t}. Lag between packets (expect 15ms): {4:g}",
                     reports.Count, report_buf[0], report_buf[1], System.DateTime.Now.Subtract(rep.GetTime()), rep.GetTime().Subtract(ts_prev)), DebugType.THREADING);
                 ts_prev = rep.GetTime();
+
+                //if (reports.Count == 0) SendOrientation(); // UDP送信
             }
             ProcessButtonsAndStick(report_buf);
             if (rumble_obj.timed_rumble)
@@ -488,6 +541,7 @@ public class Joycon
                     rumble_obj.t -= Time.deltaTime;
                 }
             }
+            SendJoyconMessage(); // UDP送信
         }
     }
     private int ProcessButtonsAndStick(byte[] report_buf)
@@ -535,7 +589,7 @@ public class Joycon
                 }
             }
         }
-        SendButton(); // UDP送信
+        //SendButtons(); // UDP送信
         return 0;
     }
 
@@ -655,7 +709,6 @@ public class Joycon
         }
         timestamp = report_buf[1] + 2;
 
-        SendOrientation(); ; // UDP送信
         return 0;
     }
 
