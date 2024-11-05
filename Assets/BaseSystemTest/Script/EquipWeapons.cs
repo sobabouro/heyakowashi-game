@@ -35,7 +35,7 @@ public class EquipWeapons : MonoBehaviour
             // 既に武器を装備している場合の処理（武器を捨てる）
             
             // FixedJointの削除（連結の解除）
-            Destroy(equipWeapon.GetComponent<FixedJoint>());
+            Destroy(this.gameObject.GetComponent<FixedJoint>());
 
             this.gameObject.GetComponent<MeshRenderer>().material.SetColor("_Color", originalColor);
 
@@ -56,8 +56,8 @@ public class EquipWeapons : MonoBehaviour
             equipWeapon.gameObject.transform.rotation = this.gameObject.transform.rotation;
 
             // オブジェクトの動きの依存対象の設定（連結の実行）
-            FixedJoint fixedJoint = equipWeapon.AddComponent<FixedJoint>();
-            fixedJoint.connectedBody = this.gameObject.GetComponent<Rigidbody>();
+            FixedJoint fixedJoint = this.gameObject.AddComponent<FixedJoint>();
+            fixedJoint.connectedBody = equipWeapon.GetComponent<Rigidbody>();
 
             this.gameObject.GetComponent<MeshRenderer>().material.SetColor("_Color", new Color(originalColor.r, originalColor.g, originalColor.b, 0.0f));
 
