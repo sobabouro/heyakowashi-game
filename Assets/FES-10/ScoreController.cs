@@ -57,6 +57,7 @@ public class ScoreController : MonoBehaviour
     {
         _score += addScore;
         ShowScore();
+        Debug.Log("AddScore : " + addScore);
     }
 
     public int GetScore()

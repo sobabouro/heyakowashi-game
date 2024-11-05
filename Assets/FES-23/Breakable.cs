@@ -104,6 +104,10 @@ public class Breakable : MonoBehaviour
                 break;
         }
         ScoreController.instance.AddScore(_score);
+        if (durability <= 0)
+        {
+            Destroy(this.gameObject);
+        }
     }
 
 
