@@ -31,7 +31,15 @@ public class Pierce : MonoBehaviour
         */
 
         // オブジェクトの動きの依存対象の設定
-        FixedJoint fixedJoint = this.gameObject.AddComponent<FixedJoint>();
+        FixedJoint fixedJoint;
+        if (this.gameObject.GetComponent<FixedJoint>() == null)
+        {
+            fixedJoint = this.gameObject.AddComponent<FixedJoint>();
+        }
+        else
+        {
+            fixedJoint = this.gameObject.GetComponent<FixedJoint>();
+        }
         fixedJoint.connectedBody = breaker.GetRigidbody();
 
         isConnected = true;
