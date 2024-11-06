@@ -235,6 +235,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   durability: 0
   slashResist: 0
+  crashResist: 0
+  pierceResist: 0
   score: 0
 --- !u!1 &386224576
 GameObject:
