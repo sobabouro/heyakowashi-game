@@ -8,9 +8,9 @@ public class CollisionEvent : MonoBehaviour
 {
     [Serializable] public class UnityEventArgCollision : UnityEvent<Collision> { }
 
-    [SerializeField] UnityEventArgCollision collisionEvnetEnter;
-    [SerializeField] UnityEventArgCollision collisionEvnetStay;
-    [SerializeField] UnityEventArgCollision collisionEvnetExit;
+    [SerializeField] public UnityEventArgCollision collisionEvnetEnter;
+    [SerializeField] public UnityEventArgCollision collisionEvnetStay;
+    [SerializeField] public UnityEventArgCollision collisionEvnetExit;
 
     private void OnCollisionEnter(Collision collision)
     {

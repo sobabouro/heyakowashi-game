@@ -238,6 +238,7 @@ MonoBehaviour:
   crashResist: 0
   pierceResist: 0
   score: 0
+  maxInterval: 0
 --- !u!1 &386224576
 GameObject:
   m_ObjectHideFlags: 0
