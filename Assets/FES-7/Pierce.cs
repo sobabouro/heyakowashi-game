@@ -20,7 +20,7 @@ public class Pierce : MonoBehaviour
     // 刺突属性による結合の開始
     public int Connect(Breaker breaker)
     {
-        if (canConnect) return 0;
+        if (!canConnect) return 0;
         // 既に結合しているオブジェクトに対して、刺突属性で再び壊した場合
         if(isConnected)
         {
