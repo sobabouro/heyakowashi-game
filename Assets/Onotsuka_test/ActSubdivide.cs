@@ -37,23 +37,24 @@ public class ActSubdivide : MonoBehaviour {
     private Vector3[]      targetNormals;
     private Vector2[]      targetUVs;
     // 切断面左側のポリゴン情報
-    public List<int>       leftTriangles;
-    public List<Vector3>   leftVertices;
-    public List<Vector3>   leftNormals;
-    public List<Vector2>   leftUVs;
+    private List<int>       leftTriangles;
+    private List<Vector3>   leftVertices;
+    private List<Vector3>   leftNormals;
+    private List<Vector2>   leftUVs;
     // 切断面右側のポリゴン情報
-    public List<int>       rightTriangles;
-    public List<Vector3>   rightVertices;
-    public List<Vector3>   rightNormals;
-    public List<Vector2>   rightUVs;
-
-    // Degug 用
-    private static bool debugMode;
+    private List<int>       rightTriangles;
+    private List<Vector3>   rightVertices;
+    private List<Vector3>   rightNormals;
+    private List<Vector2>   rightUVs;
 
     private bool interval = false;
-    private const float X_ROTATION = 20f;
-    private const float Y_ROTATION = 30f;
-    private const float Z_ROTATION = 0f;
+
+    // Degug 用
+    public static bool debugMode;
+
+    public const float X_ROTATION = 20f;
+    public const float Y_ROTATION = 30f;
+    public const float Z_ROTATION = 0f;
     public Vector3 positionOffset = new Vector3(1f, 1f, 0.1f);
 
     private void Start() {
@@ -104,6 +105,10 @@ public class ActSubdivide : MonoBehaviour {
             return;
         }
         interval = false;
+
+        DebugUtils.ToggleDebugMode();
+
+        DebugUtils.PrintNumber(cutter, nameof(cutter));
 
         // 切断対象のオブジェクトのメッシュ情報
         Mesh targetMesh       = this.GetComponent<MeshFilter>().mesh;
@@ -210,14 +215,14 @@ public class ActSubdivide : MonoBehaviour {
             return;
         }
 
-        DebugUtils.ToggleDebugMode();
+        DebugUtils.PrintListF8(newVerticesList, nameof(newVerticesList));
         DebugUtils.PrintList(vertexPairList, nameof(vertexPairList));
 
         // ひとつなぎの辺で形成されるすべての図形をリストアップする
         joinedVertexGroupList = GeometryUtils.GroupingForDetermineGeometry(
             vertexPairList
         );
-
+        
         if (joinedVertexGroupList == null)
             return;
         DebugUtils.PrintList(joinedVertexGroupList, nameof(joinedVertexGroupList));
@@ -267,6 +272,7 @@ public class ActSubdivide : MonoBehaviour {
             leftVertices,
             leftUVs
         );
+
         // 新しいオブジェクトを生成する
         CreateObject(
             rightVertices,
@@ -2142,9 +2148,9 @@ public static class DebugUtils {
     public static void ToggleDebugMode() {
         debugMode = !debugMode;
     }
-    public static void PrintNumber<T>(T value, string variableName) where T : struct, IConvertible {
+    public static void PrintNumber<T>(T value, string variableName) {
         if (debugMode) {
-            string formattedValue = Convert.ToString(value);
+            string formattedValue = FormatItem(value);
             Debug.Log($"{variableName} ({typeof(T).Name}): {formattedValue}");
         }
     }
@@ -2198,6 +2204,16 @@ public static class DebugUtils {
             Debug.Log($"{arrayName}: [" + string.Join(", ", vertexJudgeArray.Select(v => v.ToString())) + "]");
         }
     }
+    public static void PrintArrayF8(Vector2[] vectorArray, string arrayName) {
+        if (debugMode) {
+            Debug.Log($"{arrayName}: [" + string.Join(", ", vectorArray.Select(v => v.ToString("F8"))) + "]");
+        }
+    }
+    public static void PrintArrayF8(Vector3[] vectorArray, string arrayName) {
+        if (debugMode) {
+            Debug.Log($"{arrayName}: [" + string.Join(", ", vectorArray.Select(v => v.ToString("F8"))) + "]");
+        }
+    }
     public static void PrintList<T>(List<T> list, string listName) {
         if (debugMode) {
             Debug.Log($"{listName}: [{string.Join(", ", list.Select(item => item.ToString()))}]");
@@ -2222,6 +2238,53 @@ public static class DebugUtils {
     public static void PrintList<T>(List<List<List<T>>> list, string listName) {
         if (debugMode) {
             Debug.Log($"{listName}: [" + string.Join(" | ", list.Select(innerList => "[" + string.Join(" | ", innerList.Select(nestedList => $"[{string.Join(", ", nestedList.Select(item => item.ToString()))}]")) + "]")) + "]");
+        }
+    }
+    public static void PrintListF8<T>(List<T> list, string listName) {
+        if (debugMode) {
+            Debug.Log($"{listName}: [{string.Join(", ", list.Select(item => FormatItem(item)))}]");
+        }
+    }
+    public static void PrintListF8<T>(List<T[]> list, string listName) {
+        if (debugMode) {
+            Debug.Log($"{listName}: [" + string.Join(" | ", list.Select(arr =>
+                $"[{string.Join(", ", arr.Select(item => FormatItem(item)))}]")) + "]");
+        }
+    }
+    public static void PrintListF8<T>(List<List<T>> list, string listName) {
+        if (debugMode) {
+            Debug.Log($"{listName}: [" + string.Join(" | ", list.Select(innerList =>
+                $"[{string.Join(", ", innerList.Select(item => FormatItem(item)))}]")) + "]");
+        }
+    }
+    public static void PrintListF8<T>(List<List<T[]>> list, string listName) {
+        if (debugMode) {
+            Debug.Log($"{listName}: [" +
+                string.Join(" | ", list.Select(innerList => "[" +
+                    string.Join(" | ", innerList.Select(arr =>
+                        $"[{string.Join(", ", arr.Select(item => FormatItem(item)))}]")) + "]")) + "]");
+        }
+    }
+    public static void PrintListF8<T>(List<List<List<T>>> list, string listName) {
+        if (debugMode) {
+            Debug.Log($"{listName}: [" + string.Join(" | ", list.Select(innerList => "[" +
+                string.Join(" | ", innerList.Select(nestedList =>
+                    $"[{string.Join(", ", nestedList.Select(item => FormatItem(item)))}]")) + "]")) + "]");
+        }
+    }
+
+    // 数値型の場合は "F8" 形式を適用し、それ以外は ToString() を適用するヘルパーメソッド
+    private static string FormatItem<T>(T item) {
+        if (item is float or double or decimal) {
+            return Convert.ToDouble(item).ToString("F8");
+        } else if (item is Vector3 vec3) {
+            return $"({vec3.x:F8}, {vec3.y:F8}, {vec3.z:F8})";
+        } else if (item is Vector2 vec2) {
+            return $"({vec2.x:F8}, {vec2.y:F8})";
+        } else if (item is Plane plane) {
+            return $"Normal: ({plane.normal.x:F8}, {plane.normal.y:F8}, {plane.normal.z:F8}), Distance: {plane.distance:F8}";
+        } else {
+            return item?.ToString() ?? "null";
         }
     }
 }

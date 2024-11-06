@@ -8,7 +8,7 @@ Material:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: red
-  m_Shader: {fileID: 4800000, guid: 3f7824aa63368a240a9022b10170db36, type: 3}
+  m_Shader: {fileID: 4800000, guid: 185c272b6a2f1b44bbad35defb3890db, type: 3}
   m_ValidKeywords: []
   m_InvalidKeywords: []
   m_LightmapFlags: 4
@@ -79,4 +79,5 @@ Material:
     m_Colors:
     - _Color: {r: 1, g: 0, b: 0, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
+    - _WireFrameColor: {r: 0, g: 0, b: 0, a: 0}
   m_BuildTextureStacks: []
