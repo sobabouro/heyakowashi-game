@@ -27,6 +27,10 @@ public class ResultView_Test : MonoBehaviour
     [SerializeField]
     private CreateNewData createNewData;
 
+    // グレードを表示するオブジェクト
+    [SerializeField]
+    private Grade grade;
+
     private List<ScoreData> scoreDataList = new List<ScoreData>();
 
     private ScoreData scoreData;
@@ -55,7 +59,7 @@ public class ResultView_Test : MonoBehaviour
     private void ShowScore()
     {
         playerScore.SetText(scoreData.GetScore().ToString());
-        
+        grade.ShowGrade(scoreData.GetScore());
     }
 
     // 現在保存しているのJSONデータを表示する

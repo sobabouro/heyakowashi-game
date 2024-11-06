@@ -211,6 +211,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   durabilityRecoveryAmount: 500
+  canConnect: 0
 --- !u!114 &218836125
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -926,6 +927,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   durabilityRecoveryAmount: 50
+  canConnect: 1
 --- !u!114 &491342570
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1420,6 +1422,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   durabilityRecoveryAmount: 500
+  canConnect: 0
 --- !u!114 &496327986
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2250,6 +2253,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   durabilityRecoveryAmount: 50
+  canConnect: 1
 --- !u!114 &931564791
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2798,6 +2802,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   durabilityRecoveryAmount: 50
+  canConnect: 1
 --- !u!114 &1093730163
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4263,6 +4268,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   durabilityRecoveryAmount: 500
+  canConnect: 0
 --- !u!114 &6470194113002675728
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5200,6 +5206,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   durabilityRecoveryAmount: 50
+  canConnect: 1
 --- !u!114 &9209773299084110657
 MonoBehaviour:
   m_ObjectHideFlags: 0
