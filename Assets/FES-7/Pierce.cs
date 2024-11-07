@@ -8,6 +8,8 @@ public class Pierce : MonoBehaviour
     [SerializeField]
     private int durabilityRecoveryAmount;
     [SerializeField]
+    private int scoreRecoveryAmount;
+    [SerializeField]
     private bool canConnect;
     private bool isConnected = false;
 
@@ -18,15 +20,15 @@ public class Pierce : MonoBehaviour
     }
 
     // 刺突属性による結合の開始
-    public int Connect(Breaker breaker)
+    public (int, int) Connect(Breaker breaker)
     {
-        if (!canConnect) return 0;
+        if (!canConnect) return (0, 0);
         // 既に結合しているオブジェクトに対して、刺突属性で再び壊した場合
         if(isConnected)
         {
             isConnected = false;
             Physics.IgnoreCollision(this.gameObject.GetComponent<Collider>(), breaker.gameObject.GetComponent<Collider>(), false);
-            return 0;
+            return (0, 0);
         }
 
         /*
@@ -51,6 +53,6 @@ public class Pierce : MonoBehaviour
         Physics.IgnoreCollision(this.gameObject.GetComponent<Collider>(), breaker.gameObject.GetComponent<Collider>(), true);
 
         // 回復する耐久値を返す
-        return durabilityRecoveryAmount;
+        return (durabilityRecoveryAmount, scoreRecoveryAmount);
     }
 }
