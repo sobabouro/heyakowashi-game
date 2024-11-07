@@ -136,6 +136,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   durabilityRecoveryAmount: 15
+  scoreRecoveryAmount: 5
   canConnect: 1
 --- !u!114 &4794836973917780054
 MonoBehaviour:
@@ -291,6 +292,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   durabilityRecoveryAmount: 15
+  scoreRecoveryAmount: 5
   canConnect: 1
 --- !u!4 &5434629468802099175 stripped
 Transform:

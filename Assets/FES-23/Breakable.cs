@@ -27,6 +27,8 @@ public class Breakable : MonoBehaviour
     private float nowInterval = 0;
     private bool inInterval = false;
 
+    private int scoreRecoveryAmount = 0;
+
     private void Start()
     {
         resists.Add(Type.slash, slashResist);
@@ -98,12 +100,15 @@ public class Breakable : MonoBehaviour
                 break;
             case Type.pierce:
                 // PierceƒNƒ‰ƒX‚ğŒÄ‚Ño‚·
-                durability = this.gameObject.GetComponent<Pierce>().Connect(breaker);
+                (durability, scoreRecoveryAmount) = this.gameObject.GetComponent<Pierce>().Connect(breaker);
                 break;
             default:
                 break;
         }
+
         ScoreController.instance.AddScore(_score);
+        _score = scoreRecoveryAmount;
+
         if (durability <= 0)
         {
             Destroy(this.gameObject);
@@ -123,5 +128,4 @@ public class Breakable : MonoBehaviour
         if (damage < 0) damage = 0;
         return damage;
     }
-
 }
