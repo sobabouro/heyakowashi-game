@@ -11,6 +11,8 @@ public class Grade : MonoBehaviour
     private TMP_Text gradeText;
 
     [SerializeField]
+    private Color eColor;
+    [SerializeField]
     private int dRankBorder = 500;
     [SerializeField]
     private Color dColor;
@@ -48,32 +50,32 @@ public class Grade : MonoBehaviour
 
         if (userScore < dRankBorder)
         {
+            grade = "E";
+            color = eColor;
+        }else if (userScore < cRankBorder)
+        {
             grade = "D";
             color = dColor;
-        }else if (userScore < cRankBorder)
+        }
+        else if (userScore < bRankBorder)
         {
             grade = "C";
             color = cColor;
         }
-        else if (userScore < bRankBorder)
+        else if (userScore < aRankBorder)
         {
             grade = "B";
             color = bColor;
         }
-        else if (userScore < aRankBorder)
+        else if (userScore < sRankBorder)
         {
             grade = "A";
             color = aColor;
         }
-        else if (userScore < sRankBorder)
+        else
         {
             grade = "S";
             color = sColor;
-        }
-        else
-        {
-            grade = "?";
-            color = new Color(1f, 1f, 1f, 0f);
         }
 
         gradeText.SetText(grade);
