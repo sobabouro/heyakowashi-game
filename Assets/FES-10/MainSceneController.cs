@@ -11,7 +11,7 @@ public class MainSceneController : MonoBehaviour
     private SceneController sceneController;
     [SerializeField] private float _timeLimit = 120;
 
-    private static MainSceneController instance;
+    public static MainSceneController instance;
 
     private void Awake()
     {

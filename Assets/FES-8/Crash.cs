@@ -29,7 +29,6 @@ public class Crash : MonoBehaviour
         // 自身の当たり判定を消失させる
         this.gameObject.GetComponent<Collider>().enabled = false;
 
-
         // 破壊時に呼び出されるイベントを呼び出す
         onBreakEvent?.Invoke();
 
