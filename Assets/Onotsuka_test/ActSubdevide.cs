@@ -7,6 +7,9 @@ using System.Reflection;
 using System.CodeDom;
 using MixedReality.Toolkit.SpatialManipulation;
 using UnityEngine.UIElements;
+using System.IdentityModel.Claims;
+using Unity.VisualScripting;
+using System.Text.RegularExpressions;
 
 // 切断対象オブジェクトの参照
 
@@ -23,191 +26,689 @@ using UnityEngine.UIElements;
 // 切断面の定義，新しいマテリアルの適用
 public class ActSubdivide : MonoBehaviour {
 
-    [SerializeField]
-    private GameObject     newGameObjectPrefab;
+    // メッシュの情報を格納する
+    public class MeshContainer {
+        public List<Vector3>   vertices  = new List<Vector3>();
+        public List<Vector3>   normals   = new List<Vector3>();
+        public List<Vector2>   uvs       = new List<Vector2>();
+        public List<List<int>> submesh   = new List<List<int>>();
+
+        public void Clear() {
+            vertices.Clear();
+            normals.Clear();
+            uvs.Clear();
+            submesh.Clear();
+        }
+
+        // 切断基のオブジェクトのメッシュ情報をそのまま追加する用
+        public void AddMesh(
+            int submeshDepartment, 
+            int index1, 
+            int index2, 
+            int index3
+        ) {
+            int indexCount = vertices.Count;
+
+            for (int i = 0; i < 3; i++) {
+                submesh[submeshDepartment].Add(indexCount + i);
+            }
+            vertices.AddRange(new Vector3[] {
+                originVertices[index1],
+                originVertices[index2],
+                originVertices[index3]
+            });
+            normals.AddRange(new Vector3[] {
+                originNormals[index1],
+                originNormals[index2],
+                originNormals[index3]
+            });
+            uvs.AddRange(new Vector2[] {
+                originUVs[index1],
+                originUVs[index2],
+                originUVs[index3]
+            });
+        }
+
+        // 新しく作成したメッシュ情報を追加する用
+        public void AddMesh(
+            int       submeshDepartment,
+            Vector3   face, 
+            Vector3[] newVertices, 
+            Vector3[] newNormals, 
+            Vector2[] newUVs
+        ) {
+            int indexCount = vertices.Count;
+            int sequence1 = 0;
+            int sequence2 = 1;
+            int sequence3 = 2;
+
+            Vector3 calNormal = Vector3.Cross(
+                newVertices[1] - newVertices[0],
+                newVertices[2] - newVertices[0]
+            ).normalized;
+
+            if (Vector3.Dot(calNormal, face) < 0) {
+                sequence1 = 2;
+                sequence2 = 1;
+                sequence3 = 0;
+            }
+
+            for (int i = 0; i < 3; i++) {
+                submesh[submeshDepartment].Add(indexCount + i);
+            }
+            vertices.AddRange(new Vector3[] {
+                newVertices[sequence1],
+                newVertices[sequence2],
+                newVertices[sequence3]
+            });
+            normals.AddRange(new Vector3[] {
+                newNormals[sequence1],
+                newNormals[sequence2],
+                newNormals[sequence3]
+            });
+            uvs.AddRange(new Vector2[] {
+                newUVs[sequence1],
+                newUVs[sequence2],
+                newUVs[sequence3]
+            });
+        }
+
+        public void AddVertex(
+            Vector3 vertex,
+            Vector3 normal,
+            Vector2 uv
+        ) {
+            vertices.Add(vertex);
+            normals.Add(normal);
+            uvs.Add(uv);
+        }
+
+        public void AddSubIndices(
+            int submeshDepartment,
+            int index1,
+            int index2,
+            int index3
+        ) {
+            submesh[submeshDepartment].AddRange(new int[] { 
+                index1,
+                index2,
+                index3
+            });
+        }
+    }
+    
+    // 新ポリゴン候補の情報をもとに，まとめられるポリゴンをまとめて保持する
+    public class FusionPolygonList {
+        // edgeDirection が同じポリゴンをマージするリスト
+        Dictionary<int, List<PolygonInfo>> fusionPolygonList = new Dictionary<int, List<PolygonInfo>>();
+
+        public void Add(
+            int edgeDirection,
+            PolygonInfo polygonInfo
+        ) {
+            List<PolygonInfo> polygonInfoList;
+
+            // edgeDirection が同じポリゴンをマージするリストが存在しない場合は新規作成する
+            if (!fusionPolygonList.TryGetValue(edgeDirection, out polygonInfoList)) {
+                polygonInfoList = new List<PolygonInfo>();
+                fusionPolygonList.Add(edgeDirection, polygonInfoList);
+            }
+            bool isFusion = false;
+
+            // 同じ edgeDirection のポリゴンをマージする
+            for (int i = polygonInfoList.Count - 1; i >= 0; i--) {
+                PolygonInfo subject = polygonInfoList[i];
+                // Add しようとしているポリゴンが既存のポリゴンとマージできるか判定する
+                if (polygonInfo.edgeDirection == subject.edgeDirection) {
+                    PolygonInfo towardConnection, awayConnection;
+                    // polygonInfo が上から subject に接続する場合
+                    if (polygonInfo.vertex_toward.vertexDomein == subject.vertex_away.vertexDomein) {
+                        awayConnection = subject;
+                        towardConnection = polygonInfo;
+                    }
+                    // polygonInfo が下から subject に接続する場合
+                    else if (polygonInfo.vertex_away.vertexDomein == subject.vertex_toward.vertexDomein) {
+                        awayConnection = polygonInfo;
+                        towardConnection = subject;
+                    } else {
+                        continue;
+                    }
+
+                    // マージ処理のためのポインタ操作を行う
+                    if ((towardConnection.terminal_right.next = awayConnection.internal_right.next) != null) {
+                        towardConnection.terminal_right = awayConnection.terminal_right;
+                        towardConnection.rightVertCount += awayConnection.rightVertCount - 1;
+                    }
+                    if ((towardConnection.terminal_left.next = awayConnection.internal_left.next) != null) {
+                        towardConnection.terminal_left = awayConnection.terminal_left;
+                        towardConnection.leftVertCount += awayConnection.leftVertCount - 1;
+                    }
+                    // マージ処理を行う
+                    towardConnection.vertex_away = awayConnection.vertex_away;
+                    awayConnection.vertex_toward = towardConnection.vertex_toward;
+
+                    // isFusion が true の場合は，二つのポリゴンの間に新ポリゴンがはまって三つが一つになっており，towardConnection, awayConnection の両方がマージされているので，片方を削除する
+                    if (isFusion) {
+                        polygonInfoList.Remove(awayConnection);
+                        break;
+                    }
+                    polygonInfoList[i] = towardConnection;
+                    polygonInfo = towardConnection;
+                    isFusion = true;
+                }
+            }
+            if (!isFusion) {
+                polygonInfoList.Add(polygonInfo);
+            }
+        }
+
+        public void MakeTrianges() {
+            foreach (List<PolygonInfo> list in fusionPolygonList.Values) {
+                foreach (PolygonInfo poly in list) {
+                    poly.AddTriangleCirculation();
+                }
+            }
+        }
+
+        public void Clear() {
+            fusionPolygonList.Clear();
+        }
+    }
+
+    // 新ポリゴン候補の情報を格納する
+    public class PolygonInfo {
+        public int submeshDepartment;
+        public int edgeDirection;
+        public VertexInfo vertex_toward, vertex_away;
+        public Node<int> internal_left, terminal_left, internal_right, terminal_right;
+        public int rightVertCount, leftVertCount;
+
+        public PolygonInfo(
+            bool _rtlf,
+            int _submeshDepartment,
+            int _edgeDirection,
+            VertexInfo _vertex_toward,
+            VertexInfo _vertex_away
+        ) {
+            submeshDepartment = _submeshDepartment;
+            edgeDirection = _edgeDirection;
+            vertex_toward = _vertex_toward;
+            vertex_away = _vertex_away;
+
+            if (_rtlf) {
+                internal_right = new Node<int>(_vertex_toward.indexInRightMesh);
+                terminal_right = internal_right;
+                internal_left = new Node<int>(_vertex_toward.indexInLeftMesh);
+                terminal_left = new Node<int>(_vertex_away.indexInLeftMesh);
+                internal_left.next = terminal_left;
+                rightVertCount = 1;
+                leftVertCount = 2;
+            } else {
+                internal_right = new Node<int>(_vertex_toward.indexInRightMesh);
+                terminal_right = new Node<int>(_vertex_away.indexInRightMesh);
+                internal_right.next = terminal_right;
+                internal_left = new Node<int>(_vertex_toward.indexInLeftMesh);
+                terminal_left = internal_left;
+                rightVertCount = 2;
+                leftVertCount = 1;
+            }
+        }
+
+        public void AddTriangleCirculation() {
+            (int index_r_t, int index_l_t) = vertex_toward.GetIndex();
+            (int index_r_a, int index_l_a) = vertex_away.GetIndex();
+
+            Node<int> node;
+            int index_previous, count, halfCount;
+
+            node = internal_right;
+            index_previous = node.index;
+            count = rightVertCount;
+            halfCount = rightVertCount / 2;
+
+            // 右側のポリゴンのうち，vertex_toward 寄りの頂点（internal から 中間地点）までを，vertex_toward との辺を構成する三角形に分割しながら追加していく
+            for (int i = 0; i < halfCount; i++) {
+                node = node.next;
+                int index_current = node.index;
+                mesh_right.AddSubIndices(
+                    submeshDepartment,
+                    index_current,
+                    index_previous,
+                    index_r_t
+                );
+                index_previous = index_current;
+            }
+            // 右側のポリゴンの頂点群の中間点と，vertex_toward, vertex_away で構成される三角形を追加する
+            mesh_right.AddSubIndices(
+                submeshDepartment,
+                index_previous,
+                index_r_t,
+                index_r_a
+            );
+            // 右側のポリゴンのうち，vertex_away 寄りの頂点（中間地点から terminal）までを，vertex_away との辺を構成する三角形に分割しながら追加していく
+            int remainCount = rightVertCount - halfCount - 1;
+            for (int i = 0; i < remainCount; i++) {
+                node = node.next;
+                int index_current = node.index;
+                mesh_right.AddSubIndices(
+                    submeshDepartment,
+                    index_current,
+                    index_previous,
+                    index_r_a
+                );
+                index_previous = index_current;
+            }
+
+            node = internal_left;
+            index_previous = node.index;
+            count = leftVertCount;
+            halfCount = leftVertCount / 2;
+
+            // 左側のポリゴンのうち，vertex_toward 寄りの頂点（internal から 中間地点）までを，vertex_toward との辺を構成する三角形に分割しながら追加していく
+            for (int i = 0; i < halfCount; i++) {
+                node = node.next;
+                int index_current = node.index;
+                mesh_left.AddSubIndices(
+                    submeshDepartment,
+                    index_current,
+                    index_l_t,
+                    index_previous
+                );
+                index_previous = index_current;
+            }
+            // 左側のポリゴンの頂点群の中間点と，vertex_toward, vertex_away で構成される三角形を追加する
+            mesh_left.AddSubIndices(
+                submeshDepartment,
+                index_previous,
+                index_l_a,
+                index_l_t
+            );
+            // 左側のポリゴンのうち，vertex_away 寄りの頂点（中間地点から terminal）までを，vertex_away との辺を構成する三角形に分割しながら追加していく
+            remainCount = leftVertCount - halfCount - 1;
+            for (int i = 0; i < remainCount; i++) {
+                node = node.next;
+                int index_current = node.index;
+                mesh_left.AddSubIndices(
+                    submeshDepartment,
+                    index_current,
+                    index_l_a,
+                    index_previous
+                );
+                index_previous = index_current;
+            }
+            slashSurfaceGeometry.Add(vertex_toward.position, vertex_away.position);
+        }
+    }
+
+    // 新頂点の情報を格納する
+    public class VertexInfo {
+        public int indexInLeftMesh, indexInRightMesh;
+        public float ratio;
+        public int vertexDomein;
+        public Vector3 position;
+
+        public VertexInfo(
+            int _leftTracker,
+            int _rightTracker,
+            float _ratio,
+            Vector3 _position
+        ) {
+            indexInLeftMesh = _leftTracker;
+            indexInRightMesh = _rightTracker;
+            ratio = _ratio;
+            vertexDomein = (_rightTracker << 16) | _leftTracker;
+            position = _position;
+        }
+
+        public (
+            int indexInRightMesh, 
+            int indexInLeftMesh
+        ) GetIndex() {
+            Vector3 rightNormal, leftNormal;
+            Vector2 rightUV, leftUV;
+
+            rightNormal = mesh_right.normals[indexInRightMesh];
+            rightUV = mesh_right.uvs[indexInRightMesh];
+            leftNormal = mesh_left.normals[indexInLeftMesh];
+            leftUV = mesh_left.uvs[indexInLeftMesh];
+
+            Vector3 newNormal = Vector3.Lerp(
+                rightNormal,
+                leftNormal,
+                ratio
+            );
+            Vector2 newUV = Vector2.Lerp(
+                rightUV,
+                leftUV,
+                ratio
+            );
+
+            int index_right, index_left;
+            (int, int) pair;
+
+
+            if (sandwichVertex.TryGetValue(vertexDomein, out pair)) {
+                index_right = pair.Item1;
+                index_left = pair.Item2;
+            } 
+            else {
+                index_right = mesh_right.vertices.Count;
+                mesh_right.vertices.Add(position);
+                mesh_right.normals.Add(newNormal);
+                mesh_right.uvs.Add(newUV);
+
+                index_left = mesh_left.vertices.Count;
+                mesh_left.vertices.Add(position);
+                mesh_left.normals.Add(newNormal);
+                mesh_left.uvs.Add(newUV);
+
+                sandwichVertex.Add(vertexDomein, (index_right, index_left));
+            }
+            return (index_right, index_left);
+        }
+    }
+
+    // 切断面上の図形に沿ったポリゴンを生成する
+    public class SlashSurfaceGeometry {
+        // RoopFragmentCollection
+        Dictionary<Vector3, JoinedVertexGroup> counterclockwiseDB = new Dictionary<Vector3, JoinedVertexGroup>(); // leftPointDic
+        Dictionary<Vector3, JoinedVertexGroup> clockwiseDB = new Dictionary<Vector3, JoinedVertexGroup>(); // rightPointDic
+
+        public void Add(
+            Vector3 vertex_toward_position, 
+            Vector3 vertex_away_position
+        ) {
+            Node<Vector3> target = new Node<Vector3>(vertex_away_position);
+
+            JoinedVertexGroup roop1 = null;
+            bool isFound1;
+
+            // 時計回り DB の中に自身が終点のものがある場合
+            if (isFound1 = clockwiseDB.ContainsKey(vertex_toward_position)) {
+                roop1 = clockwiseDB[vertex_toward_position];
+                // 終端に自身を追加して，終点を terget に更新する
+                roop1.end.next = target;
+                roop1.end = target;
+                roop1.endPosition = vertex_away_position;
+                // DB から roop1 を削除する
+                clockwiseDB.Remove(vertex_toward_position);
+            }
+            JoinedVertexGroup roop2 = null;
+            bool isFound2;
+
+            // 反時計回り DB の中に自身が終点のものがある場合
+            if (isFound2 = counterclockwiseDB.ContainsKey(vertex_away_position)) {
+                roop2 = counterclockwiseDB[vertex_away_position];
+                // 両ループが等しくなれば，ループの完成
+                if (roop1 == roop2) {
+                    roop1.verticesCount++;
+                    return;
+                }
+                // 終端に自身を追加して，終点を terget に更新する
+                target.next = roop2.start;
+                roop2.start = target;
+                roop2.startPosition = vertex_toward_position;
+                // DB から roop2 を削除する
+                counterclockwiseDB.Remove(vertex_away_position);
+            }
+
+            if (isFound1) {
+                // 両ループがつながったとき
+                if (isFound2) {
+                    // roop1 + target + roop2 となっているので roop1 に roop2 を結合する
+                    roop1.end = roop2.end;
+                    roop1.endPosition = roop2.endPosition;
+                    roop1.verticesCount += roop2.verticesCount + 1;
+                    clockwiseDB[roop2.endPosition] = roop1;
+                }
+                // 反時計回りに繋がったとき，時計回り DB に自身の終点を追加する
+                else {
+                    roop1.verticesCount++;
+                    // 既に追加されている場合は追加しない
+                    if (counterclockwiseDB.ContainsKey(vertex_toward_position)) {
+                        return;
+                    }
+                    clockwiseDB.Add(vertex_away_position, roop1);
+                }
+            } 
+            else {
+                // 時計回りに繋がったとき，反時計回り DB に自身の終点を追加する
+                if (isFound2) {
+                    roop2.verticesCount++;
+                    // 既に追加されている場合は追加しない
+                    if (counterclockwiseDB.ContainsKey(vertex_toward_position)) {
+                        return;
+                    }
+                    counterclockwiseDB.Add(vertex_toward_position, roop2);
+                }
+                // どちらにも繋がらなかったとき，新しいループを生成する
+                else {
+                    JoinedVertexGroup roop = new JoinedVertexGroup(
+                        target, target, vertex_toward_position, vertex_away_position
+                    );
+                    // roop.verticesCount = 2;
+                    counterclockwiseDB.Add(vertex_toward_position, roop);
+                    clockwiseDB.Add(vertex_away_position, roop);
+                }
+            }
+        }
+
+        public void Clear() {
+            counterclockwiseDB.Clear();
+            clockwiseDB.Clear();
+        }
+    }
+
+    // 切断面上の図形を格納する
+    public class JoinedVertexGroup {
+        // RooP
+        public Node<Vector3> start, end;
+        public Vector3 startPosition, endPosition;
+        public int verticesCount;
+
+        public JoinedVertexGroup(
+            Node<Vector3> toward, Node<Vector3> away, Vector3 _startPosition, Vector3 _endPosition
+        ) {
+            start = toward;
+            end = away;
+            startPosition = _startPosition;
+            endPosition = _endPosition;
+        }
+    }
+
+    public class Node<T> {
+        public Node<T> next;
+        public T index;
+
+        public Node(T _index) {
+            index = _index;
+            next = null;
+        }
+    }
+
 
     [SerializeField, Tooltip("切断面に適用するマテリアル")]
-    private Material       surfaceMaterial;
-    private Texture2D      albedoTexture;
+    private static Material surfaceMaterial;
 
-    // 切断対象のオブジェクトのメッシュ情報
-    private List<Vector3> tmpVertices;
-    private int[]          targetTriangles;
-    private Vector3[]      targetVertices;
-    private Vector3[]      targetNormals;
-    private Vector2[]      targetUVs;
-    // 切断面左側のポリゴン情報
-    private List<int>       leftTriangles;
-    private List<Vector3>   leftVertices;
-    private List<Vector3>   leftNormals;
-    private List<Vector2>   leftUVs;
-    // 切断面右側のポリゴン情報
-    private List<int>       rightTriangles;
-    private List<Vector3>   rightVertices;
-    private List<Vector3>   rightNormals;
-    private List<Vector2>   rightUVs;
+    // メッシュ情報用の変数
+    private static int[]         tracker;
+    private static Vector3[]     originVertices;
+    private static Vector3[]     originNormals;
+    private static Vector2[]     originUVs;
+    private static Mesh          originMesh;
+    private static MeshContainer mesh_left  = new MeshContainer();
+    private static MeshContainer mesh_right = new MeshContainer();
 
-    private bool interval = false;
+    // 切断面上のメッシュ情報を操作するための変数
+    private static Dictionary<int, (int, int)> sandwichVertex       = new Dictionary<int, (int, int)>();
+    private static FusionPolygonList           fusionPolygonList    = new FusionPolygonList();
+    private static SlashSurfaceGeometry        slashSurfaceGeometry = new SlashSurfaceGeometry();
 
-    // Degug 用
-    public static bool debugMode;
-
-    public const float X_ROTATION = 20f;
-    public const float Y_ROTATION = 30f;
-    public const float Z_ROTATION = 0f;
-    public Vector3 positionOffset = new Vector3(1f, 1f, 0.1f);
-
-    private void Start() {
-        Invoke("CutOK", 0.5f);
-        //DebugUtils.ToggleDebugMode();
-
-        if (debugMode) {
-            // x軸、y軸、z軸の回転をそれぞれ作成
-            Quaternion xRotationQuaternion = Quaternion.Euler(X_ROTATION, 0f, 0f);
-            Quaternion yRotationQuaternion = Quaternion.Euler(0f, Y_ROTATION, 0f);
-            Quaternion zRotationQuaternion = Quaternion.Euler(0f, 0f, Z_ROTATION);
-
-            Quaternion combinedRotation = xRotationQuaternion * yRotationQuaternion * zRotationQuaternion;
-            Vector3 rotatedNormal = combinedRotation * transform.right;
-            Vector3 customPosition = transform.position + positionOffset;
-
-            Plane cutter = new Plane(rotatedNormal, customPosition);
-
-            // surfaceMaterial が null でないかを確認
-            if (surfaceMaterial == null) {
-                Debug.LogError("surfaceMaterial is null");
-                return;
-            }
-
-            // mainTexture が null でないかを確認
-            if (surfaceMaterial.mainTexture == null) {
-                Debug.LogError("surfaceMaterial.mainTexture is null");
-                return;
-            }
-
-            // mainTexture を Texture2D にキャスト
-            albedoTexture = surfaceMaterial.mainTexture as Texture2D;
-            if (albedoTexture == null) {
-                Debug.LogError("mainTexture is not a Texture2D");
-                return;
-            }
-            Subdivide(cutter);
-        }
-    }
-    private void CutOK() {
-        interval = true;
-    }
+    private static List<Vector3>   newVertices                = new List<Vector3>();
+    private static List<List<int>> joinedVertexGroup          = new List<List<int>>();
+    private static List<Vector2>   new2DVertices              = new List<Vector2>();
+    private static List<List<int>> nonConvexGeometry          = new List<List<int>>();
+    private static List<List<int>> jointedMonotoneVertexGroup = new List<List<int>>();
 
     // メインメソッド
-    public void Subdivide(Plane cutter) {
-
-        if (interval == false) {
-            return;
-        }
-        interval = false;
+    public static void Subdivide(GameObject origin, Plane cutter) {
 
         DebugUtils.ToggleDebugMode();
 
         DebugUtils.PrintNumber(cutter, nameof(cutter));
 
         // 切断対象のオブジェクトのメッシュ情報
-        Mesh targetMesh       = this.GetComponent<MeshFilter>().mesh;
-        tmpVertices = new List<Vector3>();
-        targetMesh.GetVertices(tmpVertices);
-        targetTriangles       = targetMesh.triangles;
-        targetVertices        = targetMesh.vertices;
-        targetNormals         = targetMesh.normals;
-        targetUVs             = targetMesh.uv;
-        // 切断面左側のポリゴン情報
-        leftTriangles         = new List<int>();
-        leftVertices          = new List<Vector3>();
-        leftNormals           = new List<Vector3>();
-        leftUVs               = new List<Vector2>();
-        // 切断面右側のポリゴン情報
-        rightTriangles        = new List<int>();
-        rightVertices         = new List<Vector3>();
-        rightNormals          = new List<Vector3>();
-        rightUVs              = new List<Vector2>();
-        // 切断対象のオブジェクトの情報操作用
-        int               targetVerticesLength  = targetVertices.Length;
-        List<Vector3>     newVerticesList       = new List<Vector3>();
-        List<VertexJudge> newVertexJudge        = new List<VertexJudge>();
-        List<int[]>       vertexPairList        = new List<int[]>();
-        List<List<int>>   joinedVertexGroupList = new List<List<int>>();
+        mesh_left.Clear();
+        mesh_right.Clear();
 
-        Vector2[]       new2DVerticesArray;
-        List<List<int>> nonConvexGeometryList;
-        List<List<int>> jointedMonotoneVertexGroupList;
+        sandwichVertex.Clear();
+        fusionPolygonList.Clear();
+        slashSurfaceGeometry.Clear();
+
+        newVertices.Clear();
+        joinedVertexGroup.Clear();
+        new2DVertices.Clear();
+        nonConvexGeometry.Clear();
+        jointedMonotoneVertexGroup.Clear();
+
+        originMesh = origin.GetComponent<MeshFilter>().mesh;
+        originVertices = originMesh.vertices;
+        originNormals = originMesh.normals;
+        originUVs = originMesh.uv;
 
         // 切断対象のオブジェクトの各ポリゴンの左右判定用
-        int rightSortingHat = 0, leftSortingHat = 0;
-        bool vertexTruthValue1, vertexTruthValue2, vertexTruthValue3;
+        int rightHut = 0;
+        int leftHut = 0;
+        bool[] vertexTruthValues = new bool[originVertices.Length];
+        int[] submeshIndicesAry;
+        // mesh_origin の頂点が mesh_left, mesh_right での何番目の頂点に対応するかを格納する
+        tracker = new int[originVertices.Length];
 
-        /* ****************************** */
-        /* 断面の左右のポリゴンを生成する */
-        /* ****************************** */
+        // もとの頂点情報に左右情報を格納すると同時に，頂点情報を追加する
+        for (int i = 0; i < originVertices.Length; i++) {
+            vertexTruthValues[i] = cutter.GetSide(originVertices[i]);
 
-        for (int i = 0; i < targetTriangles.Length; i += 3) {
-            if (!MathUtils.IsTriangle(targetVertices[targetTriangles[i]], targetVertices[targetTriangles[i + 1]], targetVertices[targetTriangles[i + 2]]))
-                continue;
-            vertexTruthValue1 = cutter.GetSide(targetVertices[targetTriangles[i]]);
-            vertexTruthValue2 = cutter.GetSide(targetVertices[targetTriangles[i + 1]]);
-            vertexTruthValue3 = cutter.GetSide(targetVertices[targetTriangles[i + 2]]);
-            //対象の三角形ポリゴンの頂点すべてが右側にある場合
-            if (vertexTruthValue1 && vertexTruthValue2 && vertexTruthValue3) {
-                AddToRightSide(
-                    i,
-                    ref rightSortingHat, 
-                    targetTriangles, 
-                    targetVertices,
-                    targetUVs, 
-                    rightTriangles, 
-                    rightVertices,
-                    rightUVs
+            if (vertexTruthValues[i]) {
+                mesh_right.AddVertex(
+                    originVertices[i],
+                    originNormals[i],
+                    originUVs[i]
                 );
+                tracker[i] = rightHut++;
             }
-            // 対象の三角形ポリゴンの頂点すべてが左側にある場合
-            else if (!vertexTruthValue1 && !vertexTruthValue2 && !vertexTruthValue3) {
-                AddToLeftSide(
-                    i,
-                    ref leftSortingHat,
-                    targetTriangles,
-                    targetVertices,
-                    targetUVs,
-                    leftTriangles,
-                    leftVertices,
-                    leftUVs
-                );
-            }
-            // 対象の三角形ポリゴンの頂点が左右に分かれている場合
             else {
-                ProcessMixedTriangle(
-                    i,
-                    ref rightSortingHat,
-                    ref leftSortingHat,
-                    cutter,
-                    vertexTruthValue1,
-                    vertexTruthValue2,
-                    vertexTruthValue3,
-                    targetVerticesLength,
-                    targetTriangles,
-                    targetVertices,
-                    targetUVs,
-                    newVerticesList,
-                    newVertexJudge,
-                    vertexPairList,
-                    rightTriangles,
-                    rightVertices,
-                    rightUVs,
-                    leftTriangles,
-                    leftVertices,
-                    leftUVs
+                mesh_left.AddVertex(
+                    originVertices[i],
+                    originNormals[i],
+                    originUVs[i]
                 );
+                tracker[i] = leftHut++;
             }
         }
-        /* ************************** */
-        /* 断面上のポリゴンを生成する */
-        /* ************************** */
+        if (rightHut < 4 || leftHut < 4) {
+            return;
+        }
+
+        // サブメッシュの数だけループ
+        for (int submeshDepartment = 0; submeshDepartment < originMesh.subMeshCount; submeshDepartment++) {
+            // このサブメッシュの頂点数を取得する
+            submeshIndicesAry = originMesh.GetIndices(submeshDepartment);
+            mesh_left.submesh.Add(new List<int>());
+            mesh_right.submesh.Add(new List<int>());
+
+            // サブメッシュの頂点数だけループ
+            for (int i = 0; i < submeshIndicesAry.Length; i += 3) {
+                int subIndex1 = submeshIndicesAry[i];
+                int subIndex2 = submeshIndicesAry[i + 1];
+                int subIndex3 = submeshIndicesAry[i + 2];
+                bool subIndexRTLF1 = vertexTruthValues[subIndex1];
+                bool subIndexRTLF2 = vertexTruthValues[subIndex2];
+                bool subIndexRTLF3 = vertexTruthValues[subIndex3];
+
+                //対象の三角形ポリゴンの頂点すべてが右側にある場合
+                if (subIndexRTLF1 && subIndexRTLF2 && subIndexRTLF3) {
+                    mesh_right.AddSubIndices(
+                        submeshDepartment, 
+                        tracker[subIndex1],
+                        tracker[subIndex2],
+                        tracker[subIndex3]
+                    );
+                }
+                // 対象の三角形ポリゴンの頂点すべてが左側にある場合
+                else if (!subIndexRTLF1 && !subIndexRTLF2 && !subIndexRTLF3) {
+                    mesh_left.AddSubIndices(
+                        submeshDepartment, 
+                        tracker[subIndex1],
+                        tracker[subIndex2],
+                        tracker[subIndex3]
+                    );
+                }
+                // 対象の三角形ポリゴンの頂点が左右に分かれている場合
+                else {
+                    ProcessMixedTriangle(
+                        cutter,
+                        submeshDepartment,
+                        new bool[3] { subIndexRTLF1, subIndexRTLF2, subIndexRTLF3 }, 
+                        new int[3] { subIndex1, subIndex2, subIndex3 }
+                    );
+                }
+            }
+        }
+        // 切断されたポリゴンの再構築を行う
+        fusionPolygonList.MakeTrianges();
+
+        Material[] mats = origin.GetComponent<MeshRenderer>().sharedMaterials;
+        // もし切断対象の設定されたマテリアルの最後の要素が切断面用のマテリアルでない場合
+        if (mats[mats.Length - 1].name != surfaceMaterial.name) {
+            // 切断面用のマテリアルを追加する
+            Material[] newMats = new Material[mats.Length + 1];
+            mesh_right.submesh.Add(new List<int>());
+            mesh_left.submesh.Add(new List<int>());
+            // マテリアル配列に切断面用のマテリアルを追加する
+            mats.CopyTo(newMats, 0);
+            newMats[mats.Length] = surfaceMaterial;
+            mats = newMats;
+        }
+
+        // 切断面ポリゴンの構築を行う
+
+        // オブジェクトを生成する
+        Mesh newMeshRight = new Mesh();
+        newMeshRight.vertices = mesh_right.vertices.ToArray();
+        newMeshRight.normals = mesh_right.normals.ToArray();
+        newMeshRight.uv = mesh_right.uvs.ToArray();
+        newMeshRight.subMeshCount = mesh_right.submesh.Count;
+        for (int i = 0; i < mesh_right.submesh.Count; i++) {
+            newMeshRight.SetIndices(mesh_right.submesh[i].ToArray(), MeshTopology.Triangles, i);
+        }
+
+        Mesh newMeshLeft = new Mesh();
+        newMeshLeft.vertices = mesh_left.vertices.ToArray();
+        newMeshLeft.normals = mesh_left.normals.ToArray();
+        newMeshLeft.uv = mesh_left.uvs.ToArray();
+        newMeshLeft.subMeshCount = mesh_left.submesh.Count;
+        for (int i = 0; i < mesh_left.submesh.Count; i++) {
+            newMeshLeft.SetIndices(mesh_left.submesh[i].ToArray(), MeshTopology.Triangles, i);
+        }
+
+        // 左側のメッシュは元のオブジェクトに適用する
+        origin.name = "cut obj";
+        origin.GetComponent<MeshFilter>().mesh = newMeshLeft;
+        GameObject newObjRight = origin;
+        // 右側のメッシュは新しいオブジェクトに適用する
+        GameObject newObjLeft = new GameObject("cut obj", typeof(MeshFilter), typeof(MeshRenderer), typeof(MeshCollider), typeof(Rigidbody), typeof(ActSubdivide));
+        newObjLeft.transform.position = origin.transform.position;
+        newObjLeft.transform.rotation = origin.transform.rotation;
+        newObjLeft.GetComponent<MeshFilter>().mesh = newMeshRight;
+
+        newObjLeft.GetComponent<MeshRenderer>().materials = mats;
+        newObjLeft.GetComponent<MeshCollider>().sharedMesh = newMeshLeft;
+        newObjLeft.GetComponent<MeshCollider>().cookingOptions = MeshColliderCookingOptions.CookForFasterSimulation;
+        newObjLeft.GetComponent<MeshCollider>().convex = true;
+        newObjLeft.GetComponent<MeshCollider>().material = GetComponent<Collider>().material;
+        newObjRight.GetComponent<MeshRenderer>().materials = mats;
+
+        /*
 
         // 右側と左側のポリゴンがそれぞれ4つ以上ない場合は，立体を形成しないため終了する
         if (rightTriangles.Count < 4 || leftTriangles.Count < 4) {
@@ -222,7 +723,7 @@ public class ActSubdivide : MonoBehaviour {
         joinedVertexGroupList = GeometryUtils.GroupingForDetermineGeometry(
             vertexPairList
         );
-        
+
         if (joinedVertexGroupList == null)
             return;
         DebugUtils.PrintList(joinedVertexGroupList, nameof(joinedVertexGroupList));
@@ -230,7 +731,7 @@ public class ActSubdivide : MonoBehaviour {
         // 新頂点の二次元座標変換する
         new2DVerticesArray = new Vector2[newVerticesList.Count];
         new2DVerticesArray = GeometryUtils.ConvertCoordinates3DTo2D(
-            cutter, 
+            cutter,
             newVerticesList
         );
 
@@ -238,7 +739,7 @@ public class ActSubdivide : MonoBehaviour {
 
         // 最も外郭となる処理図形 (内包図形の有無に関わらない) ごとにグループ化する
         nonConvexGeometryList = GeometryUtils.GroupingForSegmentNonMonotoneGeometry(
-            new2DVerticesArray, 
+            new2DVerticesArray,
             joinedVertexGroupList
         );
 
@@ -246,8 +747,8 @@ public class ActSubdivide : MonoBehaviour {
 
         // 処理図形に対して，単調多角形分割を行う
         jointedMonotoneVertexGroupList = ComputationalGeometryAlgorithm.MakeMonotone(
-            new2DVerticesArray, 
-            joinedVertexGroupList, 
+            new2DVerticesArray,
+            joinedVertexGroupList,
             nonConvexGeometryList
         );
         if (jointedMonotoneVertexGroupList == null)
@@ -257,7 +758,7 @@ public class ActSubdivide : MonoBehaviour {
 
         // 単調多角形を三角形分割する
         ComputationalGeometryAlgorithm.TriangulateMonotonePolygon(
-            cutter.normal, 
+            cutter.normal,
             targetVerticesLength,
             ref rightSortingHat,
             ref leftSortingHat,
@@ -285,6 +786,8 @@ public class ActSubdivide : MonoBehaviour {
             leftUVs
         );
         Destroy(this.gameObject);
+
+        */
     }
 
     // オブジェクト生成用メソッド
@@ -314,398 +817,180 @@ public class ActSubdivide : MonoBehaviour {
         obj.GetComponent<ActSubdivide>().surfaceMaterial = surfaceMaterial;
     }
 
-    // 右側メッシュ情報の挿入
-    private static void AddToRightSide(
-        int           triangleOffset,
-        ref int       rightOffset,
-        int[]         targetTriangles,
-        Vector3[]     targetVertices,
-        Vector2[]     targetUVs, 
-        List<int>     rightTriangles,
-        List<Vector3> rightVertices,
-        List<Vector2> rightUVs
-    ) {
-        rightTriangles.Add(rightOffset++);
-        rightTriangles.Add(rightOffset++);
-        rightTriangles.Add(rightOffset++);
-
-        rightVertices.AddRange(new Vector3[] {
-            targetVertices[targetTriangles[triangleOffset]],
-            targetVertices[targetTriangles[triangleOffset + 1]],
-            targetVertices[targetTriangles[triangleOffset + 2]]
-        });
-        rightUVs.AddRange(new Vector2[] {
-            targetUVs[targetTriangles[triangleOffset]],
-            targetUVs[targetTriangles[triangleOffset + 1]],
-            targetUVs[targetTriangles[triangleOffset + 2]]
-        });
-    }
-
-    // 左側メッシュ情報の挿入
-    private static void AddToLeftSide(
-        int           triangleOffset,
-        ref int       leftOffset,
-        int[]         targetTriangles, 
-        Vector3[]     targetVertices,
-        Vector2[]     targetUVs, 
-        List<int>     leftTriangles, 
-        List<Vector3> leftVertices,
-        List<Vector2> leftUVs
-    ) {
-        leftTriangles.Add(leftOffset++);
-        leftTriangles.Add(leftOffset++);
-        leftTriangles.Add(leftOffset++);
-
-        leftVertices.AddRange(new Vector3[] {
-            targetVertices[targetTriangles[triangleOffset]],
-            targetVertices[targetTriangles[triangleOffset + 1]],
-            targetVertices[targetTriangles[triangleOffset + 2]]
-        });
-        leftUVs.AddRange(new Vector2[] {
-            targetUVs[targetTriangles[triangleOffset]],
-            targetUVs[targetTriangles[triangleOffset + 1]],
-            targetUVs[targetTriangles[triangleOffset + 2]]
-        });
-    }
-
     // 切断面上メッシュ情報の挿入
     private static void ProcessMixedTriangle(
-        int               triangleOffset,
-        ref int           rightOffset,
-        ref int           leftOffset,
-        Plane             cutter, 
-        bool              vertexTruthValue1, 
-        bool              vertexTruthValue2, 
-        bool              vertexTruthValue3, 
-        int               targetVerticesLength,
-        int[]             targetTriangles, 
-        Vector3[]         targetVertices, 
-        Vector2[]         targetUVs,
-        List<Vector3>     newVerticesList,
-        List<VertexJudge> newVertexJudge, 
-        List<int[]>       vertexPairList, 
-        List<int>         rightTriangles, 
-        List<Vector3>     rightVertices, 
-        List<Vector2>     rightUVs, 
-        List<int>         leftTriangles, 
-        List<Vector3>     leftVertices, 
-        List<Vector2>     leftUVs
+        Plane  cutter, 
+        int    submeshDepartment,
+        bool[] vertexTruthValues,
+        int[] subIndices
     ) {
+        ( // ポリゴンの頂点情報を扱いやすいように整理する
+            bool rtlf, 
+            int[] sortedIndex
+        ) = SortIndex(
+            vertexTruthValues,
+            subIndices[0],
+            subIndices[1],
+            subIndices[2]
+        );
+
+        /*
         float distance1 = 0.0f;
         float distance2 = 0.0f;
         float distance3 = 0.0f;
         float epsilon = 0.0001f;
 
-        ( // ポリゴンの頂点情報を扱いやすいように整理する
-            bool rtlf, 
-            int vertexIndex1, Vector3 lonelyVertex, 
-            int vertexIndex2, Vector3 startPairVertex, 
-            int vertexIndex3, Vector3 lastPairVertex
-        ) = SegmentedPolygonsUtils.SortIndex(
-            targetTriangles[triangleOffset], vertexTruthValue1, targetVertices[targetTriangles[triangleOffset]],
-            targetTriangles[triangleOffset + 1], vertexTruthValue2, targetVertices[targetTriangles[triangleOffset + 1]],
-            targetTriangles[triangleOffset + 2], vertexTruthValue3, targetVertices[targetTriangles[triangleOffset + 2]]
-        );
-        distance1 = Mathf.Abs(cutter.GetDistanceToPoint(lonelyVertex));
-        distance2 = Mathf.Abs(cutter.GetDistanceToPoint(startPairVertex));
-        distance3 = Mathf.Abs(cutter.GetDistanceToPoint(lastPairVertex));
+        distance1 = Mathf.Abs(cutter.GetDistanceToPoint(originVertices[sortedIndex[0]]));
+        distance2 = Mathf.Abs(cutter.GetDistanceToPoint(originVertices[sortedIndex[1]]));
+        distance3 = Mathf.Abs(cutter.GetDistanceToPoint(originVertices[sortedIndex[2]]));
 
         // 「切断面上に孤独な頂点が存在する場合」と「切断面上にペア頂点の両方が存在する場合」はGetSide() で判定しきれないので，ここで処理する
         if ((rtlf && distance2 < epsilon && distance3 < epsilon) || (!rtlf && distance1 < epsilon)) {
-            AddToRightSide(
-                triangleOffset,
-                ref rightOffset,
-                targetTriangles,
-                targetVertices,
-                targetUVs,
-                rightTriangles,
-                rightVertices,
-                rightUVs
+            mesh_right.AddMesh(
+                submeshDepartment,
+                tracker[subIndices[0]],
+                tracker[subIndices[1]],
+                tracker[subIndices[2]]
+            );
+            return;
+        } else if ((rtlf && distance1 < epsilon) || (!rtlf && distance2 < epsilon && distance3 < epsilon)) {
+            mesh_left.AddMesh(
+                submeshDepartment,
+                tracker[subIndices[0]],
+                tracker[subIndices[1]],
+                tracker[subIndices[2]]
             );
             return;
         }
-        else if ((rtlf && distance1 < epsilon) || (!rtlf && distance2 < epsilon && distance3 < epsilon)) {
-            AddToLeftSide(
-                triangleOffset,
-                ref leftOffset,
-                targetTriangles,
-                targetVertices,
-                targetUVs,
-                leftTriangles,
-                leftVertices,
-                leftUVs
-            );
-            return;
-        }
+        */
 
-        ( // 新しい頂点を生成する
-            Vector3 newStartPairVertex,
-            Vector3 newLastPairVertex,
-            float ratio_LonelyAsStart, 
-            float ratio_LonelyAsLast
-        ) = SegmentedPolygonsUtils.GenerateNewVertex(
-            cutter, 
-            rtlf,
-            vertexIndex1,
-            vertexIndex2,
-            vertexIndex3,
-            lonelyVertex, 
-            startPairVertex, 
-            lastPairVertex, 
-            vertexPairList,
-            newVerticesList,
-            newVertexJudge
-        );
+        Ray ray1;
+        Ray ray2;
+        double direction1, direction2;
+        double distance_lonlyToInternal, distance_lonlyToTerminal;
+        Vector3 newVertexInternal, newVertexTerminal;
+        float ratio_lonelyToInternal, ratio_lonelyToTerminal;
 
-        ( // 新しいUV座標を生成する
-            Vector2 newUV1, 
-            Vector2 newUV2
-        ) = SegmentedPolygonsUtils.GenerateNewUV(
-            ratio_LonelyAsStart, 
-            ratio_LonelyAsLast,
-            targetUVs[vertexIndex1], 
-            targetUVs[vertexIndex2], 
-            targetUVs[vertexIndex3]
-        );
-       
-        /* ****************************** */
-        /* 孤独な頂点が無限平面の右側にある場合 */
-        /* ****************************** */
+        // Ray を飛ばして，孤独な頂点からの距離比を算出する (飛ばす方向は固定する)
         if (rtlf) {
-            // 切断ポリゴン右側を生成する処理
-            rightTriangles.Add(rightOffset++);
-            rightTriangles.Add(rightOffset++);
-            rightTriangles.Add(rightOffset++);
-
-            rightVertices.AddRange(new Vector3[] { 
-                targetVertices[vertexIndex1], 
-                newStartPairVertex, 
-                newLastPairVertex 
-            });
-            rightUVs.AddRange(new Vector2[] { 
-                targetUVs[vertexIndex1], 
-                newUV1, 
-                newUV2 
-            });
-            // 切断ポリゴン左側一つ目を生成する処理
-            leftTriangles.Add(leftOffset++);
-            leftTriangles.Add(leftOffset++);
-            leftTriangles.Add(leftOffset++);
-
-            leftVertices.AddRange(new Vector3[] {
-                newStartPairVertex,
-                targetVertices[vertexIndex2],
-                targetVertices[vertexIndex3]
-            });
-            leftUVs.AddRange(new Vector2[] {
-                newUV1,
-                targetUVs[vertexIndex2],
-                targetUVs[vertexIndex3]
-            });
-            // 切断ポリゴン左側二つ目を生成する処理
-            leftTriangles.Add(leftOffset++);
-            leftTriangles.Add(leftOffset++);
-            leftTriangles.Add(leftOffset++);
-
-            leftVertices.AddRange(new Vector3[] {
-                targetVertices[vertexIndex3],
-                newLastPairVertex,
-                newStartPairVertex
-            });
-            leftUVs.AddRange(new Vector2[] {
-                targetUVs[vertexIndex3],
-                newUV2,
-                newUV1
-            });
-        }
-        /* ****************************** */
-        /* 孤独な頂点が無限平面の左側にある場合 */
-        /* ****************************** */
+            ray1 = new Ray(originVertices[sortedIndex[0]], (originVertices[sortedIndex[1]] - originVertices[sortedIndex[0]]).normalized);
+            ray2 = new Ray(originVertices[sortedIndex[0]], (originVertices[sortedIndex[2]] - originVertices[sortedIndex[0]]).normalized);
+        } 
         else {
-            // 切断ポリゴン左側を生成する処理
-            leftTriangles.Add(leftOffset++);
-            leftTriangles.Add(leftOffset++);
-            leftTriangles.Add(leftOffset++);
-
-            leftVertices.AddRange(new Vector3[] {
-                targetVertices[vertexIndex1],
-                newLastPairVertex, 
-                newStartPairVertex
-            });
-            leftUVs.AddRange(new Vector2[] {
-                targetUVs[vertexIndex1],
-                newUV1,
-                newUV2
-            });
-            // 切断ポリゴン右側一つ目を生成する処理
-            rightTriangles.Add(rightOffset++);
-            rightTriangles.Add(rightOffset++);
-            rightTriangles.Add(rightOffset++);
-
-            rightVertices.AddRange(new Vector3[] {
-                newLastPairVertex,
-                targetVertices[vertexIndex2],
-                targetVertices[vertexIndex3]
-            });
-            rightUVs.AddRange(new Vector2[] {
-                newUV1,
-                targetUVs[vertexIndex2],
-                targetUVs[vertexIndex3]
-            });
-            // 切断ポリゴン右側二つ目を生成する処理
-            rightTriangles.Add(rightOffset++);
-            rightTriangles.Add(rightOffset++);
-            rightTriangles.Add(rightOffset++);
-
-            rightVertices.AddRange(new Vector3[] {
-                targetVertices[vertexIndex3],
-                newStartPairVertex,
-                newLastPairVertex
-            });
-            rightUVs.AddRange(new Vector2[] {
-                targetUVs[vertexIndex3],
-                newUV2,
-                newUV1
-            });
+            ray1 = new Ray(originVertices[sortedIndex[1]], (originVertices[sortedIndex[0]] - originVertices[sortedIndex[1]]).normalized);
+            ray2 = new Ray(originVertices[sortedIndex[2]], (originVertices[sortedIndex[0]] - originVertices[sortedIndex[2]]).normalized);
         }
+        
+        distance_lonlyToInternal = (originVertices[sortedIndex[0]] - originVertices[sortedIndex[1]]).sqrMagnitude;
+        distance_lonlyToTerminal = (originVertices[sortedIndex[0]] - originVertices[sortedIndex[2]]).sqrMagnitude;
+        
+        cutter.Raycast(ray1, out float tempDirection1);
+        direction1 = (double)tempDirection1;
+        cutter.Raycast(ray2, out float tempDirection2);
+        direction2 = (double)tempDirection2;
+
+        newVertexInternal = ray1.GetPoint((float)direction1);
+        newVertexTerminal = ray2.GetPoint((float)direction2);
+
+        ratio_lonelyToInternal = (float)(direction1 * direction1 / distance_lonlyToInternal);
+        ratio_lonelyToTerminal = (float)(direction2 * direction2 / distance_lonlyToTerminal);
+
+        // 新しい辺の方向を int 型にシフトして保存する
+        int edgeDirection;
+        // 新頂点情報を生成する
+        VertexInfo vertexInfoToward, vertexInfoAway;
+
+        if (rtlf) {
+            edgeDirection = ToIntFromVector3((newVertexTerminal - newVertexInternal).normalized);
+            vertexInfoToward = new VertexInfo(
+                tracker[sortedIndex[0]],
+                tracker[sortedIndex[1]],
+                ratio_lonelyToInternal,
+                newVertexInternal
+            );
+            vertexInfoAway = new VertexInfo(
+                tracker[sortedIndex[0]],
+                tracker[sortedIndex[2]],
+                ratio_lonelyToTerminal,
+                newVertexTerminal
+            );
+        } 
+        else {
+            edgeDirection = ToIntFromVector3((newVertexInternal - newVertexTerminal).normalized);
+            vertexInfoToward = new VertexInfo(
+                tracker[sortedIndex[2]],
+                tracker[sortedIndex[0]],
+                ratio_lonelyToTerminal,
+                newVertexTerminal
+            );
+            vertexInfoAway = new VertexInfo(
+                tracker[sortedIndex[1]],
+                tracker[sortedIndex[0]],
+                ratio_lonelyToInternal,
+                newVertexInternal
+            );
+        }
+        // 新ポリゴン情報を生成する
+        PolygonInfo polygonInfo = new PolygonInfo(
+            rtlf,
+            submeshDepartment,
+            edgeDirection,
+            vertexInfoToward,
+            vertexInfoAway
+        );
+        // 新ポリゴンの切断辺方向が既存の新ポリゴンの切断辺方向と同じ（同一平面）であれば，マージする
+        fusionPolygonList.Add(edgeDirection, polygonInfo);
     }
 
-    // 分断ポリゴンに対する処理系
-    internal class SegmentedPolygonsUtils {
+    // ポリゴンの頂点番号を，孤独な頂点を先頭に，表裏情報をもつ順番に並び替える
+    public static (
+        bool rtlf, 
+        int[] sortedIndex
+    ) SortIndex(
+        bool[] vertexTruthValues, 
+        int submeshIndex1, 
+        int submeshIndex2, 
+        int submeshIndex3
+    ) {
+        bool rtlf;
 
-        // ポリゴンの頂点番号を，孤独な頂点を先頭に，表裏情報をもつ順番に並び替える
-        public static (
-            bool rtlf, 
-            int newIndex1, Vector3 lonelyVertex, 
-            int newIndex2, Vector3 startPairVertex, 
-            int newIndex3, Vector3 lastPairVertex
-        ) SortIndex(
-            int index1, bool vertexTruthValue1, Vector3 vertex1, 
-            int index2, bool vertexTruthValue2, Vector3 vertex2, 
-            int index3, bool vertexTruthValue3, Vector3 vertex3
-        ) {
-            // 孤独な頂点が無限平面の右側にある場合
-            if (vertexTruthValue1 && !vertexTruthValue2 && !vertexTruthValue3) {
-                bool rtlf = true;
-                return (rtlf, index1, vertex1, index2, vertex2, index3, vertex3);
-            }
-            else if (!vertexTruthValue1 && vertexTruthValue2 && !vertexTruthValue3) {
-                bool rtlf = true;
-                return (rtlf, index2, vertex2, index3, vertex3, index1, vertex1);
-            }
-            else if (!vertexTruthValue1 && !vertexTruthValue2 && vertexTruthValue3) {
-                bool rtlf = true;
-                return (rtlf, index3, vertex3, index1, vertex1, index2, vertex2);
-            }
-            // 孤独な頂点が無限平面の左側にある頂点
-            else if (vertexTruthValue1 && vertexTruthValue2 && !vertexTruthValue3) {
-                bool rtlf = false;
-                return (rtlf, index3, vertex3, index1, vertex1, index2, vertex2);
-            }
-            else if (vertexTruthValue1 && !vertexTruthValue2 && vertexTruthValue3) {
-                bool rtlf = false;
-                return (rtlf, index2, vertex2, index3, vertex3, index1, vertex1);
-            }
-            else { // if (!vertexTruthValue1 && vertexTruthValue2 && vertexTruthValue3)
-                bool rtlf = false;
-                return (rtlf, index1, vertex1, index2, vertex2, index3, vertex3);
-            }
-        }
-
-        // ポリゴンの切断辺の両端の頂点を，切断ポリゴンの法線・切断平面の法線とフレミングの左手の方向になるように生成する
-        public static (
-            Vector3 newStartPairVertex,
-            Vector3 newLastPairVertex, 
-            float ratio_LonelyStart,
-            float ratio_LonelyLast
-        ) GenerateNewVertex(
-            Plane plane, 
-            bool rtlf, 
-            int lonelyIndex,
-            int startPairIndex,
-            int lastPairIndex,
-            Vector3 lonelyVertex,
-            Vector3 startPairVertex,
-            Vector3 lastPairVertex,
-            List<int[]> vertexPairList,
-            List<Vector3> newVerticesList,
-            List<VertexJudge> newVertexJudge
-        ) {
-            int newStartPairIndex = -1;
-            int newLastPairIndex = -1;
-            Vector3 newStartPairVertex;
-            Vector3 newLastPairVertex;
-            Ray ray1;
-            Ray ray2;
-            bool isDuplicateStart = false;
-            bool isDuplicateLast = false;
-            double distance1 = 0.0;
-            double distance2 = 0.0;
-            double distanceLonelyStart = Vector3.Distance(lonelyVertex, startPairVertex);
-            double distanceLonelyLast = Vector3.Distance(lonelyVertex, lastPairVertex);
-            float ratio_LonelyStart = (float)(distance1 / distanceLonelyStart);
-            float ratio_LonelyLast = (float)(distance2 / distanceLonelyLast);
-
-            if (rtlf) {
-                ray1 = new Ray(lonelyVertex, (startPairVertex - lonelyVertex).normalized);
-                ray2 = new Ray(lonelyVertex, (lastPairVertex - lonelyVertex).normalized);
-            } else {
-                ray1 = new Ray(lastPairVertex, (lonelyVertex - lastPairVertex).normalized);
-                ray2 = new Ray(startPairVertex, (lonelyVertex - startPairVertex).normalized);
-            }
-            plane.Raycast(ray1, out float tempDistance1);
-            distance1 = (double)tempDistance1;
-            newStartPairVertex = ray1.GetPoint((float)distance1);
-            plane.Raycast(ray2, out float tempDistance2);
-            distance2 = (double)tempDistance2;
-            newLastPairVertex = ray2.GetPoint((float)distance2);
-
-            for (int i = 0; i < newVerticesList.Count; i++) {
-                if (newVerticesList[i] == newStartPairVertex) {
-                    isDuplicateStart = true;
-                    newStartPairIndex = i;
-                    break;
+        if (vertexTruthValues[0]) {
+            // t|t|f
+            if (vertexTruthValues[1]) {
+                rtlf = false;
+                return (rtlf, new int[] { submeshIndex3, submeshIndex1, submeshIndex2 });
+            } 
+            else {
+                // t|f|t
+                if (vertexTruthValues[2]) {
+                    rtlf = false;
+                    return (rtlf, new int[] { submeshIndex2, submeshIndex3, submeshIndex1 });
+                } 
+                // t|f|f
+                else {
+                    rtlf = true;
+                    return (rtlf, new int[] { submeshIndex1, submeshIndex2, submeshIndex3 });
                 }
             }
-            if (!isDuplicateStart) {
-                newVerticesList.Add(newStartPairVertex);
-                newStartPairIndex = newVerticesList.Count - 1;
-            }
-
-            for (int i = 0; i < newVerticesList.Count; i++) {
-                if (newVerticesList[i] == newLastPairVertex) {
-                    isDuplicateLast = true;
-                    newLastPairIndex = i;
-                    break;
+        } 
+        else {
+            if (vertexTruthValues[1]) {
+                // f|t|t
+                if (vertexTruthValues[2]) {
+                    rtlf = false;
+                    return (rtlf, new int[] { submeshIndex1, submeshIndex2, submeshIndex3 });
+                }
+                // f|t|f
+                else {
+                    rtlf = true;
+                    return (rtlf, new int[] { submeshIndex2, submeshIndex3, submeshIndex1 });
                 }
             }
-            if (!isDuplicateLast) {
-                newVerticesList.Add(newLastPairVertex);
-                newLastPairIndex = newVerticesList.Count - 1;
+            // f|f|t
+            else {
+                rtlf = true;
+                return (rtlf, new int[] { submeshIndex3, submeshIndex1, submeshIndex2 });
             }
-
-            vertexPairList.Add(new int[] { newStartPairIndex, newLastPairIndex });
-            return (newStartPairVertex, newLastPairVertex, ratio_LonelyStart, ratio_LonelyLast);
-        }
-
-        // 新頂点のUV座標を生成する
-        public static (
-            Vector2 newUV1, 
-            Vector2 newUV2
-        ) GenerateNewUV(
-            float ratio_LonelyAsStart, 
-            float ratio_LonelyAsLast, 
-            Vector2 uv1, Vector2 uv2, Vector2 uv3
-        ) {
-            Vector2 newUV1 = new Vector2(
-                uv1.x + (uv2.x - uv1.x) * ratio_LonelyAsStart,
-                uv1.y + (uv2.y - uv1.y) * ratio_LonelyAsStart
-            );
-            Vector2 newUV2 = new Vector2(
-                uv1.x + (uv3.x - uv1.x) * ratio_LonelyAsLast,
-                uv1.y + (uv3.y - uv1.y) * ratio_LonelyAsLast
-            );
-            return (newUV1, newUV2);
         }
     }
 
@@ -1890,7 +2175,7 @@ public class ActSubdivide : MonoBehaviour {
             });
         }
 
-    // 単調多角形頂点リストを top から bottom まで，左右境界ごとに分割する
+        // 単調多角形頂点リストを top から bottom まで，左右境界ごとに分割する
         private static void PairTracingBoundaryEdge(
             List<int[]> vertexConnection, 
             int top, 
@@ -1918,6 +2203,18 @@ public class ActSubdivide : MonoBehaviour {
                 vertexConnection[i][1] = 1;
             }
         }
+    }
+
+    const int filter = 0x0000FFFF; // 16ビットのマスク
+    const int amp = 1 << 15;       // 拡大率（16ビット精度を確保するために適切な倍率を設定）
+
+    public static int ToIntFromVector3(Vector3 vector) {
+        // 各成分を16ビット精度でエンコード
+        int cutLineX = ((int)(vector.x * amp) & filter) << 16;
+        int cutLineY = ((int)(vector.y * amp) & filter) << 8;
+        int cutLineZ = ((int)(vector.z * amp) & filter);
+
+        return cutLineX | cutLineY | cutLineZ;
     }
 }
 
