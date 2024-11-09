@@ -493,6 +493,9 @@ public class ActSubdivide : MonoBehaviour {
                 }
             }
         }
+        public void MakeSurface() {
+
+        }
 
         public void Clear() {
             counterclockwiseDB.Clear();
@@ -528,10 +531,9 @@ public class ActSubdivide : MonoBehaviour {
     }
 
 
-    [SerializeField, Tooltip("切断面に適用するマテリアル")]
-    private static Material surfaceMaterial;
-
     // メッシュ情報用の変数
+    private static Vector3       planeNormal;
+    private static float         planeDistance;
     private static int[]         tracker;
     private static Vector3[]     originVertices;
     private static Vector3[]     originNormals;
@@ -551,14 +553,75 @@ public class ActSubdivide : MonoBehaviour {
     private static List<List<int>> nonConvexGeometry          = new List<List<int>>();
     private static List<List<int>> jointedMonotoneVertexGroup = new List<List<int>>();
 
+    public static void Subdivide(
+        GameObject targetGameObject,
+        Plane cutter,
+        Vector3 cutPoint,
+        Material cutSurfaceMaterial = null
+    ) {
+        if (!targetGameObject.GetComponent<MeshFilter>()) {
+            return;
+        } 
+        else if (!targetGameObject.GetComponent<MeshRenderer>()) {
+            return;
+        }
+        Mesh mesh = targetGameObject.GetComponent<MeshFilter>().mesh;
+        Transform transform = targetGameObject.transform;
+        bool addNewMat = false;
+
+    Material[] mats = targetGameObject.GetComponent<MeshRenderer>().sharedMaterials;
+        // もし切断対象の設定されたマテリアルの最後の要素が切断面用のマテリアルでない場合
+        if (mats[mats.Length - 1].name != cutSurfaceMaterial.name) {
+            addNewMat = true;
+        }
+
+        (Mesh rightMesh, Mesh leftMesh) = Subdivide(mesh, transform, cutter, cutPoint, addNewMat);
+
+        if (rightMesh == null || leftMesh == null) {
+            return;
+        }
+        if (addNewMat) {
+            // 切断面用のマテリアルを追加する
+            Material[] newMats = new Material[mats.Length + 1];
+            // マテリアル配列に切断面用のマテリアルを追加する
+            mats.CopyTo(newMats, 0);
+            newMats[mats.Length] = cutSurfaceMaterial;
+            mats = newMats;
+        }
+        targetGameObject.GetComponent<MeshFilter>().mesh = leftMesh;
+        Transform leftTransform = targetGameObject.transform;
+        GameObject rightGameObject = Instantiate(targetGameObject, leftTransform.position, leftTransform.rotation, leftTransform.parent);
+        rightGameObject.transform.parent = null;
+        rightGameObject.GetComponent<MeshFilter>().mesh = rightMesh;
+        rightGameObject.GetComponent<MeshRenderer>().sharedMaterials = targetGameObject.GetComponent<MeshRenderer>().sharedMaterials;
+        if (targetGameObject.GetComponent<MeshCollider>()) {
+            targetGameObject.GetComponent<MeshCollider>().sharedMesh = leftMesh;
+            rightGameObject.GetComponent<MeshCollider>().sharedMesh = rightMesh;
+        }
+    }
+
     // メインメソッド
-    public static void Subdivide(GameObject origin, Plane cutter) {
+    public static (
+        Mesh rightMesh, 
+        Mesh leftMesh
+    ) Subdivide(
+        Mesh targetMesh,
+        Transform targetTransform,
+        Plane cutter, 
+        Vector3 cutPoint, 
+        bool addNewMat = false
+    ) {
+        if (cutter.normal == Vector3.zero) {
+            Mesh empty = new Mesh();
+            empty.vertices = new Vector3[] { };
+            return (null, null);
+        }
 
-        DebugUtils.ToggleDebugMode();
+        //DebugUtils.ToggleDebugMode();
 
-        DebugUtils.PrintNumber(cutter, nameof(cutter));
+        //DebugUtils.PrintNumber(cutter, nameof(cutter));
 
-        // 切断対象のオブジェクトのメッシュ情報
+        // 初期化
         mesh_left.Clear();
         mesh_right.Clear();
 
@@ -572,7 +635,8 @@ public class ActSubdivide : MonoBehaviour {
         nonConvexGeometry.Clear();
         jointedMonotoneVertexGroup.Clear();
 
-        originMesh = origin.GetComponent<MeshFilter>().mesh;
+        // 切断対象のオブジェクトのメッシュ情報
+        originMesh = targetMesh;
         originVertices = originMesh.vertices;
         originNormals = originMesh.normals;
         originUVs = originMesh.uv;
@@ -585,9 +649,17 @@ public class ActSubdivide : MonoBehaviour {
         // mesh_origin の頂点が mesh_left, mesh_right での何番目の頂点に対応するかを格納する
         tracker = new int[originVertices.Length];
 
+        // 切断面の法線ベクトルと距離を取得する
+        Vector3 scale = targetTransform.localScale;
+        planeNormal = Vector3.Scale(scale, targetTransform.InverseTransformDirection(cutter.normal)).normalized;
+        Vector3 anchor = targetTransform.transform.InverseTransformPoint(cutPoint);
+        planeDistance = Vector3.Dot(planeNormal, anchor);
+        // 切断面の定義
+        Plane plane = new Plane(planeNormal, planeDistance);
+
         // もとの頂点情報に左右情報を格納すると同時に，頂点情報を追加する
         for (int i = 0; i < originVertices.Length; i++) {
-            vertexTruthValues[i] = cutter.GetSide(originVertices[i]);
+            vertexTruthValues[i] = plane.GetSide(originVertices[i]);
 
             if (vertexTruthValues[i]) {
                 mesh_right.AddVertex(
@@ -607,7 +679,7 @@ public class ActSubdivide : MonoBehaviour {
             }
         }
         if (rightHut < 4 || leftHut < 4) {
-            return;
+            return (null, null);
         }
 
         // サブメッシュの数だけループ
@@ -658,56 +730,41 @@ public class ActSubdivide : MonoBehaviour {
         // 切断されたポリゴンの再構築を行う
         fusionPolygonList.MakeTrianges();
 
-        Material[] mats = origin.GetComponent<MeshRenderer>().sharedMaterials;
-        // もし切断対象の設定されたマテリアルの最後の要素が切断面用のマテリアルでない場合
-        if (mats[mats.Length - 1].name != surfaceMaterial.name) {
-            // 切断面用のマテリアルを追加する
-            Material[] newMats = new Material[mats.Length + 1];
-            mesh_right.submesh.Add(new List<int>());
+        if (addNewMat) {
             mesh_left.submesh.Add(new List<int>());
-            // マテリアル配列に切断面用のマテリアルを追加する
-            mats.CopyTo(newMats, 0);
-            newMats[mats.Length] = surfaceMaterial;
-            mats = newMats;
+            mesh_right.submesh.Add(new List<int>());
         }
+        // 切断面上のポリゴンを構成する
+        //slashSurfaceGeometry.MakeSurface();
 
-        // 切断面ポリゴンの構築を行う
+        Mesh rightMesh = new Mesh();
+        Mesh leftMesh = new Mesh();
 
-        // オブジェクトを生成する
-        Mesh newMeshRight = new Mesh();
-        newMeshRight.vertices = mesh_right.vertices.ToArray();
-        newMeshRight.normals = mesh_right.normals.ToArray();
-        newMeshRight.uv = mesh_right.uvs.ToArray();
-        newMeshRight.subMeshCount = mesh_right.submesh.Count;
+        rightMesh.name = "rightMesh";
+        rightMesh.vertices = mesh_right.vertices.ToArray();
+        rightMesh.normals = mesh_right.normals.ToArray();
+        rightMesh.uv = mesh_right.uvs.ToArray();
+        rightMesh.subMeshCount = mesh_right.submesh.Count;
         for (int i = 0; i < mesh_right.submesh.Count; i++) {
-            newMeshRight.SetIndices(mesh_right.submesh[i].ToArray(), MeshTopology.Triangles, i);
+            rightMesh.SetIndices(
+                mesh_right.submesh[i].ToArray(),
+                MeshTopology.Triangles,
+                i
+            );
         }
-
-        Mesh newMeshLeft = new Mesh();
-        newMeshLeft.vertices = mesh_left.vertices.ToArray();
-        newMeshLeft.normals = mesh_left.normals.ToArray();
-        newMeshLeft.uv = mesh_left.uvs.ToArray();
-        newMeshLeft.subMeshCount = mesh_left.submesh.Count;
+        leftMesh.name = "leftMesh";
+        leftMesh.vertices = mesh_left.vertices.ToArray();
+        leftMesh.normals = mesh_left.normals.ToArray();
+        leftMesh.uv = mesh_left.uvs.ToArray();
+        leftMesh.subMeshCount = mesh_left.submesh.Count;
         for (int i = 0; i < mesh_left.submesh.Count; i++) {
-            newMeshLeft.SetIndices(mesh_left.submesh[i].ToArray(), MeshTopology.Triangles, i);
+            leftMesh.SetIndices(
+                mesh_left.submesh[i].ToArray(),
+                MeshTopology.Triangles,
+                i
+            );
         }
-
-        // 左側のメッシュは元のオブジェクトに適用する
-        origin.name = "cut obj";
-        origin.GetComponent<MeshFilter>().mesh = newMeshLeft;
-        GameObject newObjRight = origin;
-        // 右側のメッシュは新しいオブジェクトに適用する
-        GameObject newObjLeft = new GameObject("cut obj", typeof(MeshFilter), typeof(MeshRenderer), typeof(MeshCollider), typeof(Rigidbody), typeof(ActSubdivide));
-        newObjLeft.transform.position = origin.transform.position;
-        newObjLeft.transform.rotation = origin.transform.rotation;
-        newObjLeft.GetComponent<MeshFilter>().mesh = newMeshRight;
-
-        newObjLeft.GetComponent<MeshRenderer>().materials = mats;
-        newObjLeft.GetComponent<MeshCollider>().sharedMesh = newMeshLeft;
-        newObjLeft.GetComponent<MeshCollider>().cookingOptions = MeshColliderCookingOptions.CookForFasterSimulation;
-        newObjLeft.GetComponent<MeshCollider>().convex = true;
-        newObjLeft.GetComponent<MeshCollider>().material = GetComponent<Collider>().material;
-        newObjRight.GetComponent<MeshRenderer>().materials = mats;
+        return (rightMesh, leftMesh);
 
         /*
 
