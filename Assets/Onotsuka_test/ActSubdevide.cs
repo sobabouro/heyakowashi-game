@@ -170,7 +170,8 @@ public class ActSubdivide : MonoBehaviour {
                     else if (polygonInfo.vertex_away.vertexDomein == subject.vertex_toward.vertexDomein) {
                         awayConnection = polygonInfo;
                         towardConnection = subject;
-                    } else {
+                    } 
+                    else {
                         continue;
                     }
 
