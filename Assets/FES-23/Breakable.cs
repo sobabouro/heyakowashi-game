@@ -97,7 +97,7 @@ public class Breakable : MonoBehaviour
         {
             case Type.slash:
                 // Slashクラスを呼び出す
-                this.gameObject.GetComponent<ActSubdivide>().Subdivide(breaker.GetCutter());
+                //this.gameObject.GetComponent<ActSubdivide>().Subdivide(breaker.GetCutter());
                 break;
             case Type.crash:
                 // Crashクラスを呼び出す

@@ -556,7 +556,6 @@ public class ActSubdivide : MonoBehaviour {
     public static void Subdivide(
         GameObject targetGameObject,
         Plane cutter,
-        Vector3 cutPoint,
         Material cutSurfaceMaterial = null
     ) {
         if (!targetGameObject.GetComponent<MeshFilter>()) {
@@ -575,7 +574,7 @@ public class ActSubdivide : MonoBehaviour {
             addNewMat = true;
         }
 
-        (Mesh rightMesh, Mesh leftMesh) = Subdivide(mesh, transform, cutter, cutPoint, addNewMat);
+        (Mesh rightMesh, Mesh leftMesh) = Subdivide(mesh, transform, cutter, addNewMat);
 
         if (rightMesh == null || leftMesh == null) {
             return;
@@ -608,7 +607,6 @@ public class ActSubdivide : MonoBehaviour {
         Mesh targetMesh,
         Transform targetTransform,
         Plane cutter, 
-        Vector3 cutPoint, 
         bool addNewMat = false
     ) {
         if (cutter.normal == Vector3.zero) {
@@ -645,21 +643,20 @@ public class ActSubdivide : MonoBehaviour {
         int rightHut = 0;
         int leftHut = 0;
         bool[] vertexTruthValues = new bool[originVertices.Length];
-        int[] submeshIndicesAry;
         // mesh_origin の頂点が mesh_left, mesh_right での何番目の頂点に対応するかを格納する
         tracker = new int[originVertices.Length];
 
         // 切断面の法線ベクトルと距離を取得する
         Vector3 scale = targetTransform.localScale;
         planeNormal = Vector3.Scale(scale, targetTransform.InverseTransformDirection(cutter.normal)).normalized;
-        Vector3 anchor = targetTransform.transform.InverseTransformPoint(cutPoint);
+        Vector3 anchor = targetTransform.transform.InverseTransformPoint(cutter.normal * cutter.distance);
         planeDistance = Vector3.Dot(planeNormal, anchor);
         // 切断面の定義
         Plane plane = new Plane(planeNormal, planeDistance);
 
         // もとの頂点情報に左右情報を格納すると同時に，頂点情報を追加する
         for (int i = 0; i < originVertices.Length; i++) {
-            vertexTruthValues[i] = plane.GetSide(originVertices[i]);
+            vertexTruthValues[i] = JudgeSide(originVertices[i], planeNormal, anchor);
 
             if (vertexTruthValues[i]) {
                 mesh_right.AddVertex(
@@ -685,7 +682,7 @@ public class ActSubdivide : MonoBehaviour {
         // サブメッシュの数だけループ
         for (int submeshDepartment = 0; submeshDepartment < originMesh.subMeshCount; submeshDepartment++) {
             // このサブメッシュの頂点数を取得する
-            submeshIndicesAry = originMesh.GetIndices(submeshDepartment);
+            int[] submeshIndicesAry = originMesh.GetIndices(submeshDepartment);
             mesh_left.submesh.Add(new List<int>());
             mesh_right.submesh.Add(new List<int>());
 
@@ -719,7 +716,6 @@ public class ActSubdivide : MonoBehaviour {
                 // 対象の三角形ポリゴンの頂点が左右に分かれている場合
                 else {
                     ProcessMixedTriangle(
-                        cutter,
                         submeshDepartment,
                         new bool[3] { subIndexRTLF1, subIndexRTLF2, subIndexRTLF3 }, 
                         new int[3] { subIndex1, subIndex2, subIndex3 }
@@ -872,12 +868,10 @@ public class ActSubdivide : MonoBehaviour {
         obj.GetComponent<Rigidbody>().velocity = GetComponent<Rigidbody>().velocity;
         obj.GetComponent<Rigidbody>().angularVelocity = GetComponent<Rigidbody>().angularVelocity;
         obj.GetComponent<ObjectManipulator>();
-        obj.GetComponent<ActSubdivide>().surfaceMaterial = surfaceMaterial;
     }
 
     // 切断面上メッシュ情報の挿入
     private static void ProcessMixedTriangle(
-        Plane  cutter, 
         int    submeshDepartment,
         bool[] vertexTruthValues,
         int[] subIndices
@@ -891,36 +885,6 @@ public class ActSubdivide : MonoBehaviour {
             subIndices[1],
             subIndices[2]
         );
-
-        /*
-        float distance1 = 0.0f;
-        float distance2 = 0.0f;
-        float distance3 = 0.0f;
-        float epsilon = 0.0001f;
-
-        distance1 = Mathf.Abs(cutter.GetDistanceToPoint(originVertices[sortedIndex[0]]));
-        distance2 = Mathf.Abs(cutter.GetDistanceToPoint(originVertices[sortedIndex[1]]));
-        distance3 = Mathf.Abs(cutter.GetDistanceToPoint(originVertices[sortedIndex[2]]));
-
-        // 「切断面上に孤独な頂点が存在する場合」と「切断面上にペア頂点の両方が存在する場合」はGetSide() で判定しきれないので，ここで処理する
-        if ((rtlf && distance2 < epsilon && distance3 < epsilon) || (!rtlf && distance1 < epsilon)) {
-            mesh_right.AddMesh(
-                submeshDepartment,
-                tracker[subIndices[0]],
-                tracker[subIndices[1]],
-                tracker[subIndices[2]]
-            );
-            return;
-        } else if ((rtlf && distance1 < epsilon) || (!rtlf && distance2 < epsilon && distance3 < epsilon)) {
-            mesh_left.AddMesh(
-                submeshDepartment,
-                tracker[subIndices[0]],
-                tracker[subIndices[1]],
-                tracker[subIndices[2]]
-            );
-            return;
-        }
-        */
 
         Ray ray1;
         Ray ray2;
@@ -1050,6 +1014,13 @@ public class ActSubdivide : MonoBehaviour {
                 return (rtlf, new int[] { submeshIndex3, submeshIndex1, submeshIndex2 });
             }
         }
+    }
+    public static bool JudgeSide(
+        Vector3 vec,
+        Vector3 normal, 
+        Vector3 point
+    ) {
+        return (normal.x * (vec.x - point.x) + normal.y * (vec.y - point.y) + normal.z * (vec.z - point.z) > 0);
     }
 
     // 切断平面上の頂点と，それらが構成する図形に対する処理系
