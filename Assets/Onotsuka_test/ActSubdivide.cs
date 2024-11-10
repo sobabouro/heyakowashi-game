@@ -2,7 +2,7 @@ using System;
 using System.Timers;
 using System.Collections.Generic;
 using UnityEngine;
-public class Slash : MonoBehaviour {
+public class ActSubdivide : MonoBehaviour {
     // キャスト時の丸め誤差をどこまで許容するか
     private static ConversionMode mode = ConversionMode.Mode1;
 
