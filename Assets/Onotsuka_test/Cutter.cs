@@ -7,12 +7,9 @@ public class Cutter : MonoBehaviour {
     [SerializeField, Tooltip("切断面用のマテリアル")]
     Material surfaceMat;
 
-
     // 動く方向で切断する場合
     private Vector3 prePos = Vector3.zero;
     private Vector3 prePos2 = Vector3.zero;
-
-    
 
     void FixedUpdate() {
         prePos = prePos2;
@@ -29,20 +26,24 @@ public class Cutter : MonoBehaviour {
         ContactPoint contactPoint = collision.contacts[0];
         Vector3 collisionPositionWorld = contactPoint.point;
 
-        // 衝突したオブジェクトの名前と衝突点の座標をログに出力
-        Debug.Log($"Collision detected with object: {collision.gameObject.name}");
-        Debug.Log($"Collision position: {collisionPositionWorld}");
+        // 衝突相手のローカル座標に変換
+        Vector3 collisionPositionLocal = collision.transform.InverseTransformPoint(collisionPositionWorld);
 
-        //// 衝突相手のローカル座標に変換
-        //Vector3 collisionPositionLocal = collision.transform.InverseTransformPoint(collisionPositionWorld);
+        // カッターの法線ベクトルをワールド空間で計算
+        Vector3 worldNormal = Vector3.Cross(transform.forward.normalized, prePos - transform.position).normalized;
 
-        // カッターの平面を相手のワールド座標で設定
-        var cutter = new Plane(Vector3.Cross(transform.forward.normalized, prePos - transform.position).normalized, collisionPositionWorld);
+        // 衝突相手のローカル空間に法線ベクトルを変換
+        Vector3 localNormal = collision.transform.InverseTransformDirection(worldNormal);
 
-        ActSubdivide.Subdivide(collision.gameObject, cutter, surfaceMat);
+        // 平面の距離を計算：平面の法線ベクトルからワールド空間の任意の点（例えば collisionPositionWorld）への距離
+        float worldDistance = Vector3.Dot(worldNormal, collisionPositionWorld);
 
-        //MeshCut.CutMesh(collision.gameObject, collisionPositionWorld, cutter.normal, true, surfaceMat);
+        //// カッターの平面を相手のローカル座標で設定
+        //var cutter = new Plane(localNormal, collisionPositionLocal);
 
-        Debug.Log("Subdivide method called.");
+        // カッターの平面をワールド座標で設定
+        var cutter = new Plane(worldNormal, worldDistance);
+
+        Slash.CallSlash(collision.gameObject, cutter, surfaceMat);
     }
 }
