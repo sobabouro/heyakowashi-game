@@ -6,17 +6,21 @@ using UnityEngine.Events;
 
 public class Pierce : MonoBehaviour
 {
-    [SerializeField]
+    [SerializeField, Tooltip("回復耐久値")]
     private int durabilityRecoveryAmount;
-    [SerializeField]
+    [SerializeField, Tooltip("回復スコア")]
     private int scoreRecoveryAmount;
-    [SerializeField]
+    [SerializeField, Tooltip("結合可能？")]
     private bool canConnect;
+    // 結合している？
     private bool isConnected = false;
 
     // オブジェクト破壊時に呼び出すイベント登録
     public UnityEvent onBreakEvent;
+<<<<<<< HEAD
 
+=======
+>>>>>>> origin/main
     // オブジェクト結合時に呼び出すイベント登録
     public UnityEvent onConnectEvent;
 
@@ -26,21 +30,31 @@ public class Pierce : MonoBehaviour
 
     }
 
-    // 刺突属性による結合の開始
+    /// <summary>
+    /// 刺突属性による結合の開始
+    /// </summary>
+    /// <param name="breaker">壊すものクラス</param>
+    /// <returns>回復する耐久値、スコア</returns>
     public (int, int) Connect(Breaker breaker)
     {
+        // コライダーの取得
+        Collider breakerCollider = breaker.gameObject.GetComponent<Collider>();
+        Collider myCollider = this.gameObject.GetComponent<Collider>();
+
+        // 結合できないオブジェクトの場合
         if (!canConnect)
         {
             // 破壊時に呼び出されるイベントを呼び出す
             onBreakEvent?.Invoke();
             return (0, 0);
         }
-            
+
         // 既に結合しているオブジェクトに対して、刺突属性で再び壊した場合
         if(isConnected)
         {
             isConnected = false;
-            Physics.IgnoreCollision(this.gameObject.GetComponent<Collider>(), breaker.gameObject.GetComponent<Collider>(), false);
+            // 結合したオブジェクト間の衝突判定の有効化
+            Physics.IgnoreCollision(myCollider, breakerCollider, false);
 
             // 破壊時に呼び出されるイベントを呼び出す
             onBreakEvent?.Invoke();
@@ -53,23 +67,19 @@ public class Pierce : MonoBehaviour
         */
 
         // オブジェクトの動きの依存対象の設定
-        FixedJoint fixedJoint;
-        if (this.gameObject.GetComponent<FixedJoint>() == null)
+        FixedJoint fixedJoint = this.gameObject.GetComponent<FixedJoint>(); ;
+        if (fixedJoint == null)
         {
             fixedJoint = this.gameObject.AddComponent<FixedJoint>();
-        }
-        else
-        {
-            fixedJoint = this.gameObject.GetComponent<FixedJoint>();
         }
         fixedJoint.connectedBody = breaker.GetRigidbody();
 
         isConnected = true;
 
         // 結合したオブジェクト間の衝突判定の無効化
-        Physics.IgnoreCollision(this.gameObject.GetComponent<Collider>(), breaker.gameObject.GetComponent<Collider>(), true);
+        Physics.IgnoreCollision(myCollider, breakerCollider, true);
 
-        // 破壊時に呼び出されるイベントを呼び出す
+        // 結合時に呼び出されるイベントを呼び出す
         onConnectEvent?.Invoke();
 
         // 回復する耐久値を返す

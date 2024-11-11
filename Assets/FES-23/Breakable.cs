@@ -1,4 +1,4 @@
-using System.Collections;
+ï»¿using System.Collections;
 using System.Collections.Generic;
 using System.Linq.Expressions;
 using UnityEngine;
@@ -7,34 +7,37 @@ public enum Type { plane, slash, crash, pierce }
 
 public class Breakable : MonoBehaviour
 {
-    [SerializeField, Tooltip("‘Ï‹v’l")]
-    private int durability = default;
-    [Header("‘®«‘Ï«")]
-    [SerializeField, Tooltip("Ø’f‘Ï«")]
-    private int slashResist = default;
-    [SerializeField, Tooltip("ÕŒ‚‘Ï«"),]
-    private int crashResist = default;
-    [SerializeField, Tooltip("ŠÑ’Ê‘Ï«"),]
-    private int pierceResist = default;
-    [SerializeField, Tooltip("ƒXƒRƒA")]
-    private int _score = default;
-
-    // ‘®«‘Ï«‚Ì«‘
-    private Dictionary<Type, int> resists = new Dictionary<Type, int>();
-
-    [SerializeField]
-    private float maxInterval = default;
-    private float nowInterval = 0;
-    private bool inInterval = false;
-
-    private int scoreRecoveryAmount = 0;
+    // å›ºæœ‰ã®ã‚¹ãƒ†ãƒ¼ã‚¿ã‚¹
+    [SerializeField, Tooltip("è€ä¹…å€¤")] private int _maxDurability; // æœ€å¤§è€ä¹…å€¤
+    [Header("å±æ€§è€æ€§")]
+    [SerializeField, Tooltip("åˆ‡æ–­è€æ€§")] private int _slashResist;   // åˆ‡æ–­è€æ€§
+    [SerializeField, Tooltip("è¡æ’ƒè€æ€§")] private int _crashResist;   // è¡æ’ƒè€æ€§
+    [SerializeField, Tooltip("è²«é€šè€æ€§")] private int _pierceResist;  // è²«é€šè€æ€§
+    [SerializeField, Tooltip("ã‚¹ã‚³ã‚¢")] private int _score;           //Â ã‚¹ã‚³ã‚¢
+    [SerializeField, Tooltip("ã‚¤ãƒ³ã‚¿ãƒ¼ãƒãƒ«")] private float _maxDamageInterval; // ã‚¤ãƒ³ã‚¿ãƒ¼ãƒãƒ«
+    // å‚ç…§
+    private Dictionary<Type, int> _resists = new Dictionary<Type, int>();  // å±æ€§è€æ€§ã®è¾æ›¸
+    // private Slash _slash;   // åˆ‡æ–­å‡¦ç†ã‚¯ãƒ©ã‚¹
+    private Crash _crash;     // ç ´å£Šå‡¦ç†ã‚¯ãƒ©ã‚¹
+    private Pierce _pierce;   // åˆºçªå‡¦ç†ã‚¯ãƒ©ã‚¹
+    // è¨ˆç®—ç”¨
+    private int _nowDurability = 0;          // ç¾åœ¨ã®è€ä¹…å€¤
+    private float _nowDamageInterval = 0;    // ã‚¤ãƒ³ã‚¿ãƒ¼ãƒãƒ«å€¤
+    private bool _inDamageInterval = false;Â Â // ç¾åœ¨ã‚¤ãƒ³ã‚¿ãƒ¼ãƒãƒ«ä¸­ï¼Ÿ
 
     private void Start()
     {
-        resists.Add(Type.slash, slashResist);
-        resists.Add(Type.crash, crashResist);
-        resists.Add(Type.pierce, pierceResist);
-        resists.Add(Type.plane, 0);
+        // è¾æ›¸ä½œæˆ
+        _resists.Add(Type.slash, _slashResist);
+        _resists.Add(Type.crash, _crashResist);
+        _resists.Add(Type.pierce, _pierceResist);
+        _resists.Add(Type.plane, 0);
+        // å‚ç…§å–å¾—
+        //_slash = GetComponent<Slash>();
+        _crash = GetComponent<Crash>();
+        _pierce = GetComponent<Pierce>();
+        // ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿åˆæœŸåŒ–
+        Initialize();
     }
 
     private void Update()
@@ -43,22 +46,33 @@ public class Breakable : MonoBehaviour
     }
 
     /// <summary>
-    /// ˜A‘±‚ÅUŒ‚‚ğó‚¯‚È‚¢‚æ‚¤‚É‚·‚éƒCƒ“ƒ^[ƒoƒ‹
+    /// ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿åˆæœŸåŒ–
+    /// </summary>
+    private void Initialize()
+    {
+        _nowDurability = _maxDurability;
+        _nowDamageInterval = 0;
+        _inDamageInterval = false;
+    }
+
+    /// <summary>
+    /// é€£ç¶šã§æ”»æ’ƒã‚’å—ã‘ãªã„ã‚ˆã†ã«ã™ã‚‹ã‚¤ãƒ³ã‚¿ãƒ¼ãƒãƒ«
     /// </summary>
     private void CalcInterval()
     {
-        if (inInterval)
+        if (_inDamageInterval)
         {
-            nowInterval += Time.deltaTime;
-            if (nowInterval > maxInterval)
+            _nowDamageInterval += Time.deltaTime;
+            if (_nowDamageInterval > _maxDamageInterval)
             {
-                nowInterval = 0;
-                inInterval = false;
+                _nowDamageInterval = 0;
+                _inDamageInterval = false;
             }
         }
     }
 
     /// <summary>
+<<<<<<< HEAD
     /// —^‚¦‚ç‚ê‚½UŒ‚—Í‚Æ‘®«A©g‚Ì‘Ï«AÅI“I‚Èƒ_ƒ[ƒW‚Ì’l‚ğŒvZ‚·‚éB
     /// </summary>
     /// <param name="receivedATK">ó‚¯‚éUŒ‚—Í</param>
@@ -73,16 +87,22 @@ public class Breakable : MonoBehaviour
 
     /// <summary>
     /// UŒ‚‚³‚ê‚½‚ÉŒÄ‚Ño‚·ƒƒ\ƒbƒhB
+=======
+    /// æ”»æ’ƒã•ã‚ŒãŸæ™‚ã«å‘¼ã³å‡ºã™ãƒ¡ã‚½ãƒƒãƒ‰ã€‚
+>>>>>>> origin/main
     /// </summary>
-    /// <param name="receivedATK">ó‚¯‚éUŒ‚—Í</param>
-    /// <param name="breaker">UŒ‚‚µ‚½‘¤‚Ìî•ñ</param>
+    /// <param name="receivedATK">å—ã‘ã‚‹æ”»æ’ƒåŠ›</param>
+    /// <param name="breaker">æ”»æ’ƒã—ãŸå´ã®æƒ…å ±</param>
     /// <returns></returns>
     public bool ReciveAttack(int receivedATK, Breaker breaker)
     {
-        if (inInterval) return false;
-        inInterval = true;
+        // ã‚¤ãƒ³ã‚¿ãƒ¼ãƒãƒ«ä¸­ãªã‚‰ã‚¹ã‚­ãƒƒãƒ—
+        if (_inDamageInterval) return false;
+        _inDamageInterval = true;
 
+        // ãƒ€ãƒ¡ãƒ¼ã‚¸è¨ˆç®—
         int damage = CalcDamage(receivedATK, breaker.Type);
+<<<<<<< HEAD
         Debug.Log($"damage: {damage}");
         durability -= damage;
 /*
@@ -90,6 +110,11 @@ public class Breakable : MonoBehaviour
  */
         Debug.Log($"durability: {durability}");
         if (durability < 0)
+=======
+        _nowDurability -= damage;
+        Debug.Log($"nowDurability: {_nowDurability} ( -{damage} damage)");
+        if (_nowDurability < 0)
+>>>>>>> origin/main
         {
             Break(breaker);
             return true;
@@ -98,25 +123,44 @@ public class Breakable : MonoBehaviour
     }
 
     /// <summary>
-    /// ‘Ï‹v’l‚ª0‚É‚È‚è‰ó‚ê‚é‚Æ‚«‚Ìƒƒ\ƒbƒh
+    /// ä¸ãˆã‚‰ã‚ŒãŸæ”»æ’ƒåŠ›ã¨å±æ€§ã€è‡ªèº«ã®è€æ€§ã€æœ€çµ‚çš„ãªãƒ€ãƒ¡ãƒ¼ã‚¸ã®å€¤ã‚’è¨ˆç®—ã™ã‚‹ã€‚
     /// </summary>
-    /// <param name="breaker">`UŒ‚‚µ‚½‘¤‚Ìî•ñ</param>
+    /// <param name="receivedATK">å—ã‘ã‚‹æ”»æ’ƒåŠ›</param>
+    /// <param name="attackType">å—ã‘ã‚‹æ”»æ’ƒã®å±æ€§</param>
+    /// <returns></returns>
+    private int CalcDamage(int receivedATK, Type attackType)
+    {
+        int damage = receivedATK - _resists[attackType];
+        if (damage < 0) damage = 0;
+        return damage;
+    }
+
+    /// <summary>
+    /// è€ä¹…å€¤ãŒ0ã«ãªã‚Šå£Šã‚Œã‚‹ã¨ãã®ãƒ¡ã‚½ãƒƒãƒ‰
+    /// </summary>
+    /// <param name="breaker">`æ”»æ’ƒã—ãŸå´ã®æƒ…å ±</param>
     private void Break(Breaker breaker)
     {
         Debug.Log("Break");
+        int scoreRecoveryAmount = 0;
         switch (breaker.Type)
         {
             case Type.slash:
+<<<<<<< HEAD
                 // SlashƒNƒ‰ƒX‚ğŒÄ‚Ño‚·
                 this.gameObject.GetComponent<Slash>().CallSlash(breaker);
+=======
+                // Slashã‚¯ãƒ©ã‚¹ã‚’å‘¼ã³å‡ºã™
+                // _slash.CallSlash(breaker.GetCutter());
+>>>>>>> origin/main
                 break;
             case Type.crash:
-                // CrashƒNƒ‰ƒX‚ğŒÄ‚Ño‚·
-                this.gameObject.GetComponent<Crash>().CallCrash();
+                // Crashã‚¯ãƒ©ã‚¹ã‚’å‘¼ã³å‡ºã™
+                _crash.GetComponent<Crash>().CallCrash();
                 break;
             case Type.pierce:
-                // PierceƒNƒ‰ƒX‚ğŒÄ‚Ño‚·
-                (durability, scoreRecoveryAmount) = this.gameObject.GetComponent<Pierce>().Connect(breaker);
+                // Pierceã‚¯ãƒ©ã‚¹ã‚’å‘¼ã³å‡ºã™
+                (_nowDurability, scoreRecoveryAmount) = _pierce.Connect(breaker);
                 break;
             default:
                 break;
@@ -125,7 +169,7 @@ public class Breakable : MonoBehaviour
         ScoreController.instance.AddScore(_score);
         _score = scoreRecoveryAmount;
 
-        if (durability <= 0)
+        if (_nowDurability <= 0)
         {
             Destroy(this.gameObject);
         }

@@ -1,45 +1,61 @@
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
+using System.Drawing;
 using UnityEngine;
+using static UnityEditor.Experimental.AssetDatabaseExperimental.AssetDatabaseCounters;
 
-// breakable.cs �Œ�`����
+// breakable.cs で定義する
 // public enum Type { plane, slash, crash, pierce }
 
 public class Breaker : MonoBehaviour
 {
-    [SerializeField, Tooltip("��b�U����")]
-    private int _baseATK = default;
-    [SerializeField, Tooltip("����")]
-    private Type _type = Type.plane;
-    // ���x���擾���邽�߂�Rigidbody
-    [SerializeField]
-    private Rigidbody my_rigidbody;
-    // �_���[�W���������邽�߂ɕK�v�ȍŒ���̑��x
-    [SerializeField]
-    private float _velocity_threshold = 0;
+    // 固有ステータス
+    [SerializeField, Tooltip("基礎攻撃力")] private int _baseATK; // 基礎攻撃力
+    [SerializeField, Tooltip("属性")] private Type _type;         // 属性
 
-    // ���������Őؒf����ꍇ�ɕK�v�Ȍ��݂ƈ�t���O�̍��W
-    private Vector3 prePos = Vector3.zero;
-    private Vector3 prePos2 = Vector3.zero;
+    // 計算用
+    private float _velocity_threshold = 0; // ダメージが発生するために必要な最低限の速度
+    private Rigidbody _rigidbody;          // 速度を取得するためのRigidbody
+    // 移動方向を取得するための
+    private Vector3 _prePosition;  // 1フレーム前の座標;
+    private Vector3 _nowPosition;  // 現在の座標;
+    private Plane _cutter;         // 切断する平面;
 
-    private Plane cutter;
-
+    // アクセサ
     public Type Type { get { return _type; } }
+
+    public void SetRigidbody(Rigidbody rigidbody)
+    {
+        _rigidbody = rigidbody;
+    }
+    public Rigidbody GetRigidbody()
+    {
+        return _rigidbody;
+    }
+    public Plane GetCutter()
+    {
+        return _cutter;
+    }
 
     private void Start()
     {
-
+        _rigidbody = GetComponent<Rigidbody>();
     }
-
     void FixedUpdate()
     {
-        prePos = prePos2;
-        prePos2 = transform.position;
+        // 座標の更新
+        _prePosition = _nowPosition;
+        _nowPosition = transform.position;
     }
 
+    /// <summary>
+    /// 最終攻撃職を計算する。
+    /// </summary>
+    /// <param name="other_velocity">衝突相手の速度</param>
     private int CalcATK(Vector3 other_velocity)
     {
-        float velocity = (my_rigidbody.velocity - other_velocity).magnitude;
+        // 相対速度を求める
+        float velocity = (_rigidbody.velocity - other_velocity).magnitude;
         if (velocity < _velocity_threshold) velocity = 0;
         int finalATK = (int)(_baseATK * velocity);
         return finalATK;
@@ -66,17 +82,26 @@ public class Breaker : MonoBehaviour
     }
 
     /// <summary>
-    /// �U�����郁�\�b�h�B�I�u�W�F�N�g�ƏՓˎ��ɌĂяo���B
+    /// 攻撃するメソッド。オブジェクトと衝突時に呼び出す。
     /// </summary>
-    /// <param name="collision">�Փ˃f�[�^�S��</param>
+    /// <param name="collision">衝突データ全般</param>
     public void Attack(Collision collision)
     {
         Breakable breakable = collision.gameObject.GetComponent<Breakable>();
         
         if (breakable == null) return;
 
+        // 衝突点のワールド座標を取得
+        Vector3 collisionPositionWorld = collision.contacts[0].point;
+        // 衝突相手のローカル座標に変換
+        Vector3 collisionPositionLocal = collision.transform.InverseTransformPoint(collisionPositionWorld);
+        // 断面を相手のローカル座標で設定
+        CalcCutterPlane(collisionPositionLocal);
+
+        // 衝突相手の速度を取得
         Rigidbody otherRigitbody = collision.gameObject.GetComponent<Rigidbody>();
         int finalATK = CalcATK(otherRigitbody.velocity);
+<<<<<<< HEAD
         
         breakable.ReciveAttack(finalATK, this);
 
@@ -84,20 +109,23 @@ public class Breaker : MonoBehaviour
         CalcCutter(collision);
 
         Debug.Log("Attack! : " + this.gameObject + " to " + breakable + " : " + finalATK + " : " + otherRigitbody.velocity + " : " + my_rigidbody.velocity);
+=======
+
+        // 相手に攻撃
+        breakable.ReciveAttack(finalATK, this);
+
+        Debug.Log($"Attack!: {this.gameObject.name} to {breakable.gameObject.name}, finalATK: {finalATK}, velocity: {otherRigitbody.velocity}, {_rigidbody.velocity}");
+>>>>>>> origin/main
     }
 
-    public void SetRigidbody(Rigidbody rigidbody)
+    /// <summary>
+    /// カッター（切断する平面）を作成する
+    /// </summary>
+    /// <param name="collision">衝突データ全般</param>
+    private void CalcCutterPlane(Vector3 point)
     {
-        my_rigidbody = rigidbody;
+        // 断面を相手のローカル座標で設定
+        _cutter = new Plane(Vector3.Cross(transform.forward.normalized, _prePosition - _nowPosition).normalized, point);
     }
 
-    public Rigidbody GetRigidbody()
-    {
-        return my_rigidbody;
-    }
-
-    public Plane GetCutter()
-    {
-        return cutter;
-    }
 }
