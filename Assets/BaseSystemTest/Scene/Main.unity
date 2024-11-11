@@ -183,7 +183,7 @@ GameObject:
   - component: {fileID: 218836126}
   - component: {fileID: 218836125}
   - component: {fileID: 218836124}
-  - component: {fileID: 218836123}
+  - component: {fileID: 218836136}
   m_Layer: 0
   m_Name: Slash
   m_TagString: BreakableObject
@@ -191,18 +191,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &218836123
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 218836122}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6171fc0a0da87d54999b2eb6f27d319d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!114 &218836124
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -647,6 +635,26 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 12
   m_LocalEulerAnglesHint: {x: 90, y: 0, z: 0}
+--- !u!114 &218836136
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 218836122}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 68c98c563007a79428cf505f09508a3e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  numberOfCanSlash: 2
+  surfaceMat: {fileID: 0}
+  onSlashEvent:
+    m_PersistentCalls:
+      m_Calls: []
+  onBreakEvent:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!1 &221607693
 GameObject:
   m_ObjectHideFlags: 0
@@ -1363,9 +1371,17 @@ MonoBehaviour:
   m_GameObject: {fileID: 491342566}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6171fc0a0da87d54999b2eb6f27d319d, type: 3}
+  m_Script: {fileID: 11500000, guid: 68c98c563007a79428cf505f09508a3e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  numberOfCanSlash: 2
+  surfaceMat: {fileID: 0}
+  onSlashEvent:
+    m_PersistentCalls:
+      m_Calls: []
+  onBreakEvent:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!1 &496327983
 GameObject:
   m_ObjectHideFlags: 0
@@ -1386,7 +1402,7 @@ GameObject:
   - component: {fileID: 496327987}
   - component: {fileID: 496327986}
   - component: {fileID: 496327985}
-  - component: {fileID: 496327984}
+  - component: {fileID: 496327997}
   m_Layer: 0
   m_Name: Crash
   m_TagString: BreakableObject
@@ -1394,18 +1410,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &496327984
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 496327983}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6171fc0a0da87d54999b2eb6f27d319d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!114 &496327985
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1850,6 +1854,26 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 11
   m_LocalEulerAnglesHint: {x: 90, y: 0, z: 0}
+--- !u!114 &496327997
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 496327983}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 68c98c563007a79428cf505f09508a3e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  numberOfCanSlash: 2
+  surfaceMat: {fileID: 0}
+  onSlashEvent:
+    m_PersistentCalls:
+      m_Calls: []
+  onBreakEvent:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!1 &536761730
 GameObject:
   m_ObjectHideFlags: 0
@@ -2790,9 +2814,17 @@ MonoBehaviour:
   m_GameObject: {fileID: 931564787}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6171fc0a0da87d54999b2eb6f27d319d, type: 3}
+  m_Script: {fileID: 11500000, guid: 68c98c563007a79428cf505f09508a3e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  numberOfCanSlash: 2
+  surfaceMat: {fileID: 0}
+  onSlashEvent:
+    m_PersistentCalls:
+      m_Calls: []
+  onBreakEvent:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!1001 &1035396528
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -3335,9 +3367,17 @@ MonoBehaviour:
   m_GameObject: {fileID: 1093730159}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6171fc0a0da87d54999b2eb6f27d319d, type: 3}
+  m_Script: {fileID: 11500000, guid: 68c98c563007a79428cf505f09508a3e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  numberOfCanSlash: 2
+  surfaceMat: {fileID: 0}
+  onSlashEvent:
+    m_PersistentCalls:
+      m_Calls: []
+  onBreakEvent:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!114 &1120114072 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 8582149202028883427, guid: cdf4c1a5a10e08a4d90a0845632a2ad8, type: 3}
@@ -5965,7 +6005,7 @@ GameObject:
   - component: {fileID: 6470194113214061650}
   - component: {fileID: 6470194113214061632}
   - component: {fileID: 1398958617269563646}
-  - component: {fileID: 6470194113214061648}
+  - component: {fileID: 6470194113214061651}
   m_Layer: 0
   m_Name: Pierce
   m_TagString: BreakableObject
@@ -5973,18 +6013,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &6470194113214061648
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6470194113214061647}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6171fc0a0da87d54999b2eb6f27d319d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!54 &6470194113214061649
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -6034,6 +6062,26 @@ MonoBehaviour:
   collisionEvnetExit:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &6470194113214061651
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6470194113214061647}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 68c98c563007a79428cf505f09508a3e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  numberOfCanSlash: 2
+  surfaceMat: {fileID: 0}
+  onSlashEvent:
+    m_PersistentCalls:
+      m_Calls: []
+  onBreakEvent:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!114 &9209773299084110656
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -6064,6 +6112,14 @@ MonoBehaviour:
   m_GameObject: {fileID: 6470194113002675742}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6171fc0a0da87d54999b2eb6f27d319d, type: 3}
+  m_Script: {fileID: 11500000, guid: 68c98c563007a79428cf505f09508a3e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  numberOfCanSlash: 2
+  surfaceMat: {fileID: 0}
+  onSlashEvent:
+    m_PersistentCalls:
+      m_Calls: []
+  onBreakEvent:
+    m_PersistentCalls:
+      m_Calls: []

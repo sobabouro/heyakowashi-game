@@ -48,6 +48,6 @@ public class Cutter : MonoBehaviour {
         // カッターの平面をワールド座標で設定
         var cutter = new Plane(worldNormal, worldDistance);
 
-        ActSubdivide.Subdivide(collision.gameObject, generatePrefab, cutter, surfaceMat);
+        ActSubdivide.Subdivide(collision.gameObject, cutter, surfaceMat);
     }
 }

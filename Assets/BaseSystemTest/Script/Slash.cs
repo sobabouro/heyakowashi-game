@@ -9,10 +9,6 @@ public class Slash : MonoBehaviour
     [SerializeField]
     private int numberOfCanSlash = 2;
 
-    // 切断後に呼び出されるプレハブ
-    [SerializeField]
-    private GameObject generatePrefab;
-
     [SerializeField, Tooltip("切断面用のマテリアル")]
     Material surfaceMat;
 
@@ -34,22 +30,14 @@ public class Slash : MonoBehaviour
         }
         else
         {
-            // ActSubdivide内でオブジェクトの破棄はおこなわれる（はず）
-            ActSubdivide.Subdivide(breaker.gameObject, generatePrefab, breaker.GetCutter(), surfaceMat);
+            numberOfCanSlash--;
 
-            /*
-             ここで切断後に生成されるオブジェクトの残り切断可能回数を処理する
-             */
+            // ActSubdivide内でオブジェクトの破棄はおこなわれる（はず）
+            ActSubdivide.Subdivide(this.gameObject, breaker.GetCutter(), surfaceMat);
 
             // 切断時に呼び出されるイベントを呼び出す
             onSlashEvent?.Invoke();
         }
 
-
-    }
-
-    public void SetNumberOfCanSlash(int numberOfCanSlash)
-    {
-        this.numberOfCanSlash = numberOfCanSlash;
     }
 }

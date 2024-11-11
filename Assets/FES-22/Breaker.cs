@@ -80,6 +80,9 @@ public class Breaker : MonoBehaviour
         
         breakable.ReciveAttack(finalATK, this);
 
+        // 切断クラス用の平面計算呼び出し
+        CalcCutter(collision);
+
         Debug.Log("Attack! : " + this.gameObject + " to " + breakable + " : " + finalATK + " : " + otherRigitbody.velocity + " : " + my_rigidbody.velocity);
     }
 
