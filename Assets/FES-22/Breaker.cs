@@ -61,26 +61,6 @@ public class Breaker : MonoBehaviour
         return finalATK;
     }
 
-    //  Ø’fƒNƒ‰ƒX—p‚ÌØ’f•½–ÊŒvZ
-    private void CalcCutter(Collision collision)
-    {
-        // Õ“Ë“_‚Ìƒ[ƒ‹ƒhÀ•W‚ğæ“¾
-        ContactPoint contactPoint = collision.contacts[0];
-        Vector3 collisionPositionWorld = contactPoint.point;
-
-        // Õ“Ë‘Šè‚Ìƒ[ƒJƒ‹À•W‚É•ÏŠ·
-        Vector3 collisionPositionLocal = collision.transform.InverseTransformPoint(collisionPositionWorld);
-
-        // ƒJƒbƒ^[‚Ì–@üƒxƒNƒgƒ‹‚ğƒ[ƒ‹ƒh‹óŠÔ‚ÅŒvZ
-        Vector3 worldNormal = Vector3.Cross(transform.forward.normalized, prePos - transform.position).normalized;
-
-        // •½–Ê‚Ì‹——£‚ğŒvZF•½–Ê‚Ì–@üƒxƒNƒgƒ‹‚©‚çƒ[ƒ‹ƒh‹óŠÔ‚Ì”CˆÓ‚Ì“_i—á‚¦‚Î collisionPositionWorldj‚Ö‚Ì‹——£
-        float worldDistance = Vector3.Dot(worldNormal, collisionPositionWorld);
-
-        // ƒJƒbƒ^[‚Ì•½–Ê‚ğƒ[ƒ‹ƒhÀ•W‚Åİ’è
-        cutter = new Plane(worldNormal, worldDistance);
-    }
-
     /// <summary>
     /// æ”»æ’ƒã™ã‚‹ãƒ¡ã‚½ãƒƒãƒ‰ã€‚ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã¨è¡çªæ™‚ã«å‘¼ã³å‡ºã™ã€‚
     /// </summary>
@@ -101,21 +81,11 @@ public class Breaker : MonoBehaviour
         // è¡çªç›¸æ‰‹ã®é€Ÿåº¦ã‚’å–å¾—
         Rigidbody otherRigitbody = collision.gameObject.GetComponent<Rigidbody>();
         int finalATK = CalcATK(otherRigitbody.velocity);
-<<<<<<< HEAD
-        
-        breakable.ReciveAttack(finalATK, this);
-
-        // Ø’fƒNƒ‰ƒX—p‚Ì•½–ÊŒvZŒÄ‚Ño‚µ
-        CalcCutter(collision);
-
-        Debug.Log("Attack! : " + this.gameObject + " to " + breakable + " : " + finalATK + " : " + otherRigitbody.velocity + " : " + my_rigidbody.velocity);
-=======
 
         // ç›¸æ‰‹ã«æ”»æ’ƒ
         breakable.ReciveAttack(finalATK, this);
 
         Debug.Log($"Attack!: {this.gameObject.name} to {breakable.gameObject.name}, finalATK: {finalATK}, velocity: {otherRigitbody.velocity}, {_rigidbody.velocity}");
->>>>>>> origin/main
     }
 
     /// <summary>

@@ -72,24 +72,7 @@ public class Breakable : MonoBehaviour
     }
 
     /// <summary>
-<<<<<<< HEAD
-    /// —^‚¦‚ç‚ê‚½UŒ‚—Í‚Æ‘®«A©g‚Ì‘Ï«AÅI“I‚Èƒ_ƒ[ƒW‚Ì’l‚ğŒvZ‚·‚éB
-    /// </summary>
-    /// <param name="receivedATK">ó‚¯‚éUŒ‚—Í</param>
-    /// <param name="attackType">ó‚¯‚éUŒ‚‚Ì‘®«</param>
-    /// <returns></returns>
-    private int CalcDamage(int receivedATK, Type attackType)
-    {
-        int damage = receivedATK - resists[attackType];
-        if (damage < 0) damage = 0;
-        return damage;
-    }
-
-    /// <summary>
-    /// UŒ‚‚³‚ê‚½‚ÉŒÄ‚Ño‚·ƒƒ\ƒbƒhB
-=======
     /// æ”»æ’ƒã•ã‚ŒãŸæ™‚ã«å‘¼ã³å‡ºã™ãƒ¡ã‚½ãƒƒãƒ‰ã€‚
->>>>>>> origin/main
     /// </summary>
     /// <param name="receivedATK">å—ã‘ã‚‹æ”»æ’ƒåŠ›</param>
     /// <param name="breaker">æ”»æ’ƒã—ãŸå´ã®æƒ…å ±</param>
@@ -102,19 +85,9 @@ public class Breakable : MonoBehaviour
 
         // ãƒ€ãƒ¡ãƒ¼ã‚¸è¨ˆç®—
         int damage = CalcDamage(receivedATK, breaker.Type);
-<<<<<<< HEAD
-        Debug.Log($"damage: {damage}");
-        durability -= damage;
-/*
- ƒ_ƒ[ƒW’l‚É‰‚¶‚½ƒƒ\ƒbƒh‚ğ·‚µ‚Ş‚È‚ç‘½•ª‚±‚±
- */
-        Debug.Log($"durability: {durability}");
-        if (durability < 0)
-=======
         _nowDurability -= damage;
         Debug.Log($"nowDurability: {_nowDurability} ( -{damage} damage)");
         if (_nowDurability < 0)
->>>>>>> origin/main
         {
             Break(breaker);
             return true;
@@ -146,13 +119,8 @@ public class Breakable : MonoBehaviour
         switch (breaker.Type)
         {
             case Type.slash:
-<<<<<<< HEAD
-                // SlashƒNƒ‰ƒX‚ğŒÄ‚Ño‚·
-                this.gameObject.GetComponent<Slash>().CallSlash(breaker);
-=======
                 // Slashã‚¯ãƒ©ã‚¹ã‚’å‘¼ã³å‡ºã™
                 // _slash.CallSlash(breaker.GetCutter());
->>>>>>> origin/main
                 break;
             case Type.crash:
                 // Crashã‚¯ãƒ©ã‚¹ã‚’å‘¼ã³å‡ºã™
