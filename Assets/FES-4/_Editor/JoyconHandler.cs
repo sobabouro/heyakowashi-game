@@ -7,8 +7,6 @@ public class JoyconHandler : MonoBehaviour
 {
     private List<Joycon> joycons;
 
-    [SerializeField]  
-    private Transform cameraTransform;
     [SerializeField]
     public int jc_ind = 0;
 
@@ -24,6 +22,19 @@ public class JoyconHandler : MonoBehaviour
         {
             Destroy(gameObject);
         }
+
+        if (jc_ind == 0)
+        {
+            gameObject.GetComponent<Renderer>().material.color = Color.blue;
+        }
+        else if (jc_ind == 1)
+        {
+            gameObject.GetComponent<Renderer>().material.color = Color.red;
+        }
+        else if (jc_ind == 2)
+        {
+            gameObject.GetComponent<Renderer>().material.color = Color.green;
+        }
     }
 
     // Update is called once per frame
@@ -33,31 +44,13 @@ public class JoyconHandler : MonoBehaviour
         if (joycons.Count > 0)
         {
             Joycon j = joycons[jc_ind];
-            // GetButtonDown checks if a button has been pressed (not held)
-            if (j.GetButtonDown(Joycon.Button.SHOULDER_2))
-            {
-                Debug.Log("Shoulder button 2 pressed");
-                // GetStick returns a 2-element vector with x/y joystick components
-                Debug.Log(string.Format("Stick x: {0:N} Stick y: {1:N}", j.GetStick()[0], j.GetStick()[1]));
 
-                // Joycon has no magnetometer, so it cannot accurately determine its yaw value. Joycon.Recenter allows the user to reset the yaw value.
-                // j.Recenter();
-                // j.ResetVelocityInWorld();
-                // gameObject.transform.position = pos;
+            if (j.GetButton(Joycon.Button.SHOULDER_2))
+            {
                 foreach (Joycon joycon in joycons)
                 {
                     joycon.Recenter();
                 }
-            }
-            // GetButtonDown checks if a button has been released
-            if (j.GetButtonUp(Joycon.Button.SHOULDER_2))
-            {
-                Debug.Log("Shoulder button 2 released");
-            }
-            // GetButtonDown checks if a button is currently down (pressed or held)
-            if (j.GetButton(Joycon.Button.SHOULDER_2))
-            {
-                Debug.Log("Shoulder button 2 held");
             }
 
             if (j.GetButtonDown(Joycon.Button.DPAD_DOWN))
@@ -73,35 +66,11 @@ public class JoyconHandler : MonoBehaviour
                 // (Useful for dynamically changing rumble values.)
                 // Then call SetRumble(0,0,0) when you want to turn it off.
             }
-            if (j.GetButtonDown(Joycon.Button.HOME) || j.GetButtonDown(Joycon.Button.CAPTURE))
-            {
-                j.Recenter();
-            }
 
-            stick = j.GetStick();
-
-            if (j.GetButton(Joycon.Button.DPAD_UP))
-            {
-                gameObject.GetComponent<Renderer>().material.color = Color.green;
-            }
-            else
-            {
-                if (jc_ind == 0)
-                {
-                    gameObject.GetComponent<Renderer>().material.color = Color.blue;
-                }
-                else if(jc_ind == 1)
-                {
-                    gameObject.GetComponent<Renderer>().material.color = Color.red;
-                }
-                else if (jc_ind == 2)
-                {
-                    gameObject.GetComponent<Renderer>().material.color = Color.green;
-                }
-            }
+            // stick = j.GetStick();
 
             // ‰ñ“]
-            gameObject.transform.rotation = cameraTransform.rotation * j.GetVector();
+            gameObject.transform.rotation = j.GetVector();
         }
     }
 

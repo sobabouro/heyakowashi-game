@@ -68,10 +68,10 @@ public class JoyconManager : MonoBehaviour
 		{
 			enumerate = (hid_device_info)Marshal.PtrToStructure(ptr, typeof(hid_device_info));
 
-			Debug.Log($"vendor_id: {enumerate.vendor_id}");
-			Debug.Log($"product_id: {enumerate.product_id}");
-			Debug.Log($"usage_page: {enumerate.usage_page}");
-			Debug.Log($"usage: {enumerate.usage}");
+			// Debug.Log($"vendor_id: {enumerate.vendor_id}");
+			// Debug.Log($"product_id: {enumerate.product_id}");
+			// Debug.Log($"usage_page: {enumerate.usage_page}");
+			// Debug.Log($"usage: {enumerate.usage}");
 
 			if (enumerate.product_id == product_l || enumerate.product_id == product_r)
 			{
@@ -92,7 +92,7 @@ public class JoyconManager : MonoBehaviour
 				IntPtr handle = HIDapi.hid_open_path(enumerate.path);
 				HIDapi.hid_set_nonblocking(handle, 1);
 				j.Add(new Joycon(handle, EnableIMU, EnableLocalize & EnableIMU, 0.05f, isLeft));
-				j[i].SetUDP(8000 + i);
+				j[i].SetUDP(50000 + i);
 				++i;
 			}
 			ptr = enumerate.next;
