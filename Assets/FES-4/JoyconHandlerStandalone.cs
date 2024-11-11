@@ -1,7 +1,6 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -23,6 +22,7 @@ public class JoyconHandlerStandalone : MonoBehaviour
     int quaternion_size = 4 * sizeof(float);
 
     // ボタンの状態
+    private bool[] down_ = new bool[13];
     private bool[] buttons_down = new bool[13];
     private bool[] buttons_up = new bool[13];
     private bool[] buttons = new bool[13];
@@ -31,8 +31,8 @@ public class JoyconHandlerStandalone : MonoBehaviour
     private void Start()
     {
         m_transform = gameObject.transform;
-        UDPServer server = GetComponent<UDPServer>();
-        if (server != null) server.AddReceiveEvent(GetMessage);
+        TCPCliant cliant = GetComponent<TCPCliant>();
+        if (cliant != null) cliant.AddReceiveEvent(GetMessage);
     }
 
     // UDPで受信したデータを取り出す
@@ -45,18 +45,28 @@ public class JoyconHandlerStandalone : MonoBehaviour
         orientation.z = BitConverter.ToSingle(message.bytes, 2 * sizeof(float));
         orientation.w = BitConverter.ToSingle(message.bytes, 3 * sizeof(float));
         // ボタンの状態データ
-        for (index = 0; index < 13; index++)
+        for (int i = 0; i < buttons.Length; ++i)
         {
-            buttons_down[index] = BitConverter.ToBoolean(message.bytes, quaternion_size + index * sizeof(bool));
+            down_[i] = buttons[i];
         }
         for (index = 0; index < 13; index++)
         {
-            buttons_up[index] = BitConverter.ToBoolean(message.bytes, quaternion_size + (13 + index) * sizeof(bool));
+            buttons_down[index] = BitConverter.ToBoolean(message.bytes, quaternion_size + index*sizeof(bool));
         }
         for (index = 0; index < 13; index++)
         {
-            buttons[index] = BitConverter.ToBoolean(message.bytes, quaternion_size + (26 + index) * sizeof(bool));
+            buttons_up[index] = BitConverter.ToBoolean(message.bytes, quaternion_size + (13+index)*sizeof(bool));
         }
+        for (index = 0; index < 13; index++)
+        {
+            buttons[index] = BitConverter.ToBoolean(message.bytes, quaternion_size + (26+index)*sizeof(bool));
+        }
+        for (int i = 0; i < buttons.Length; ++i)
+        {
+            buttons_up[i] = (down_[i] & !buttons[i]);
+            buttons_down[i] = (!down_[i] & buttons[i]);
+        }
+        // Debug.Log(BitConverter.ToInt32(message.bytes, quaternion_size + 39*sizeof(bool)));
     }
 
     bool result = false;

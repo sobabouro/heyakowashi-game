@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using UnityEngine.Events;
 using UnityEngine;
 
 #if UNITY_EDITOR
@@ -8,13 +7,13 @@ using System.Net;
 using System.Net.Sockets;
 #else
 using System.IO;
-using Windows.Networking.Sockets;
 using System.Threading.Tasks;
+using Windows.Networking.Sockets;
 #endif
 
 public class UDPServer: MonoBehaviour
 {
-    [SerializeField] private int listenPort = 8000;
+    [SerializeField] private int listenPort = 50000;
 
     [SerializeField] public event Action<Message> receiveAction;
 
@@ -30,7 +29,7 @@ public class UDPServer: MonoBehaviour
     private IPEndPoint endPoint;
     private UdpClient udpClient;
 
-    private void Start()
+    private void Awake()
     {
         endPoint = new IPEndPoint(IPAddress.Any, listenPort);
         udpClient = new UdpClient(endPoint);
@@ -38,6 +37,8 @@ public class UDPServer: MonoBehaviour
 
     private void Update()
     {
+        if (udpClient == null) return;
+
         while (udpClient.Available > 0)
         {
             try
@@ -55,7 +56,7 @@ public class UDPServer: MonoBehaviour
         {
             message = queue.Dequeue();
             receiveAction.Invoke(message);
-        }   
+        }
     }
 
 #else
@@ -94,9 +95,11 @@ public class UDPServer: MonoBehaviour
 
     async void MessageReceived(DatagramSocket sender, DatagramSocketMessageReceivedEventArgs args)
     {
-        using (var stream = args.GetDataStream().AsStreamForRead()) {
+        using (var stream = args.GetDataStream().AsStreamForRead())
+        {
             await stream.ReadAsync(buffer, 0, MAX_BUFFER_SIZE);
-            lock (lockObject) {
+            lock (lockObject)
+            {
                 queue.Enqueue(new Message(buffer, System.DateTime.Now));
             }
         }

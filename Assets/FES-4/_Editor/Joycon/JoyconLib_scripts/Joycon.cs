@@ -6,6 +6,7 @@ using UnityEngine;
 using System.Threading;
 using System.Net.Sockets;
 using System.Reflection;
+using Unity.VisualScripting;
 
 
 public class Joycon
@@ -428,43 +429,54 @@ public class Joycon
 
 
     private UDPCliant udpCliant;
-    int port = 8000;
+    private TCPServer tcpServer;
     Quaternion orientation;
-    int quaternion_size = 4 * sizeof(float);
+    int qs = 4 * sizeof(float);
     bool[] buttons_data = new bool[39];
     // byte[] send_quaternion_bytes = new byte[1 + 4 * sizeof(float)];
     // byte[] send_buttons_bytes = new byte[1 + 39 * sizeof(bool)];
-    byte[] send_bytes = new byte[4 * sizeof(float) + 39 * sizeof(bool)];
-    int index = 0; 
+    byte[] send_bytes = new byte[4 * sizeof(float) + 39 * sizeof(bool) + sizeof(int)];
+    byte[] temp_bytes = new byte[4 * sizeof(float) + 39 * sizeof(bool) + sizeof(int)];
+    int index = 0;
+    int puket_number = 0;
 
     public void SetUDP(int port)
     {
-        udpCliant = new UDPCliant(port);
-        Debug.Log($"port:{port}");
+        // udpCliant = new UDPCliant(port);
+        tcpServer = new TCPServer(port);
     }
 
     private void SendJoyconMessage()
     {
         orientation = GetVector();
-        Array.Copy(BitConverter.GetBytes(orientation.x), 0, send_bytes, 0 * sizeof(float), sizeof(float));
-        Array.Copy(BitConverter.GetBytes(orientation.y), 0, send_bytes, 1 * sizeof(float), sizeof(float));
-        Array.Copy(BitConverter.GetBytes(orientation.z), 0, send_bytes, 2 * sizeof(float), sizeof(float));
-        Array.Copy(BitConverter.GetBytes(orientation.w), 0, send_bytes, 3 * sizeof(float), sizeof(float));
+        Array.Copy(BitConverter.GetBytes(orientation.x), 0, send_bytes, 0*sizeof(float), sizeof(float));
+        Array.Copy(BitConverter.GetBytes(orientation.y), 0, send_bytes, 1*sizeof(float), sizeof(float));
+        Array.Copy(BitConverter.GetBytes(orientation.z), 0, send_bytes, 2*sizeof(float), sizeof(float));
+        Array.Copy(BitConverter.GetBytes(orientation.w), 0, send_bytes, 3*sizeof(float), sizeof(float));
 
         for (index = 0; index < 13; index++)
         {
-            Array.Copy(BitConverter.GetBytes(buttons_down[index]), 0, send_bytes, quaternion_size + index * sizeof(bool), sizeof(bool));
+            byte buttonValue = Convert.ToByte(buttons_down[index]);
+            send_bytes[qs + index] = tcpServer.send_flag ? buttonValue : (byte)(send_bytes[qs + index] | buttonValue);
         }
         for (index = 0; index < 13; index++)
         {
-            Array.Copy(BitConverter.GetBytes(buttons_up[index]), 0, send_bytes, quaternion_size + (13 + index) * sizeof(bool), sizeof(bool));
+            byte buttonValue = Convert.ToByte(buttons_up[index]);
+            send_bytes[qs + 13 + index] = tcpServer.send_flag ? buttonValue : (byte)(send_bytes[qs + 13 + index] | buttonValue);
+
         }
         for (index = 0; index < 13; index++)
         {
-            Array.Copy(BitConverter.GetBytes(buttons[index]), 0, send_bytes, quaternion_size + (26 + index) * sizeof(bool), sizeof(bool));
+            byte buttonValue = Convert.ToByte(buttons[index]);
+            send_bytes[qs + 26 + index] = tcpServer.send_flag ? buttonValue : (byte)(send_bytes[qs + 26 + index] | buttonValue);
+
         }
-        udpCliant.SendMessage(send_bytes);
+        Array.Copy(BitConverter.GetBytes(puket_number), 0, send_bytes, qs + 39*sizeof(bool), sizeof(int));
+        puket_number = (puket_number + 1) % 10000;  // puket_number‚ª9999‚ð’´‚¦‚½‚ç0‚É–ß‚é
+
+        tcpServer.WrightMessage(send_bytes);
     }
+
     /*
         private void SendOrientation()
         {
@@ -589,7 +601,6 @@ public class Joycon
                 }
             }
         }
-        //SendButtons(); // UDP‘—M
         return 0;
     }
 

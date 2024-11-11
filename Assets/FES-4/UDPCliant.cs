@@ -1,20 +1,19 @@
 using System.Net;
 using System.Threading;
 using System.Net.Sockets;
-using System.Text;
 using UnityEngine;
 
 public class UDPCliant
 {
-    private UdpClient udpclient;
+    private UdpClient udpClient;
 
-    public UDPCliant(int port = 8000)
+    public UDPCliant(int port)
     {
         try
         {
-            udpclient = new UdpClient();
-            udpclient.EnableBroadcast = true;
-            udpclient.Connect(new IPEndPoint(IPAddress.Broadcast, port));
+            udpClient = new UdpClient();
+            udpClient.EnableBroadcast = true;
+            udpClient.Connect(new IPEndPoint(IPAddress.Broadcast, port));
         }
         catch (System.Exception e)
         {
@@ -27,7 +26,7 @@ public class UDPCliant
         Message mes = new Message(bytes, System.DateTime.Now);
         Thread thread = new Thread(() =>
         {
-            udpclient.Send(mes.bytes, mes.bytes.Length);
+            udpClient.Send(mes.bytes, mes.bytes.Length);
         });
         thread.Start();
     }
