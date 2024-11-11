@@ -45,6 +45,26 @@ public class Breaker : MonoBehaviour
         return finalATK;
     }
 
+    //  切断クラス用の切断平面計算
+    private void CalcCutter(Collision collision)
+    {
+        // 衝突点のワールド座標を取得
+        ContactPoint contactPoint = collision.contacts[0];
+        Vector3 collisionPositionWorld = contactPoint.point;
+
+        // 衝突相手のローカル座標に変換
+        Vector3 collisionPositionLocal = collision.transform.InverseTransformPoint(collisionPositionWorld);
+
+        // カッターの法線ベクトルをワールド空間で計算
+        Vector3 worldNormal = Vector3.Cross(transform.forward.normalized, prePos - transform.position).normalized;
+
+        // 平面の距離を計算：平面の法線ベクトルからワールド空間の任意の点（例えば collisionPositionWorld）への距離
+        float worldDistance = Vector3.Dot(worldNormal, collisionPositionWorld);
+
+        // カッターの平面をワールド座標で設定
+        cutter = new Plane(worldNormal, worldDistance);
+    }
+
     /// <summary>
     /// 攻撃するメソッド。オブジェクトと衝突時に呼び出す。
     /// </summary>
@@ -57,17 +77,7 @@ public class Breaker : MonoBehaviour
 
         Rigidbody otherRigitbody = collision.gameObject.GetComponent<Rigidbody>();
         int finalATK = CalcATK(otherRigitbody.velocity);
-
-        // 衝突点のワールド座標を取得
-        ContactPoint contactPoint = collision.contacts[0];
-        Vector3 collisionPositionWorld = contactPoint.point;
-
-        // 衝突相手のローカル座標に変換
-        Vector3 collisionPositionLocal = collision.transform.InverseTransformPoint(collisionPositionWorld);
-
-        // カッターの平面を相手のローカル座標で設定
-        cutter = new Plane(Vector3.Cross(transform.forward.normalized, prePos - transform.position).normalized, collisionPositionLocal);
-
+        
         breakable.ReciveAttack(finalATK, this);
 
         Debug.Log("Attack! : " + this.gameObject + " to " + breakable + " : " + finalATK + " : " + otherRigitbody.velocity + " : " + my_rigidbody.velocity);

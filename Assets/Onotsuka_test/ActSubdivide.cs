@@ -30,7 +30,7 @@ public class ActSubdivide : MonoBehaviour {
     private static SlashSurfaceGeometry slashSurfaceGeometry = new SlashSurfaceGeometry();
 
     // メインメソッド
-    public static void CallSlash(
+    public static void Subdivide(
         GameObject targetGameObject,
         Plane cutter,
         Material cutSurfaceMaterial = null
@@ -53,7 +53,7 @@ public class ActSubdivide : MonoBehaviour {
             addNewMaterial = false;
         }
         // メインメソッド実行
-        (Mesh copyMesh, Mesh originMesh) = CallSlash(mesh, transform, cutter, addNewMaterial);
+        (Mesh copyMesh, Mesh originMesh) = Subdivide(mesh, transform, cutter, addNewMaterial);
 
         if (originMesh == null || copyMesh == null) {
             return;
@@ -86,7 +86,7 @@ public class ActSubdivide : MonoBehaviour {
     public static (
         Mesh frontside,
         Mesh backside
-    ) CallSlash(
+    ) Subdivide(
         Mesh targetMesh,
         Transform targetTransform,
         Plane cutter,
