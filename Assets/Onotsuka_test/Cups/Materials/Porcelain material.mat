@@ -8,7 +8,7 @@ Material:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: Porcelain material
-  m_Shader: {fileID: 46, guid: 0000000000000000f000000000000000, type: 0}
+  m_Shader: {fileID: 4800000, guid: 185c272b6a2f1b44bbad35defb3890db, type: 3}
   m_ValidKeywords: []
   m_InvalidKeywords:
   - _DIRECTIONAL_LIGHT
@@ -172,11 +172,13 @@ Material:
     - _VertexExtrusionConstantWidth: 0
     - _VertexExtrusionSmoothNormals: 0
     - _VertexExtrusionValue: 0
+    - _WireThickness: 100
     - _ZOffsetFactor: 0
     - _ZOffsetUnits: 0
     - _ZTest: 4
     - _ZWrite: 1
     m_Colors:
+    - _BaseColor: {r: 0, g: 0, b: 0, a: 1}
     - _BlurBackgroundRect: {r: 0, g: 0, b: 1, a: 1}
     - _BorderColor: {r: 1, g: 1, b: 1, a: 0}
     - _ClippingBorderColor: {r: 1, g: 0.19999996, b: 0, a: 1}
@@ -200,5 +202,6 @@ Material:
     - _ProximityLightOuterColorOverride: {r: 0, g: 0, b: 1, a: 1}
     - _RimColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
     - _RoundCornersRadius: {r: 0.5, g: 0.5, b: 0.5, a: 0.5}
+    - _WireColor: {r: 1, g: 1, b: 1, a: 1}
     - _WireFrameColor: {r: 0, g: 0, b: 0, a: 0}
   m_BuildTextureStacks: []
