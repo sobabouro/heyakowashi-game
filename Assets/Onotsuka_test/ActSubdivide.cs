@@ -27,7 +27,9 @@ public class ActSubdivide : MonoBehaviour {
     // 切断されたポリゴンが生成される毎にマージ判定しながら格納する
     private static FusionPolygonList fusionPolygonList = new FusionPolygonList();
     // 切断辺が生成される毎にマージ判定をして，連結辺を生成しながら格納する
-    private static SlashSurfaceGeometry slashSurfaceGeometry = new SlashSurfaceGeometry();
+    private static SurfaceGeometry surfaceGeometry = new SurfaceGeometry();
+    //// 連結辺で構築される図形グループに対して，処理を行う
+    //private static ComputationalGeometryAlgorithm completeGeometry = new ComputationalGeometryAlgorithm();
 
     // メインメソッド
     public static void CallSlash(
@@ -113,7 +115,7 @@ public class ActSubdivide : MonoBehaviour {
             tracker = new int[verticesLength];
             vertexTruthValues = new bool[verticesLength];
             sandwichVertices.Clear();
-            slashSurfaceGeometry.Clear();
+            surfaceGeometry.Clear();
             fusionPolygonList.Clear();
 
             mesh_right.Clear();
@@ -207,7 +209,7 @@ public class ActSubdivide : MonoBehaviour {
             mesh_right.submesh.Add(new List<int>());
             mesh_left.submesh.Add(new List<int>());
         }
-        slashSurfaceGeometry.MakeCutSurface(mesh_right.submesh.Count - 1, targetTransform);
+        surfaceGeometry.MakeCutSurface(mesh_right.submesh.Count - 1, targetTransform);
 
         //2つのMeshを新規に作ってそれぞれに情報を追加して出力する
         Mesh frontMesh = new Mesh();
@@ -678,7 +680,7 @@ public class ActSubdivide : MonoBehaviour {
                 index_previous = index;
             }
             // 切断平面を構成する図形の連結辺を生成を行ってもらうために随時追加していく
-            slashSurfaceGeometry.Add(vertex_toward.position, vertex_away.position);
+            surfaceGeometry.Add(vertex_toward.position, vertex_away.position);
         }
     }
 
@@ -783,8 +785,8 @@ public class ActSubdivide : MonoBehaviour {
         }
     }
 
-    // 切断面上の図形に沿ったポリゴンを生成する
-    public class SlashSurfaceGeometry {
+    // 切断面上の図形を連結辺情報をもとに生成する
+    public class SurfaceGeometry {
 
         Dictionary<Vector3, JoinedVertexGroup> counterclockwiseDB = new Dictionary<Vector3, JoinedVertexGroup>();
         Dictionary<Vector3, JoinedVertexGroup> clockwiseDB = new Dictionary<Vector3, JoinedVertexGroup>();
@@ -870,6 +872,12 @@ public class ActSubdivide : MonoBehaviour {
             }
         }
 
+        public Dictionary<Vector3, JoinedVertexGroup> GetDB {
+            get {
+                return counterclockwiseDB;
+            }
+        }
+
         public void MakeCutSurface(int submesh, Transform targetTransform) {
             Vector3 scale = targetTransform.localScale;
             // ワールド座標の上方向をオブジェクト座標に変換する
@@ -893,6 +901,7 @@ public class ActSubdivide : MonoBehaviour {
             float u_min, u_max, u_range;
             float v_min, v_max, v_range;
 
+            // 閉じた連結辺でできた図形ごとに，切断面の中心に頂点を追加して頂点番号を返す
             foreach (JoinedVertexGroup roop in counterclockwiseDB.Values) {
                 {
                     u_min = u_max = Vector3.Dot(uVector, roop.startPos);
@@ -964,7 +973,7 @@ public class ActSubdivide : MonoBehaviour {
                 );
             }
 
-            // 図形の中心座標と，新頂点の両側頂点 DB をもとに新しい頂点を生成する
+            // 座標をもとに新しい頂点を生成する
             void MakeVertex(Vector3 vertexPos, out int index_right, out int index_left) {
                 index_right = mesh_right.vertices.Count;
                 index_left = mesh_left.vertices.Count;
@@ -996,6 +1005,361 @@ public class ActSubdivide : MonoBehaviour {
             clockwiseDB.Clear();
         }
     }
+    
+    //// 連結辺で構築された図形に対する処理系
+    //public class ComputationalGeometryAlgorithm {
+
+    //    // 新頂点をローカル切断平面を基準に二次元座標に変換したリスト
+    //    List<List<Vector2>> newVertices_2D = new List<List<Vector2>>();
+    //    // 新頂点の種類を格納する配列
+    //    List<List<string>> vertexTypes = new List<List<string>>();
+    //    // 処理図形ごとにグルーピングした結果を格納する
+    //    List<List<int>> outermostGeometryGroup = new List<List<int>>();
+    //    // 単調多角形の辺リスト
+    //    List<int[]> monotoneEdgeList;
+    //    // 単調多角形の対角線リスト
+    //    List<int[]> monotoneDiagonalList = new List<int[]>();
+    //    // 単調多角形の頂点リスト
+    //    List<List<int>> jointedMonotoneVertexGroupList = new List<List<int>>();
+    //    // 処理図形ごとの頂点ヘルパ管理リスト
+    //    NodeReference[] part_nonConvexGeometryNodesJagAry;
+    //    // 新頂点のヘルパを格納する配列
+    //    RefInt[] helper;
+
+    //    // 連結辺で構築された図形の単調多角形分割を行う
+    //    public List<List<int>> MakeMonotone() {
+    //        int errorCode = 0;
+            
+    //        // 新頂点を種類ごとに分類する
+    //        ClusteringVertexType();
+
+    //        // 処理図形グループごとに，単調多角形分割を行う
+    //        for (int processingCount = 0; processingCount < nonConvexGeometryList.Count; processingCount++) {
+
+    //            // ノード配列と辺リストを生成する
+    //            (
+    //                helper,
+    //                part_nonConvexGeometryNodesJagAry,
+    //                monotoneEdgeList
+    //            ) = GenerateNodeReference(
+    //                processingCount,
+    //                new2DVerticesArray.Length,
+    //                nonConvexGeometryList,
+    //                joinedVertexGroupList
+    //            );
+    //            // ノード配列を y 座標 (降順) でソートする 
+    //            SortNodesByCoordinateY(
+    //                new2DVerticesArray,
+    //                part_nonConvexGeometryNodesJagAry
+    //            );
+    //            // 単調多角形分割のための対角線を生成する
+    //            GenerateDiagonal(
+    //                new2DVerticesArray,
+    //                vertexType,
+    //                helper,
+    //                part_nonConvexGeometryNodesJagAry,
+    //                monotoneEdgeList
+    //            );
+    //            // 対角線リストから，単調多角形に分割し，多角形の辺リストに格納する
+    //            errorCode = AssortmentToMonotone(
+    //                jointedMonotoneVertexGroupList,
+    //                monotoneDiagonalList,
+    //                monotoneEdgeList
+    //            );
+    //            if (errorCode != 0) {
+    //                return null;
+    //            }
+    //        }
+    //        return jointedMonotoneVertexGroupList;
+
+    //        // 頂点の種類を判別して，各頂点にラベルを付与する
+    //        void ClusteringVertexType() {
+    //            for (int i = 0; i < newVertices_2D.Count; i++) {
+    //                List<string> types = new List<string>();
+
+    //                for (int j = 0; j < newVertices_2D[i].Count - 1; j++) {
+    //                    Vector2 internalVertex = newVertices_2D[i][j];
+    //                    Vector2 terminalVertex = (j != newVertices_2D[i].Count - 1) ? newVertices_2D[i][j + 1] : newVertices_2D[i][0];
+    //                    Vector2 point = (j != 0) ? newVertices_2D[i][j - 1] : newVertices_2D[i][newVertices_2D[i].Count - 1];
+
+    //                    // y が前後の頂点と比較して対象の点が大きいとき
+    //                    if (internalVertex.y >= point.y && internalVertex.y > terminalVertex.y) {
+    //                        // 部分最大の場合: 出発点
+    //                        if (MathUtils.IsRight(internalVertex, terminalVertex, point)) {
+    //                            types.Add("start");
+    //                        }
+    //                        // 部分極大の場合: 分離点
+    //                        else {
+    //                            types.Add("split");
+    //                        }
+    //                    }
+    //                    // y が前後の頂点と比較して対象の点が小さいとき
+    //                    else if (internalVertex.y <= point.y && internalVertex.y < terminalVertex.y) {
+    //                        // 部分最小の場合: 最終点
+    //                        if (MathUtils.IsRight(internalVertex, terminalVertex, point)) {
+    //                            types.Add("end");
+    //                        }
+    //                        // 部分極小の場合: 統合点
+    //                        else {
+    //                            types.Add("merge");
+    //                        }
+    //                    }
+    //                    // それ以外の場合: 通常の点
+    //                    else {
+    //                        types.Add("regular");
+    //                    }
+    //                }
+    //                vertexTypes.Add(types);
+    //            }
+    //        }
+
+    //        // 処理図形グループ頂点リストを y 座標の降順にソートする
+    //        void SortNodesByCoordinateY(
+    //            List<Vector2> new2DVerticesArray,
+    //            List<NodeReference> part_nonConvexGeometryNodesJagAry
+    //        ) {
+    //            // 配列を対応する頂点の y座標 > x座標 の優先度で降順にソート
+    //            Array.Sort(part_nonConvexGeometryNodesJagAry, (a, b) => {
+    //                // y 座標を比較（降順）
+    //                int compareY = new2DVerticesArray[b.CurrentVertex.Value].y.CompareTo(new2DVerticesArray[a.CurrentVertex.Value].y);
+    //                if (compareY != 0) {
+    //                    return compareY;
+    //                }
+    //                // y 座標が等しければ x 座標を比較（降順）
+    //                return new2DVerticesArray[b.CurrentVertex.Value].x.CompareTo(new2DVerticesArray[a.CurrentVertex.Value].x);
+    //            });
+    //        }
+    //    }
+
+    //    // 連結辺で構築された図形同士の内外判定を行って，処理図形ごとにグルーピングする
+    //    private List<List<int>> OutermostGeometryGrouping() {
+    //        int groupCount;
+    //        Vector2 point = new Vector2(0, 0);
+    //        bool[] visited;
+    //        bool[][] isInsides;
+    //        List<List<int>> outermostGeometryGroup = new List<List<int>>();
+
+    //        ConvertCoordinates();
+
+    //        groupCount = newVertices_2D.Count;
+    //        isInsides = new bool[groupCount][];
+
+    //        // 図形同士の内外判定を行うための配列
+    //        for (int i = 0; i < groupCount; i++) {
+    //            isInsides[i] = new bool[groupCount];
+    //        }
+    //        visited = new bool[groupCount];
+
+    //        // 図形同士の内外判定を行う
+    //        for (int i = 0; i < groupCount; i++) {
+    //            for (int j = 0; j < groupCount; j++) {
+    //                // 自分自身は無視して，他の図形との内外判定を巻き数法で行う
+    //                if (i == j)
+    //                    continue;
+    //                point = newVertices_2D[j][0];
+    //                isInsides[i][j] = WindingNumberAlgorithm(point, i);
+    //            }
+    //        }
+    //        // 図形 i が他の図形を内包するしないに関わらず，非被内包(笑)(処理図形)の場合は，内包図形とともにリストに追加する
+    //        for (int i = 0; i < groupCount; i++) {
+    //            if (visited[i])
+    //                continue;
+    //            List<int> group = new List<int>();
+    //            FindOutermostGeometry(isInsides, i, group, visited);
+    //            outermostGeometryGroup.Add(group);
+    //        }
+    //        return outermostGeometryGroup;
+
+    //        // 頂点の座標をローカル平面上の座標に変換する
+    //        void ConvertCoordinates() {
+    //            Vector3 planeNormal = localPlane.normal;
+    //            Vector3 planePoint = planeNormal * localPlane.distance;
+
+    //            // 法線に垂直なベクトルuを生成
+    //            Vector3 u = Vector3.Cross(planeNormal, Vector3.up).normalized;
+    //            if (u.magnitude < 0.001f) {
+    //                u = Vector3.Cross(planeNormal, Vector3.right).normalized;
+    //            }
+    //            // ベクトルuに垂直なベクトルvを生成
+    //            Vector3 v = Vector3.Cross(planeNormal, u);
+
+    //            // u, v による座標変換をすべての頂点に対して行う．
+    //            foreach (JoinedVertexGroup roop in surfaceGeometry.GetDB.Values) {
+    //                List<Vector2> correntGroup = new List<Vector2>();
+    //                Node<Vector3> targetEdge = roop.start;
+    //                do {
+    //                    Vector3 pos = targetEdge.index - planePoint;
+    //                    float x = Vector3.Dot(pos, u);
+    //                    float y = Vector3.Dot(pos, v);
+    //                    correntGroup.Add(new Vector2(x, y));
+    //                }
+    //                while ((targetEdge = targetEdge.next) != null);
+    //                newVertices_2D.Add(correntGroup);
+    //            }
+    //        }
+
+    //        // 巻き数法の実装
+    //        bool WindingNumberAlgorithm(
+    //            Vector2 point,
+    //            int groupIndex
+    //        ) {
+    //            // 連結辺リストが右回りで図形の内部を構成することが前提
+    //            int windingNumber = 0;
+    //            int vertexQuantity = newVertices_2D[groupIndex].Count;
+
+    //            for (int i = 0; i < vertexQuantity - 1; i++) {
+    //                Vector2 internalVertex = newVertices_2D[groupIndex][i];
+    //                Vector2 terminalVertex = (i != vertexQuantity - 1) ? newVertices_2D[groupIndex][i + 1] : newVertices_2D[groupCount][0];
+
+    //                // 辺の始点が比較点よりも下の場合
+    //                if (internalVertex.y <= point.y) {
+    //                    // 辺の終点が比較点よりも上かつ，右側に比較点（図形）がある場合
+    //                    if (terminalVertex.y > point.y && MathUtils.IsRight(internalVertex, terminalVertex, point)) {
+    //                        windingNumber--;
+    //                    }
+    //                }
+    //                // 辺の終点が比較点よりも上の場合
+    //                else {
+    //                    // 辺の始点が比較点よりも下かつ，左側に比較点（図形）がある場合
+    //                    if (terminalVertex.y <= point.y && MathUtils.IsLeft(internalVertex, terminalVertex, point)) {
+    //                        windingNumber++;
+    //                    }
+    //                }
+    //            }
+    //            // 0 でない場合は内包図形 (true)
+    //            return windingNumber != 0;
+    //        }
+
+    //        // 内外判定を行って，外側の図形をグルーピングする
+    //        void FindOutermostGeometry(
+    //            bool[][] isInsides,
+    //            int index,
+    //            List<int> group,
+    //            bool[] visited
+    //        ) {
+    //            // すでにグルーピングした図形は無視する
+    //            if (visited[index])
+    //                return;
+
+    //            visited[index] = true;
+    //            group.Add(index);
+
+    //            for (int i = 0; i < isInsides.Length; i++) {
+    //                // 図形 i が index に内包されている場合
+    //                if (isInsides[index][i]) {
+    //                    FindOutermostGeometry(isInsides, i, group, visited);
+    //                }
+    //                // 図形 index が図形 i に内包されている場合
+    //                else if (isInsides[i][index]) {
+    //                    group.Clear();
+    //                    FindOutermostGeometry(isInsides, i, group, visited);
+    //                    break;
+    //                }
+    //            }
+    //        }
+    //    }
+
+    //    public void Clear() {
+    //        newVertices_2D.Clear();
+    //        outermostGeometryGroup.Clear();
+    //    }
+    //}
+
+    // 構造体定義
+    public struct NodeReference {
+        private RefInt previousVertex;          // 直前の頂点
+        private RefInt currentVertex;           // 現在の頂点
+        private Pointer<RefInt> previousHelper; // 直前の辺のヘルパ
+        private Pointer<RefInt> currentHelper;  // 現在の辺のヘルパ
+
+        // PreviousVertexが変更されたらヘルパを更新
+        public RefInt PreviousVertex {
+            get => previousVertex;
+            set {
+                previousVertex = value;
+                UpdateHelpers();
+            }
+        }
+
+        // CurrentVertexが変更されたらヘルパを更新
+        public RefInt CurrentVertex {
+            get => currentVertex;
+            set {
+                currentVertex = value;
+                UpdateHelpers();
+            }
+        }
+
+        public Pointer<RefInt> PreviousHelper {
+            get => previousHelper;
+            set => previousHelper = value;
+        }
+
+        public Pointer<RefInt> CurrentHelper {
+            get => currentHelper;
+            set => currentHelper = value;
+        }
+
+        // コンストラクタを定義
+        public NodeReference(RefInt previousVertex, RefInt currentVertex, Pointer<RefInt> previousHelper, Pointer<RefInt> currentHelper) {
+            this.previousVertex = previousVertex;
+            this.currentVertex = currentVertex;
+            this.previousHelper = previousHelper;
+            this.currentHelper = currentHelper;
+        }
+
+        private void UpdateHelpers() {
+            // 直前の頂点でヘルパを更新
+            if (previousHelper.Value != null) {
+                previousHelper.Value = PreviousVertex;
+            }
+            // 現在の頂点でヘルパを更新
+            if (currentHelper.Value != null) {
+                currentHelper.Value = CurrentVertex;
+            }
+        }
+    }
+
+    // ラッパー用クラス
+    public class RefInt {
+        public int Value {
+            get; set;
+        }
+        public RefInt(int value) {
+            Value = value;
+        }
+        public override bool Equals(object obj) {
+            if (obj is RefInt other) {
+                return this.Value == other.Value;
+            }
+            return false;
+        }
+        public override int GetHashCode() {
+            return Value.GetHashCode();
+        }
+    }
+
+    // RefInt 用のユーティリティクラス
+    public static class RefIntUtils {
+
+        // RefInt 型の IndexOf() メソッド改修
+        public static int FindIndexOfRefInt(RefInt[] array, RefInt value) {
+            for (int i = 0; i < array.Length; i++) {
+                if (array[i].Equals(value)) {
+                    return i;
+                }
+            }
+            return -1;
+        }
+    }
+
+    // pointer クラス
+    public class Pointer<T> {
+        public T Value;
+        public Pointer(T value) {
+            Value = value;
+        }
+    }
 
     // ノード情報を格納する
     public class Node<T> {
@@ -1011,5 +1375,95 @@ public class ActSubdivide : MonoBehaviour {
         Mode1,
         Mode2,
         Mode3
+    }
+}
+
+// 計算に関する処理系
+public class MathUtils {
+    // 2つのベクトルの外積を計算する
+    public static float CrossProduct(
+        Vector2 internalVertex, 
+        Vector2 terminalVertex, 
+        Vector2 point
+    ) {
+        Vector2 v1 = terminalVertex - internalVertex;
+        Vector2 v2 = point - internalVertex;
+        return v1.x * v2.y - v1.y * v2.x;
+    }
+
+    // 頂点が右回りであることが前提
+    public static bool IsRight(
+        Vector2 internalVertex, 
+        Vector2 terminalVertex, 
+        Vector2 point
+    ) {
+        return CrossProduct(internalVertex, terminalVertex, point) > 0;
+    }
+
+    // 頂点が右回りであることが前提
+    public static bool IsLeft(
+        Vector2 internalVertex, 
+        Vector2 terminalVertex, 
+        Vector2 point
+    ) {
+        return CrossProduct(internalVertex, terminalVertex, point) < 0;
+    }
+
+    // 三角形を構成するかどうかを判定する
+    public static bool IsTriangle(Vector2 v1, Vector2 v2, Vector2 v3) {
+        // 三角形の面積を計算する
+        float area = 0.5f * Math.Abs((v2.x - v1.x) * (v3.y - v1.y) - (v3.x - v1.x) * (v2.y - v1.y));
+        // 面積がゼロでない場合は三角形を構成する
+        return area > 0;
+    }
+
+    public static bool IsTriangle(Vector3 v1, Vector3 v2, Vector3 v3) {
+        // ベクトルを計算
+        Vector3 vec1 = v2 - v1;
+        Vector3 vec2 = v3 - v1;
+
+        // 外積を計算
+        Vector3 crossProduct = Vector3.Cross(vec1, vec2);
+
+        // 外積の大きさを計算し、面積を求める
+        float area = 0.5f * crossProduct.magnitude;
+
+        // 面積がゼロでない場合は三角形を構成する
+        return area > 0;
+    }
+
+    // 消したい要素を末尾の要素と入れ替えて、末尾を削除する処理関数
+    public static void SwapAndRemoveAt<T>(List<T> list, int indexToRemove) {
+        int lastIndex = list.Count - 1;
+        if (indexToRemove < lastIndex) {
+            // 削除したい要素と末尾の要素を入れ替える
+            list[indexToRemove] = list[lastIndex];
+        }
+        // 末尾の要素を削除
+        list.RemoveAt(lastIndex);
+    }
+
+    // 指定要素が見つかるまでリストの要素を後ろに移動する
+    public static void BacktrackElementsUntilTarget(
+        List<int[]> list, 
+        int target
+    ) {
+        int index = 0;
+        int freeze2000 = 0;
+
+        // 配列の先頭から順番に確認していき、target に到達するまで繰り返す
+        while (index < list.Count && list[index][0] != target) {
+
+            freeze2000++;
+            if (freeze2000 > 1000) {
+                break;
+            }
+
+            // 先頭要素を取得し、リストの最後に追加
+            int[] elementToMove = list[index];
+            list.Add(elementToMove);
+            // リストの先頭要素を削除
+            list.RemoveAt(index);
+        }
     }
 }
