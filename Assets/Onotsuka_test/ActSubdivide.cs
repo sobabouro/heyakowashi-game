@@ -32,6 +32,7 @@ public class ActSubdivide : MonoBehaviour {
     // メインメソッド
     public static void Subdivide(
         GameObject targetGameObject,
+        GameObject generateParefab,
         Plane cutter,
         Material cutSurfaceMaterial = null
     ) {

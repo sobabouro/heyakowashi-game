@@ -59,6 +59,19 @@ public class Breakable : MonoBehaviour
     }
 
     /// <summary>
+    /// 与えられた攻撃力と属性、自身の耐性、最終的なダメージの値を計算する。
+    /// </summary>
+    /// <param name="receivedATK">受ける攻撃力</param>
+    /// <param name="attackType">受ける攻撃の属性</param>
+    /// <returns></returns>
+    private int CalcDamage(int receivedATK, Type attackType)
+    {
+        int damage = receivedATK - resists[attackType];
+        if (damage < 0) damage = 0;
+        return damage;
+    }
+
+    /// <summary>
     /// 攻撃された時に呼び出すメソッド。
     /// </summary>
     /// <param name="receivedATK">受ける攻撃力</param>
@@ -72,6 +85,9 @@ public class Breakable : MonoBehaviour
         int damage = CalcDamage(receivedATK, breaker.Type);
         Debug.Log($"damage: {damage}");
         durability -= damage;
+/*
+ ダメージ値に応じたメソッドを差し込むなら多分ここ
+ */
         Debug.Log($"durability: {durability}");
         if (durability < 0)
         {
@@ -113,19 +129,5 @@ public class Breakable : MonoBehaviour
         {
             Destroy(this.gameObject);
         }
-    }
-
-
-    /// <summary>
-    /// 与えられた攻撃力と属性、自身の耐性、最終的なダメージの値を計算する。
-    /// </summary>
-    /// <param name="receivedATK">受ける攻撃力</param>
-    /// <param name="attackType">受ける攻撃の属性</param>
-    /// <returns></returns>
-    private int CalcDamage(int receivedATK, Type attackType)
-    {
-        int damage = receivedATK - resists[attackType];
-        if (damage < 0) damage = 0;
-        return damage;
     }
 }

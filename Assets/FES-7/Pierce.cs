@@ -17,7 +17,7 @@ public class Pierce : MonoBehaviour
     // オブジェクト破壊時に呼び出すイベント登録
     public UnityEvent onBreakEvent;
 
-    // オブジェクト破壊時に呼び出すイベント登録
+    // オブジェクト結合時に呼び出すイベント登録
     public UnityEvent onConnectEvent;
 
     // 結合する座標の設定

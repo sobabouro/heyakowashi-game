@@ -7,6 +7,10 @@ public class Cutter : MonoBehaviour {
     [SerializeField, Tooltip("切断面用のマテリアル")]
     Material surfaceMat;
 
+    // 切断後に呼び出されるプレハブ
+    [SerializeField]
+    private GameObject generatePrefab;
+
     // 動く方向で切断する場合
     private Vector3 prePos = Vector3.zero;
     private Vector3 prePos2 = Vector3.zero;
@@ -44,6 +48,6 @@ public class Cutter : MonoBehaviour {
         // カッターの平面をワールド座標で設定
         var cutter = new Plane(worldNormal, worldDistance);
 
-        ActSubdivide.Subdivide(collision.gameObject, cutter, surfaceMat);
+        ActSubdivide.Subdivide(collision.gameObject, generatePrefab, cutter, surfaceMat);
     }
 }
