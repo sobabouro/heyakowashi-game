@@ -116,25 +116,27 @@ public class Breakable : MonoBehaviour
     {
         Debug.Log("Break");
         int scoreRecoveryAmount = 0;
+        int durabilityRecoveryAmount = 0;
         switch (breaker.Type)
         {
             case Type.slash:
                 // Slashクラスを呼び出す
-                // _slash.CallSlash(breaker.GetCutter());
+                // _slash.CallSlash(breaker);
                 break;
             case Type.crash:
                 // Crashクラスを呼び出す
-                _crash.GetComponent<Crash>().CallCrash();
+                _crash.CallCrash();
                 break;
             case Type.pierce:
                 // Pierceクラスを呼び出す
-                (_nowDurability, scoreRecoveryAmount) = _pierce.Connect(breaker);
+                (durabilityRecoveryAmount, scoreRecoveryAmount) = _pierce.Connect(breaker);
                 break;
             default:
                 break;
         }
 
         ScoreController.instance.AddScore(_score);
+        _nowDurability = durabilityRecoveryAmount;
         _score = scoreRecoveryAmount;
 
         if (_nowDurability <= 0)
