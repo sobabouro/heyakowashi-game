@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using MixedReality.Toolkit.SpatialManipulation;
 using UnityEngine.Events;
+using System;
 
 public class Pierce : MonoBehaviour
 {
@@ -15,7 +16,7 @@ public class Pierce : MonoBehaviour
     // 結合している？
     private bool isConnect = false;
     // 刺突結合している時の結合相手のオブジェクト
-    private List<Collider> connectObjectCollider_List;
+    private List<Collider> connectObjectCollider_List = new List<Collider>();
     // 結合座標計算使う係数の大きさ
     private float frame = 2;
 
@@ -23,6 +24,9 @@ public class Pierce : MonoBehaviour
     public UnityEvent onBreakEvent;
     // オブジェクト結合時に呼び出すイベント登録
     public UnityEvent onConnectEvent;
+    // オブジェクト破壊時にこのオブジェクトを登録しているオブジェクトのJointを外すためのイベント登録
+    [Serializable] public class UnityEventPierce : UnityEvent<Collider> { }
+    public UnityEventPierce onDisconnectEvent;
 
     // 結合する座標の設定
     private void DecideConnectPosition(Breaker breaker)
@@ -38,6 +42,7 @@ public class Pierce : MonoBehaviour
     {
         Collider myCollider = this.gameObject.GetComponent<Collider>();
         DisconnectAll(myCollider);
+        onDisconnectEvent?.Invoke(myCollider);
     }
 
     /// <summary>
@@ -105,6 +110,9 @@ public class Pierce : MonoBehaviour
 
         isConnect = true;
 
+        Pierce pierce = breakerCollider.GetComponent<Pierce>();
+        pierce.onDisconnectEvent.AddListener(DisConnect);
+
         // 結合時に呼び出されるイベントを呼び出す
         onConnectEvent?.Invoke();  
     }
@@ -114,11 +122,11 @@ public class Pierce : MonoBehaviour
     /// </summary>
     /// <param name="breaker">壊すものクラス</param>
     /// <returns></returns>
-    private void DisConnect(Breaker breaker, Collider myCollider, Collider breakerCollider)
+    private void DisConnect(Collider breakerCollider)
     {
         // オブジェクトの動きの依存対象の解除
         FixedJoint[] fixedJoint_Array = this.gameObject.GetComponents<FixedJoint>();
-        Rigidbody rigidbody = breaker.GetRigidbody();
+        Rigidbody rigidbody = breakerCollider.GetComponent<Rigidbody>();
 
         // FixedJointを全てから解除対象のみ選択
         foreach (FixedJoint fixedJoint in fixedJoint_Array)
@@ -133,7 +141,7 @@ public class Pierce : MonoBehaviour
 
         if (connectObjectCollider_List.Count <= 0) isConnect = false;
         // 結合したオブジェクト間の衝突判定の有効化
-        Physics.IgnoreCollision(myCollider, breakerCollider, false);
+        Physics.IgnoreCollision(this.gameObject.GetComponent<Collider>(), breakerCollider, false);
     }
 
     /// <summary>
