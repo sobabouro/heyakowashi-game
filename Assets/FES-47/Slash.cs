@@ -17,6 +17,10 @@ public class Slash : MonoBehaviour
     // オブジェクト破壊時に呼び出すイベント登録
     public UnityEvent onBreakEvent;
 
+    public void SetNumberOfCanSlash(int vlaue)
+    {
+        _numberOfCanSlash = vlaue;
+    }
 
     /// <summary>
     /// 切断クラスの呼び出し時にはじめに呼び出され、ActSubdivideに切断させる
@@ -76,22 +80,21 @@ public class Slash : MonoBehaviour
     /// </summary>
     /// <param name="originTransform">元オブジェクトのTransform</param>
     /// <param name="newMesh">作成したメッシュ</param>
+    /// <param name="newMaterials">割り当てるマテリアル</param>
     /// <returns></returns>
     public void CreateCutObject(Transform originTransform, Mesh newMesh, Material[] newMaterials)
     {
         GameObject polygonInfo_subject = Instantiate(_cutObjectPrefab, originTransform.position, originTransform.rotation, null);
-
         // Meshの設定
         polygonInfo_subject.GetComponent<MeshFilter>().mesh = newMesh;
-
         // マテリアルの設定
         polygonInfo_subject.GetComponent<MeshRenderer>().sharedMaterials = newMaterials;
-
         // MeshColliderの設定
         MeshCollider meshCollider = polygonInfo_subject.GetComponent<MeshCollider>();
         if(meshCollider)
         {
             polygonInfo_subject.GetComponent<MeshCollider>().sharedMesh = newMesh;
         }
+        polygonInfo_subject.GetComponent<Slash>().SetNumberOfCanSlash(_numberOfCanSlash-1);
     }
 }
