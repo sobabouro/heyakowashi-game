@@ -35,10 +35,10 @@ public class Slash : MonoBehaviour
         {
             // 生成したオブジェクトと干渉しないようにColliderを無効化
             this.gameObject.GetComponent<Collider>().enabled = false;
-            (Mesh mesh1, Mesh mesh2) = ActSubdivide.Subdivide(this.gameObject, breaker.GetCutter());
+            // (Mesh mesh1, Mesh mesh2) = ActSubdivide.Subdivide(this.gameObject, breaker.GetCutter());
             // 切断された後のオブジェクトを生成する
-            CreateDividedObject(transform.position, mesh1);
-            CreateDividedObject(transform.position, mesh2); 
+            // CreateDividedObject(transform.position, mesh1);
+            // CreateDividedObject(transform.position, mesh2); 
             
             Destroy(this.gameObject);
             // 切断時のイベントを呼び出す
