@@ -112,6 +112,10 @@ PrefabInstance:
       propertyPath: m_UseGravity
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 4038646514024504506, guid: 6165bea23924141459a12b8c689d842a, type: 3}
+      propertyPath: _maxDurability
+      value: 50
+      objectReference: {fileID: 0}
     - target: {fileID: 4038646514024504511, guid: 6165bea23924141459a12b8c689d842a, type: 3}
       propertyPath: _brokenObjectPrefab
       value: 
@@ -205,6 +209,10 @@ PrefabInstance:
     - target: {fileID: 4038646514024504504, guid: 6165bea23924141459a12b8c689d842a, type: 3}
       propertyPath: m_UseGravity
       value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4038646514024504506, guid: 6165bea23924141459a12b8c689d842a, type: 3}
+      propertyPath: _maxDurability
+      value: 50
       objectReference: {fileID: 0}
     - target: {fileID: 4038646514024504511, guid: 6165bea23924141459a12b8c689d842a, type: 3}
       propertyPath: _brokenObjectPrefab

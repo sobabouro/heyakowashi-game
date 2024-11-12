@@ -134,11 +134,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 916c45e0acabc3f49b0909e2b4c050c0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _container: {fileID: 0}
   _baseATK: 10
   _type: 2
-  my_rigidbody: {fileID: 7405474662165418933}
-  _velocity_threshold: 0
 --- !u!114 &7405474662165418931
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -151,13 +148,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 653514ead52426a47a2b2958f5121436, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  durability: 50
-  slashResist: 0
-  crashResist: 0
-  pierceResist: 0
+  _maxDurability: 100
+  _slashResist: 0
+  _crashResist: 0
+  _pierceResist: 0
   _score: 100
-  scoreController: {fileID: 0}
-  maxInterval: 0.1
+  _maxDamageInterval: 0.1
 --- !u!114 &7405474662165418930
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -483,6 +479,14 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   durabilityRecoveryAmount: 50
+  scoreRecoveryAmount: 0
+  canConnect: 0
+  onBreakEvent:
+    m_PersistentCalls:
+      m_Calls: []
+  onConnectEvent:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!1 &7405474663093502137
 GameObject:
   m_ObjectHideFlags: 0
