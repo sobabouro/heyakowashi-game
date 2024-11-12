@@ -23,7 +23,8 @@ public class JoyconHandlerStandalone : MonoBehaviour
     private Message _message;
     private byte[] request_bytes = { 0x01 };
     private int quaternion_size = 4 * sizeof(float);
-    private int index = 0;
+    private int puket_number = 0;
+    private bool isChecked = true; // データ使用済み？
 
     // 参照
     private Transform m_transform;
@@ -104,19 +105,13 @@ public class JoyconHandlerStandalone : MonoBehaviour
         orientation.z = BitConverter.ToSingle(message.bytes, 2 * sizeof(float));
         orientation.w = BitConverter.ToSingle(message.bytes, 3 * sizeof(float));
         // ボタンの状態データ
-        for (index = 0; index < buttons.Length; index++)
+        for (int i = 0; i < buttons.Length; i++)
         {
-            down_[index] = buttons[index];
+            bool button_tmp = BitConverter.ToBoolean(message.bytes, quaternion_size + i);
+            // 検出するまでは論理和
+            buttons[i] = isChecked ? button_tmp : (buttons[i] | button_tmp);
         }
-        for (index = 0; index < buttons.Length; index++)
-        {
-            buttons[index] = BitConverter.ToBoolean(message.bytes, quaternion_size + index * sizeof(bool));
-        }
-        for (index = 0; index < buttons.Length; index++)
-        {
-            buttons_up[index] = (down_[index] & !buttons[index]);
-            buttons_down[index] = (!down_[index] & buttons[index]);
-        }
+        isChecked = false;
         // Debug.Log(BitConverter.ToInt32(message.bytes, quaternion_size + buttons.Length));
     }
 
@@ -126,6 +121,19 @@ public class JoyconHandlerStandalone : MonoBehaviour
     /// </summary>
     private void CheckButtons()
     {
+        // 押した瞬間、話した瞬間を判定
+        int index = 0;
+        for (index = 0; index < buttons.Length; index++)
+        {
+            buttons_up[index] = (down_[index] & !buttons[index]);
+            buttons_down[index] = (!down_[index] & buttons[index]);
+        }
+        for (index = 0; index < buttons.Length; index++)
+        {
+            down_[index] = buttons[index];
+        }
+
+        // 状態チェック
         if (GetButtonDown(Joycon.Button.DPAD_UP))
         {
             Debug.Log("Up button pressed");
@@ -156,6 +164,7 @@ public class JoyconHandlerStandalone : MonoBehaviour
             Debug.Log("Shoulder button 2 pressed");
             PressedShoulder2ButtonEvents?.Invoke();
         }
+        isChecked = true;
     }
 
 }

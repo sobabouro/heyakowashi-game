@@ -23,9 +23,8 @@ public class JoyconHandler : MonoBehaviour
     private TCPServer tcpServer;
     private int qs = 4 * sizeof(float);
     private byte[] send_bytes = new byte[4 * sizeof(float) + 13 + sizeof(int)];
-    private int index = 0;
     private int puket_number = 0;
-    public bool unsent = true; // 未送信データがある？
+    private bool isSent = true; // 送信済みデータがある？
 
     private void Start()
     {
@@ -86,9 +85,9 @@ public class JoyconHandler : MonoBehaviour
         bool[] buttons_tmp = joycon.GetButtons();
         for (int i = 0; i < buttons.Length; i++)
         {
-            buttons[i] = unsent ? (buttons[i] | buttons_tmp[i]) : buttons_tmp[i];
+            buttons[i] = isSent ? buttons_tmp[i] : (buttons[i] | buttons_tmp[i]);
         }
-        unsent = true;
+        isSent = false;
         // orientation
         orientation = joycon.GetVector();
         // Apply
@@ -122,6 +121,6 @@ public class JoyconHandler : MonoBehaviour
         // 次に送信するデータを作成
         CreateJoyconMessage();
         tcpServer.SendMessage(send_bytes);
-        unsent = false;
+        isSent = true;
     }
 }
