@@ -126,8 +126,6 @@ public class Breakable : MonoBehaviour
     private void Break(Breaker breaker)
     {
         Debug.Log("Break");
-        int scoreRecoveryAmount = 0;
-        int durabilityRecoveryAmount = 0;
         switch (breaker.Type)
         {
             case Type.slash:
@@ -147,8 +145,6 @@ public class Breakable : MonoBehaviour
         }
 
         ScoreController.instance.AddScore(_score);
-        _nowDurability = durabilityRecoveryAmount;
-        _score = scoreRecoveryAmount;
 
         if (_nowDurability <= 0)
         {
