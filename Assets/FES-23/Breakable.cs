@@ -23,7 +23,18 @@ public class Breakable : MonoBehaviour
     // 計算用
     private int _nowDurability = 0;          // 現在の耐久値
     private float _nowDamageInterval = 0;    // インターバル値
-    private bool _inDamageInterval = false;  // 現在インターバル中？
+    private bool _inDamageInterval = false;  // 現在インターバル中？
+
+    // アクセサ
+    public void SetDurability(int durability)
+    {
+        _nowDurability = durability;
+    }
+
+    public void SetScore(int score)
+    {
+        _score = score;
+    }
 
     private void Start()
     {
@@ -115,27 +126,25 @@ public class Breakable : MonoBehaviour
     private void Break(Breaker breaker)
     {
         Debug.Log("Break");
-        int scoreRecoveryAmount = 0;
         switch (breaker.Type)
         {
             case Type.slash:
                 // Slashクラスを呼び出す
-                // _slash.CallSlash(breaker.GetCutter());
+                _slash.CallSlash(breaker);
                 break;
             case Type.crash:
                 // Crashクラスを呼び出す
-                _crash.GetComponent<Crash>().CallCrash();
+                _crash.CallCrash();
                 break;
             case Type.pierce:
                 // Pierceクラスを呼び出す
-                (_nowDurability, scoreRecoveryAmount) = _pierce.Connect(breaker);
+                _pierce.CallPierce(breaker, this);
                 break;
             default:
                 break;
         }
 
         ScoreController.instance.AddScore(_score);
-        _score = scoreRecoveryAmount;
 
         if (_nowDurability <= 0)
         {
