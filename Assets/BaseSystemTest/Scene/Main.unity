@@ -275,12 +275,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 653514ead52426a47a2b2958f5121436, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  durability: 530000
-  slashResist: 0
-  crashResist: 0
-  pierceResist: 0
-  _score: 0
-  maxInterval: 0.2
+  _maxDurability: 530000
+  _slashResist: 0
+  _crashResist: 0
+  _pierceResist: 0
+  _score: 1000
+  _maxDamageInterval: 0.1
 --- !u!114 &218836128
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -295,8 +295,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _baseATK: 10
   _type: 1
-  my_rigidbody: {fileID: 218836131}
-  _velocity_threshold: 0
 --- !u!114 &218836129
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -633,7 +631,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 68c98c563007a79428cf505f09508a3e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  numberOfCanSlash: 2
+  numberOfCanSlash: 0
   surfaceMat: {fileID: 0}
   onSlashEvent:
     m_PersistentCalls:
@@ -820,6 +818,10 @@ PrefabInstance:
     - target: {fileID: 5426060844419805523, guid: 61502256e6d09bf4da80e67c257719db, type: 3}
       propertyPath: m_Name
       value: Sphere_kata
+      objectReference: {fileID: 0}
+    - target: {fileID: 5426060844419805523, guid: 61502256e6d09bf4da80e67c257719db, type: 3}
+      propertyPath: m_IsActive
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 5700311412893372757, guid: 61502256e6d09bf4da80e67c257719db, type: 3}
       propertyPath: m_LocalScale.x
@@ -1261,12 +1263,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 653514ead52426a47a2b2958f5121436, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  durability: 100
-  slashResist: 0
-  crashResist: 0
-  pierceResist: 0
+  _maxDurability: 100
+  _slashResist: 0
+  _crashResist: 0
+  _pierceResist: 0
   _score: 100
-  maxInterval: 0.1
+  _maxDamageInterval: 0.1
 --- !u!114 &491342575
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1281,8 +1283,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _baseATK: 10
   _type: 2
-  my_rigidbody: {fileID: 491342576}
-  _velocity_threshold: 0
 --- !u!54 &491342576
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -1495,12 +1495,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 653514ead52426a47a2b2958f5121436, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  durability: 530000
-  slashResist: 0
-  crashResist: 0
-  pierceResist: 0
-  _score: 0
-  maxInterval: 0.2
+  _maxDurability: 530000
+  _slashResist: 0
+  _crashResist: 0
+  _pierceResist: 0
+  _score: 1000
+  _maxDamageInterval: 0.1
 --- !u!114 &496327989
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1515,8 +1515,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _baseATK: 10
   _type: 2
-  my_rigidbody: {fileID: 496327992}
-  _velocity_threshold: 0
 --- !u!114 &496327990
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1853,7 +1851,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 68c98c563007a79428cf505f09508a3e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  numberOfCanSlash: 2
+  numberOfCanSlash: 0
   surfaceMat: {fileID: 0}
   onSlashEvent:
     m_PersistentCalls:
@@ -2705,12 +2703,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 653514ead52426a47a2b2958f5121436, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  durability: 100
-  slashResist: 0
-  crashResist: 0
-  pierceResist: 0
+  _maxDurability: 100
+  _slashResist: 0
+  _crashResist: 0
+  _pierceResist: 0
   _score: 100
-  maxInterval: 0.1
+  _maxDamageInterval: 0.1
 --- !u!114 &931564796
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2725,8 +2723,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _baseATK: 10
   _type: 2
-  my_rigidbody: {fileID: 931564797}
-  _velocity_threshold: 0
 --- !u!54 &931564797
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -3259,12 +3255,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 653514ead52426a47a2b2958f5121436, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  durability: 100
-  slashResist: 0
-  crashResist: 0
-  pierceResist: 0
+  _maxDurability: 100
+  _slashResist: 0
+  _crashResist: 0
+  _pierceResist: 0
   _score: 100
-  maxInterval: 0.1
+  _maxDamageInterval: 0.1
 --- !u!114 &1093730168
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3279,8 +3275,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _baseATK: 10
   _type: 2
-  my_rigidbody: {fileID: 1093730169}
-  _velocity_threshold: 0
 --- !u!54 &1093730169
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -3651,12 +3645,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 653514ead52426a47a2b2958f5121436, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  durability: 200
-  slashResist: 0
-  crashResist: 0
-  pierceResist: 0
+  _maxDurability: 0
+  _slashResist: 0
+  _crashResist: 0
+  _pierceResist: 0
   _score: 500
-  maxInterval: 0.5
+  _maxDamageInterval: 0
 --- !u!114 &1277901436
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5190,12 +5184,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 653514ead52426a47a2b2958f5121436, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  durability: 100
-  slashResist: 0
-  crashResist: 0
-  pierceResist: 0
+  _maxDurability: 100
+  _slashResist: 0
+  _crashResist: 0
+  _pierceResist: 0
   _score: 100
-  maxInterval: 0.1
+  _maxDamageInterval: 0.1
 --- !u!4 &6470194113002675730
 Transform:
   m_ObjectHideFlags: 0
@@ -5505,8 +5499,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _baseATK: 10
   _type: 2
-  my_rigidbody: {fileID: 6470194113002675735}
-  _velocity_threshold: 0
 --- !u!54 &6470194113002675735
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -5631,12 +5623,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 653514ead52426a47a2b2958f5121436, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  durability: 530000
-  slashResist: 0
-  crashResist: 0
-  pierceResist: 0
-  _score: 0
-  maxInterval: 0.2
+  _maxDurability: 530000
+  _slashResist: 0
+  _crashResist: 0
+  _pierceResist: 0
+  _score: 1000
+  _maxDamageInterval: 0.1
 --- !u!23 &6470194113214061634
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -5715,8 +5707,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _baseATK: 10
   _type: 3
-  my_rigidbody: {fileID: 6470194113214061649}
-  _velocity_threshold: 0
 --- !u!114 &6470194113214061639
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -6050,7 +6040,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 68c98c563007a79428cf505f09508a3e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  numberOfCanSlash: 2
+  numberOfCanSlash: 0
   surfaceMat: {fileID: 0}
   onSlashEvent:
     m_PersistentCalls:
