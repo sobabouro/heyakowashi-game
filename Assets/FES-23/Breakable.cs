@@ -17,7 +17,7 @@ public class Breakable : MonoBehaviour
     [SerializeField, Tooltip("インターバル")] private float _maxDamageInterval; // インターバル
     // 参照
     private Dictionary<Type, int> _resists = new Dictionary<Type, int>();  // 属性耐性の辞書
-    // private Slash _slash;   // 切断処理クラス
+    private Slash _slash;   // 切断処理クラス
     private Crash _crash;     // 破壊処理クラス
     private Pierce _pierce;   // 刺突処理クラス
     // 計算用

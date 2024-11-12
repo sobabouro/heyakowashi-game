@@ -25,7 +25,7 @@ public class Slash : MonoBehaviour
     /// <returns></returns>
     public void CallSlash(Breaker breaker)
     {
-        if (_numberOfCanSlash <= 0)
+        /*if (_numberOfCanSlash <= 0)
         {
             Destroy(this.gameObject);
             // 破壊時のイベントを呼び出す
@@ -43,7 +43,7 @@ public class Slash : MonoBehaviour
             Destroy(this.gameObject);
             // 切断時のイベントを呼び出す
             onSlashEvent?.Invoke();
-        }
+        }*/
     }
 
     /// <summary>
