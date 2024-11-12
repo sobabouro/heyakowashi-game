@@ -16,6 +16,8 @@ public class Pierce : MonoBehaviour
     private bool isConnected = false;
     // 刺突結合している時の結合相手のオブジェクト
     private List<Collider> connectObjectCollider_List;
+    // 結合座標計算使う係数の大きさ
+    private float frame = 2;
 
     // オブジェクト破壊時に呼び出すイベント登録
     public UnityEvent onBreakEvent;
@@ -23,9 +25,13 @@ public class Pierce : MonoBehaviour
     public UnityEvent onConnectEvent;
 
     // 結合する座標の設定
-    private void DecideConnectPosition()
+    private void DecideConnectPosition(Breaker breaker)
     {
+        Vector3 moveDirection = breaker.GetMoveDirection();
 
+        Vector3 movePosition = this.gameObject.transform.position + (-frame * moveDirection);
+
+        this.gameObject.transform.position = movePosition;
     }
 
     private void OnDestroy()
@@ -90,9 +96,7 @@ public class Pierce : MonoBehaviour
         // 結合したオブジェクト間の衝突判定の無効化
         Physics.IgnoreCollision(myCollider, breakerCollider, true);
 
-        /*
-        // ここで結合するオブジェクトの座標を調整する
-         */
+        DecideConnectPosition(breaker);
 
         FixedJoint fixedJoint = this.gameObject.AddComponent<FixedJoint>();
         fixedJoint.connectedBody = breaker.GetRigidbody();
