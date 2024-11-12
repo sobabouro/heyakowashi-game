@@ -5,17 +5,15 @@ using UnityEngine.Events;
 
 public class Crash : MonoBehaviour
 {
-    // 破壊後のオブジェクトを呼び出すかのフラグ
-    [SerializeField]
-    private bool _canCallBrokenObject;
-    // オブジェクトの破壊後に呼び出されるオブジェクト
-    [SerializeField]
+    [SerializeField, Tooltip("破壊後のオブジェクトを生成する？")]
+    private bool _canCreateBrokenObject;
+    [SerializeField, Tooltip("破壊後のオブジェクト")]
     private GameObject _brokenObjectPrefab;
+    [SerializeField, Tooltip("破壊後のオブジェクトを生成した際に加える力")]
+    private float _addImpulse = 1;
+
     // オブジェクト破壊時に呼び出すイベント登録
     public UnityEvent onBreakEvent;
-    // 破壊後のオブジェクトを呼び出す際に加える外向きの力
-    [SerializeField]
-    private float _addImpulse = 1;
 
     // Start is called before the first frame update
     void Start()
@@ -23,7 +21,9 @@ public class Crash : MonoBehaviour
         onBreakEvent.AddListener(DebugMessage);
     }
 
-    // 壊属性によるオブジェクトの破壊処理が呼び出される際に呼び出す
+    /// <summary>
+    /// 壊属性によるオブジェクトの破壊時に呼び出す
+    /// </summary>
     public void CallCrash()
     {
         // 自身の当たり判定を消失させる
@@ -33,9 +33,9 @@ public class Crash : MonoBehaviour
         onBreakEvent?.Invoke();
 
         // フラグによって破壊後のオブジェクトを呼び出したりする
-        if (_canCallBrokenObject)
+        if (_canCreateBrokenObject)
         {
-            CallBrokenObject();
+            CreateBrokenObject();
         }
 
         // オブジェクトを破壊する
@@ -43,8 +43,10 @@ public class Crash : MonoBehaviour
         Destroy(this.gameObject);
     }
 
-    // 破壊後にオブジェクトを作る際に呼び出す
-    private void CallBrokenObject()
+    /// <summary>
+    /// 破壊後にオブジェクトを作る際に呼び出す
+    /// </summary>
+    private void CreateBrokenObject()
     {
         Debug.Log("CallBrokenObject!");
         // 破壊後に呼び出すオブジェクトを生成して、外側に向けてある程度の力(_addForce)を入れてオブジェクトを動かす
