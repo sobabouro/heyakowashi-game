@@ -1,8 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
-using System.Drawing;
 using UnityEngine;
-using static UnityEditor.Experimental.AssetDatabaseExperimental.AssetDatabaseCounters;
 
 // breakable.cs で定義する
 // public enum Type { plane, slash, crash, pierce }
@@ -35,6 +33,10 @@ public class Breaker : MonoBehaviour
     public Plane GetCutter()
     {
         return _cutter;
+    }
+    public Vector3 GetMoveDirection()
+    {
+        return _nowPosition - _prePosition;
     }
 
     private void Start()
@@ -91,7 +93,7 @@ public class Breaker : MonoBehaviour
     /// <summary>
     /// カッター（切断する平面）を作成する
     /// </summary>
-    /// <param name="collision">衝突データ全般</param>
+    /// <param name="point">平面の座標</param>
     private void CalcCutterPlane(Vector3 point)
     {
         // 断面を相手のローカル座標で設定
