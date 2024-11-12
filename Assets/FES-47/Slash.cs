@@ -23,7 +23,7 @@ public class Slash : MonoBehaviour
     /// </summary>
     /// <param name="breaker">UŒ‚‚µ‚½‘¤‚Ìî•ñ</param>
     /// <returns></returns>
-    public void Divide(Breaker breaker)
+    public void CallSlash(Breaker breaker)
     {
         if (_numberOfCanSlash <= 0)
         {
