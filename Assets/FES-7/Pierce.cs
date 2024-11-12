@@ -13,7 +13,7 @@ public class Pierce : MonoBehaviour
     [SerializeField, Tooltip("結合可能？")]
     private bool canConnect;
     // 結合している？
-    private bool isConnected = false;
+    private bool isPierce = false;
     // 刺突結合している時の結合相手のオブジェクト
     private List<Collider> connectObjectCollider_List;
     // 結合座標計算使う係数の大きさ
@@ -56,16 +56,18 @@ public class Pierce : MonoBehaviour
         {
             // 破壊時に呼び出されるイベントを呼び出す
             onBreakEvent?.Invoke();
+            Destroy(this.gameObject);
             breakable.SetScore(0);
         }
 
         // 既に結合しているオブジェクトに対して、刺突属性で再び壊した場合
-        if (isConnected)
+        if (isPierce)
         {
             DisconnectAll(myCollider);
 
             // 破壊時に呼び出されるイベントを呼び出す
             onBreakEvent?.Invoke();
+            Destroy(this.gameObject);
             breakable.SetScore(0);
         }
 
@@ -101,7 +103,7 @@ public class Pierce : MonoBehaviour
         FixedJoint fixedJoint = this.gameObject.AddComponent<FixedJoint>();
         fixedJoint.connectedBody = breaker.GetRigidbody();
 
-        isConnected = true;
+        isPierce = true;
 
         // 結合時に呼び出されるイベントを呼び出す
         onConnectEvent?.Invoke();  
@@ -129,7 +131,7 @@ public class Pierce : MonoBehaviour
 
         connectObjectCollider_List.Remove(breakerCollider);
 
-        if (connectObjectCollider_List.Count <= 0) isConnected = false;
+        if (connectObjectCollider_List.Count <= 0) isPierce = false;
         // 結合したオブジェクト間の衝突判定の有効化
         Physics.IgnoreCollision(myCollider, breakerCollider, false);
     }
@@ -152,7 +154,7 @@ public class Pierce : MonoBehaviour
             Destroy(fixedJoint);
         }
 
-        isConnected = false;
+        isPierce = false;
         // 結合したオブジェクト間の衝突判定の有効化
         foreach (Collider connectObjectCollider in connectObjectCollider_List)
         {
