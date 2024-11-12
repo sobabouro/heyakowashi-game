@@ -12,9 +12,7 @@ GameObject:
   - component: {fileID: 5248627829647284511}
   - component: {fileID: 832478982504394216}
   - component: {fileID: 3275893705895917736}
-  - component: {fileID: 5653421966118527357}
   - component: {fileID: 574815726060066804}
-  - component: {fileID: 874436751412851059}
   m_Layer: 0
   m_Name: Sphere_hand
   m_TagString: Untagged
@@ -100,19 +98,6 @@ SphereCollider:
   serializedVersion: 2
   m_Radius: 0.5
   m_Center: {x: 0, y: 0, z: 0}
---- !u!114 &5653421966118527357
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3655099359813900876}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4dc53420bc909014d960ef251a712de3, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  port: 50002
 --- !u!114 &574815726060066804
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -125,61 +110,26 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c99cdea318234cd45a0dd39346a0615b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  UpPushEventt:
+  port: 50002
+  ip: 192.168.20.14
+  PressedUpButtonEvents:
     m_PersistentCalls:
       m_Calls: []
-  DownPushEventt:
-    m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 874436751412851059}
-        m_TargetAssemblyTypeName: ObjectManipulator2, Assembly-CSharp
-        m_MethodName: HoldSynchronizedObject
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
-  LeftPushEventt:
+  PressedDownButtonEvents:
     m_PersistentCalls:
       m_Calls: []
-  RightPushEventt:
-    m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 874436751412851059}
-        m_TargetAssemblyTypeName: ObjectManipulator2, Assembly-CSharp
-        m_MethodName: ReleaseSynchronizedObject
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
-  Shoulder1PushEventt:
+  PressedLeftButtonEvents:
     m_PersistentCalls:
       m_Calls: []
-  Shoulder2PushEventt:
+  PressedRightButtonEvents:
     m_PersistentCalls:
       m_Calls: []
---- !u!114 &874436751412851059
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3655099359813900876}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a3c6e063aecbbfe4f8780261aebbbecc, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  SynchronizedObjectTransform: {fileID: 0}
+  PressedShoulder1ButtonEvents:
+    m_PersistentCalls:
+      m_Calls: []
+  PressedShoulder2ButtonEvents:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!1 &5426060844419805523
 GameObject:
   m_ObjectHideFlags: 0
@@ -191,7 +141,6 @@ GameObject:
   - component: {fileID: 3256604270198744330}
   - component: {fileID: 8769707457358881531}
   - component: {fileID: 5775980565041203074}
-  - component: {fileID: 3283164640587808459}
   - component: {fileID: 8172695666989447224}
   m_Layer: 0
   m_Name: Sphere_kata
@@ -266,19 +215,6 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!114 &3283164640587808459
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5426060844419805523}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4dc53420bc909014d960ef251a712de3, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  port: 50000
 --- !u!114 &8172695666989447224
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -291,22 +227,24 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c99cdea318234cd45a0dd39346a0615b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  UpPushEventt:
+  port: 50000
+  ip: 192.168.20.14
+  PressedUpButtonEvents:
     m_PersistentCalls:
       m_Calls: []
-  DownPushEventt:
+  PressedDownButtonEvents:
     m_PersistentCalls:
       m_Calls: []
-  LeftPushEventt:
+  PressedLeftButtonEvents:
     m_PersistentCalls:
       m_Calls: []
-  RightPushEventt:
+  PressedRightButtonEvents:
     m_PersistentCalls:
       m_Calls: []
-  Shoulder1PushEventt:
+  PressedShoulder1ButtonEvents:
     m_PersistentCalls:
       m_Calls: []
-  Shoulder2PushEventt:
+  PressedShoulder2ButtonEvents:
     m_PersistentCalls:
       m_Calls: []
 --- !u!1 &6305281429111538038
@@ -320,7 +258,6 @@ GameObject:
   - component: {fileID: 2861896276260459830}
   - component: {fileID: 4878880399339716334}
   - component: {fileID: 3176546377208316296}
-  - component: {fileID: 6233972535981882815}
   - component: {fileID: 3390051295538696355}
   m_Layer: 0
   m_Name: Sphere_hiji
@@ -395,19 +332,6 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!114 &6233972535981882815
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6305281429111538038}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4dc53420bc909014d960ef251a712de3, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  port: 50001
 --- !u!114 &3390051295538696355
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -420,21 +344,23 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c99cdea318234cd45a0dd39346a0615b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  UpPushEventt:
+  port: 50001
+  ip: 192.168.20.14
+  PressedUpButtonEvents:
     m_PersistentCalls:
       m_Calls: []
-  DownPushEventt:
+  PressedDownButtonEvents:
     m_PersistentCalls:
       m_Calls: []
-  LeftPushEventt:
+  PressedLeftButtonEvents:
     m_PersistentCalls:
       m_Calls: []
-  RightPushEventt:
+  PressedRightButtonEvents:
     m_PersistentCalls:
       m_Calls: []
-  Shoulder1PushEventt:
+  PressedShoulder1ButtonEvents:
     m_PersistentCalls:
       m_Calls: []
-  Shoulder2PushEventt:
+  PressedShoulder2ButtonEvents:
     m_PersistentCalls:
       m_Calls: []

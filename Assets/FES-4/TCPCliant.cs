@@ -6,9 +6,6 @@ using System.Threading;
 using System.Text;
 
 
-
-
-
 #if UNITY_EDITOR
 using System.Net.Sockets;
 #else
@@ -19,31 +16,39 @@ using Windows.Networking.Sockets;
 #endif
 
 
-public class TCPCliant : MonoBehaviour
+public class TCPCliant
 {
-    [SerializeField] private int port = 50000;
-    [SerializeField] private string ip = "192.168.20.14";
-    [SerializeField] private byte[] request_bytes = { 0x01 };
+    // 受信時イベント
+    public event Action<byte[]> onReceiveEvents;
 
-    public event Action<Message> receiveAction;
-    private Queue<Message> _queue = new Queue<Message>();
-    private Message _message;
-
-    private object _lockObject = new object();
-    public void AddReceiveEvent(Action<Message> action)
+    public void AddReceiveEvent(Action<byte[]> action)
     {
-        receiveAction += action;
+        onReceiveEvents += action;
     }
 
 #if UNITY_EDITOR
     private TcpClient _tcpClient = null;
     private NetworkStream _stream = null;
 
-    private void Start()
+    public TCPCliant(int port, string ip)
     {
+        // サーバに接続する。
+        Thread receivedThread = new Thread(() =>
+        {
+            ConnectTcpServer(port, ip);
+        });
+        receivedThread.Start();
+    }
+
+
+    /// <summary>
+    /// サーバに接続する。
+    /// </summary>
+    private void ConnectTcpServer(int port, string ip)
+    {
+        Debug.Log($"TcpClient Request port:{port}");
         try
         {
-            Debug.Log($"TcpClient Request port:{port}");
             // TcpClientを作成し、サーバーと接続する
             // 接続完了するまでブロッキングする
             _tcpClient = new TcpClient(ip, port);
@@ -56,50 +61,41 @@ public class TCPCliant : MonoBehaviour
             _stream.ReadTimeout = 10000;
             _stream.WriteTimeout = 10000;
 
-            Thread sendthread = new Thread(() =>
-            {
-                MessageReceivedTask();
-            });
-            sendthread.Start();
+            // 受信開始
+            MessageReceivTask();
         }
-        catch (System.Exception e)
+        catch (Exception e)
         {
             Debug.LogError(e.ToString());
         }
     }
 
-    private void Update()
-    {
-        SendMessage(request_bytes);
-
-        while (_queue.Count > 0)
-        {
-            lock (_lockObject)
-            {
-                _message = _queue.Dequeue();
-                receiveAction.Invoke(_message);
-            }
-        }
-
-    }
-
+    /// <summary>
+    /// データを送信する。
+    /// </summary>
+    /// <param name="bytes">送信するしたデータ</param>
     public void SendMessage(byte[] bytes)
     {
+        // 接続中なら
         if (_tcpClient != null && _tcpClient.Connected)
         {
-            Thread sendthread = new Thread(() =>
+            Thread sendThread = new Thread(() =>
             {
                 // データを送信
                 _stream.Write(bytes, 0, bytes.Length);
                 _stream.Flush();
-                //Debug.Log("SendMessage");
+                //Debug.Log("TcpClient SendMessage");
             });
-            sendthread.Start();
+            sendThread.Start();
         }
     }
-    private async void MessageReceivedTask()
+
+    /// <summary>
+    /// 接続が切れるまで受信を繰り返す。非同期処理。受信時に登録したイベントを呼び出す。
+    /// </summary>
+    private async void MessageReceivTask()
     {
-        // 接続が切れるまで送受信を繰り返す
+        // 接続が切れるまで受信を繰り返す
         while (_tcpClient != null && _tcpClient.Connected)
         {
             try
@@ -107,25 +103,26 @@ public class TCPCliant : MonoBehaviour
                 // データを受信
                 byte[] buffer = new byte[_tcpClient.ReceiveBufferSize];
                 await _stream.ReadAsync(buffer, 0, buffer.Length);
-                
-                lock (_lockObject)
-                {
-                    _queue.Enqueue(new Message(buffer, System.DateTime.Now));
-                }
-                //Debug.Log("MessageReceived");
+                //Debug.Log("TcpClient ReceivedMessage");
+
+                // 受信時イベントを呼び出す。
+                onReceiveEvents.Invoke(buffer);
             }
             catch (Exception e)
             {
                 Debug.Log(e.ToString());
+                break;
             }
             // クライアントの接続が切れたら
             if (_tcpClient.Client.Poll(1000, SelectMode.SelectRead) && (_tcpClient.Client.Available == 0))
             {
-                Debug.Log("Disconnect: " + _tcpClient.Client.RemoteEndPoint);
-                _tcpClient.Close();
-                _stream = null;
+                Debug.Log("TcpClient Disconnect: " + _tcpClient.Client.RemoteEndPoint);
+                break;
             }
         }
+        // 接続を閉じる
+        _stream?.Close();
+        _tcpClient?.Close();
         Debug.Log("TcpClient Close"); 
     }
 #else
@@ -135,60 +132,70 @@ public class TCPCliant : MonoBehaviour
 
     private const int MAX_BUFFER_SIZE = 1024;
     private byte[] _buffer = new byte[MAX_BUFFER_SIZE];
-    private bool isStopMessageReceivedTask = false;
-    private void Start()
+    private bool _isStopMessageReceivedTask = false;
+
+    public TCPCliant(int port, string ip)
     {
         Task.Run(async () =>
         {
-            _socket = new StreamSocket();
-            UnityEngine.WSA.Application.InvokeOnAppThread(() => { Debug.Log($"TcpClient Request port:{port}"); }, true);
-            await _socket.ConnectAsync(new HostName(ip), port.ToString());
-            UnityEngine.WSA.Application.InvokeOnAppThread(() => { Debug.Log($"TcpClient Connect"); }, true);
-            _inputStream = _socket.InputStream.AsStreamForRead();
-            _outputStream = _socket.OutputStream.AsStreamForWrite();
-            MessageReceivedTask(_inputStream);
+            try
+            {
+                UnityEngine.WSA.Application.InvokeOnAppThread(() => { Debug.Log($"TcpClient Request port:{port}, Now waiting..."); }, true);
+                // TcpClientを作成し、サーバーと接続する
+                // 接続完了するまでブロッキングする
+                _socket = new StreamSocket();
+                await _socket.ConnectAsync(new HostName(ip), port.ToString());
+                UnityEngine.WSA.Application.InvokeOnAppThread(() => { Debug.Log($"TcpClient Connect"); }, true);
+                // 入出力Streamを取得する
+                _inputStream = _socket.InputStream.AsStreamForRead();
+                _outputStream = _socket.OutputStream.AsStreamForWrite();
+                // 受信開始
+                MessageReceivTask();
+            }
+            catch (Exception e)
+            {
+                Debug.LogError(e.ToString());
+            }
         });
 
     }
 
-    private void Update()
-    {
-        SendMessage(request_bytes); 
-
-        lock (_lockObject)
-        {
-            while (_queue.Count > 0)
-            {
-                _message = _queue.Dequeue();
-                receiveAction.Invoke(_message);
-            }
-        }
-    }
-
+    
+    /// <summary>
+    /// データを送信する。
+    /// </summary>
+    /// <param name="bytes">送信するしたデータ</param>
     public void SendMessage(byte[] bytes)
     {
-        if (_outputStream != null) Task.Run(async () =>
+        // 接続中なら
+        if (_outputStream != null)
         {
-            await _outputStream.WriteAsync(bytes);
-            await _outputStream.FlushAsync();
-            // UnityEngine.WSA.Application.InvokeOnAppThread(() => { Debug.Log("SendMessage"); }, true);
-        });
+            Task.Run(async () => {
+                // データを送信
+                await _outputStream.WriteAsync(bytes);
+                await _outputStream.FlushAsync();
+                // UnityEngine.WSA.Application.InvokeOnAppThread(() => { Debug.Log("TcpClient SendMessage"); }, true);
+            });
+        }
     }
-
-    private async void MessageReceivedTask(Stream inputStream)
+        
+    /// <summary>
+    /// 接続が切れるまで受信を繰り返す。非同期処理。受信時に登録したイベントを呼び出す。
+    /// </summary>
+    private async void MessageReceivTask()
     {
-        while (!isStopMessageReceivedTask)
+        // 接続が切れるまで送受信を繰り返す
+        while (_inputStream != null && !_isStopMessageReceivedTask)
         {
-            if (inputStream == null) break;
 
             try
             {
-                await inputStream.ReadAsync(_buffer, 0, MAX_BUFFER_SIZE);
-                lock (_lockObject)
-                {
-                    _queue.Enqueue(new Message(_buffer, System.DateTime.Now));
-                }
-                // UnityEngine.WSA.Application.InvokeOnAppThread(() => { Debug.Log("MessageReceived"); }, true);
+                // データを受信
+                await _inputStream.ReadAsync(_buffer, 0, MAX_BUFFER_SIZE);
+                // UnityEngine.WSA.Application.InvokeOnAppThread(() => { Debug.Log("TcpClient ReceivedMessage"); }, true);
+
+                // 受信時イベントを呼び出す。
+                onReceiveEvents.Invoke(_buffer);
             }
             catch (Exception e)
             {
@@ -196,13 +203,11 @@ public class TCPCliant : MonoBehaviour
                 break;
             }
         }
-        UnityEngine.WSA.Application.InvokeOnAppThread(() => { Debug.Log("TcpClient Close"); }, true);
-    }
-    public void OnDestroy()
-    {
-        isStopMessageReceivedTask = true;
+        // 接続を閉じる
         _socket?.Dispose();
         _inputStream?.Close();
+        _outputStream?.Close();
+        UnityEngine.WSA.Application.InvokeOnAppThread(() => { Debug.Log("TcpClient Close"); }, true);
     }
 #endif
 }
