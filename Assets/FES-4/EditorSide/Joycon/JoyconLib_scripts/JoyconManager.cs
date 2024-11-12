@@ -92,7 +92,6 @@ public class JoyconManager : MonoBehaviour
 				IntPtr handle = HIDapi.hid_open_path(enumerate.path);
 				HIDapi.hid_set_nonblocking(handle, 1);
 				j.Add(new Joycon(handle, EnableIMU, EnableLocalize & EnableIMU, 0.05f, isLeft));
-				j[i].SetUDP(50000 + i);
 				++i;
 			}
 			ptr = enumerate.next;
@@ -105,7 +104,6 @@ public class JoyconManager : MonoBehaviour
 
         for (int i = 0; i < j.Count; ++i)
 		{
-			Debug.Log (i);
 			Joycon jc = j [i];
 			byte LEDs = 0x0;
 			LEDs |= (byte)(0x1 << i);
