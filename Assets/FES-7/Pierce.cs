@@ -14,6 +14,10 @@ public class Pierce : MonoBehaviour
     private bool canConnect;
     // 結合している？
     private bool isConnected = false;
+    // 刺突結合している時の結合相手のオブジェクト
+    private List<Collider> connectObjectCollider_List;
+    // 結合座標計算使う係数の大きさ
+    private float frame = 2;
 
     // オブジェクト破壊時に呼び出すイベント登録
     public UnityEvent onBreakEvent;
@@ -21,17 +25,27 @@ public class Pierce : MonoBehaviour
     public UnityEvent onConnectEvent;
 
     // 結合する座標の設定
-    private void DecideConnectPosition()
+    private void DecideConnectPosition(Breaker breaker)
     {
+        Vector3 moveDirection = breaker.GetMoveDirection();
 
+        Vector3 movePosition = this.gameObject.transform.position + (-frame * moveDirection);
+
+        this.gameObject.transform.position = movePosition;
+    }
+
+    private void OnDestroy()
+    {
+        Collider myCollider = this.gameObject.GetComponent<Collider>();
+        DisconnectAll(myCollider);
     }
 
     /// <summary>
-    /// 刺突属性による結合の開始
+    /// 刺突属性の呼び出し
     /// </summary>
     /// <param name="breaker">壊すものクラス</param>
     /// <returns>回復する耐久値、スコア</returns>
-    public (int, int) Connect(Breaker breaker)
+    public void CallPierce(Breaker breaker, Breakable breakable)
     {
         // コライダーの取得
         Collider breakerCollider = breaker.gameObject.GetComponent<Collider>();
@@ -42,43 +56,109 @@ public class Pierce : MonoBehaviour
         {
             // 破壊時に呼び出されるイベントを呼び出す
             onBreakEvent?.Invoke();
-            return (0, 0);
+            breakable.SetScore(0);
         }
 
         // 既に結合しているオブジェクトに対して、刺突属性で再び壊した場合
-        if(isConnected)
+        if (isConnected)
         {
-            isConnected = false;
-            // 結合したオブジェクト間の衝突判定の有効化
-            Physics.IgnoreCollision(myCollider, breakerCollider, false);
+            DisconnectAll(myCollider);
 
             // 破壊時に呼び出されるイベントを呼び出す
             onBreakEvent?.Invoke();
-
-            return (0, 0);
+            breakable.SetScore(0);
         }
 
-        /*
-                // ここで結合するオブジェクトの座標を調整する
-        */
+        // 刺突結合の実行
+        Connect(breaker, myCollider, breakerCollider);
 
+        // 結合後の耐久値とスコアを設定する
+        breakable.SetDurability(durabilityRecoveryAmount);
+        breakable.SetScore(scoreRecoveryAmount);
+    }
+
+    /// <summary>
+    /// 刺突属性による結合の開始
+    /// </summary>
+    /// <param name="breaker">壊すものクラス</param>
+    /// <returns></returns>
+    public void Connect(Breaker breaker, Collider myCollider, Collider breakerCollider)
+    {
         // オブジェクトの動きの依存対象の設定
-        FixedJoint fixedJoint = this.gameObject.GetComponent<FixedJoint>(); ;
-        if (fixedJoint == null)
+        // 既に結合しているオブジェクトの場合
+        if (connectObjectCollider_List.Contains(breakerCollider))
         {
-            fixedJoint = this.gameObject.AddComponent<FixedJoint>();
+            return;
         }
-        fixedJoint.connectedBody = breaker.GetRigidbody();
 
-        isConnected = true;
+        connectObjectCollider_List.Add(breakerCollider);
 
         // 結合したオブジェクト間の衝突判定の無効化
         Physics.IgnoreCollision(myCollider, breakerCollider, true);
 
-        // 結合時に呼び出されるイベントを呼び出す
-        onConnectEvent?.Invoke();
+        DecideConnectPosition(breaker);
 
-        // 回復する耐久値を返す
-        return (durabilityRecoveryAmount, scoreRecoveryAmount);
+        FixedJoint fixedJoint = this.gameObject.AddComponent<FixedJoint>();
+        fixedJoint.connectedBody = breaker.GetRigidbody();
+
+        isConnected = true;
+
+        // 結合時に呼び出されるイベントを呼び出す
+        onConnectEvent?.Invoke();  
+    }
+
+    /// <summary>
+    /// 刺突属性による結合の解除
+    /// </summary>
+    /// <param name="breaker">壊すものクラス</param>
+    /// <returns></returns>
+    private void DisConnect(Breaker breaker, Collider myCollider, Collider breakerCollider)
+    {
+        // オブジェクトの動きの依存対象の解除
+        FixedJoint[] fixedJoint_Array = this.gameObject.GetComponents<FixedJoint>();
+        Rigidbody rigidbody = breaker.GetRigidbody();
+
+        // FixedJointを全てから解除対象のみ選択
+        foreach (FixedJoint fixedJoint in fixedJoint_Array)
+        {
+            if (fixedJoint.connectedBody == rigidbody)
+            {
+                Destroy(fixedJoint);
+            }
+        }
+
+        connectObjectCollider_List.Remove(breakerCollider);
+
+        if (connectObjectCollider_List.Count <= 0) isConnected = false;
+        // 結合したオブジェクト間の衝突判定の有効化
+        Physics.IgnoreCollision(myCollider, breakerCollider, false);
+    }
+
+    /// <summary>
+    /// 刺突属性による結合の解除
+    /// </summary>
+    /// <param name="breaker">壊すものクラス</param>
+    /// <returns></returns>
+    private void DisconnectAll(Collider myCollider)
+    {
+        if (connectObjectCollider_List.Count <= 0) return;
+
+        // FixedJointを全て取得し、
+        FixedJoint[] fixedJoint_List = this.gameObject.GetComponents<FixedJoint>();
+
+        // オブジェクトの動きの依存対象の解除
+        foreach (FixedJoint fixedJoint in fixedJoint_List)
+        {
+            Destroy(fixedJoint);
+        }
+
+        isConnected = false;
+        // 結合したオブジェクト間の衝突判定の有効化
+        foreach (Collider connectObjectCollider in connectObjectCollider_List)
+        {
+            Physics.IgnoreCollision(myCollider, connectObjectCollider, false);
+        }
+
+        connectObjectCollider_List.Clear();
     }
 }
