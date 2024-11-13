@@ -1,62 +1,100 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.AI;
 using UnityEngine.Events;
 
 public class Slash : MonoBehaviour
 {
-    [SerializeField, Tooltip("c‚èØ’f‰Â”\‰ñ”")]
-    private int _numberOfCanSlash = 2; 
-    [SerializeField, Tooltip("Ø’f–Ê—p‚Ìƒ}ƒeƒŠƒAƒ‹")]
-    private Material _surfaceMat; 
-    [SerializeField, Tooltip("Ø’f‚³‚ê‚½Œã‚ÌƒIƒuƒWƒFƒNƒg")]
-    private GameObject _dividedObjectPrefab;
+    [SerializeField, Tooltip("æ®‹ã‚Šåˆ‡æ–­å¯èƒ½å›æ•°")]
+    private int _numberOfCanSlash = 2;
+    [SerializeField, Tooltip("åˆ‡æ–­é¢ç”¨ã®ãƒãƒ†ãƒªã‚¢ãƒ«")]
+    private Material _cutSurfaceMaterial; 
+    [SerializeField, Tooltip("åˆ‡æ–­ã•ã‚ŒãŸå¾Œã®ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆ")]
+    private GameObject _cutObjectPrefab;
 
-    // ƒIƒuƒWƒFƒNƒgØ’f‚ÉŒÄ‚Ño‚·ƒCƒxƒ“ƒg“o˜^
+    // ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆåˆ‡æ–­æ™‚ã«å‘¼ã³å‡ºã™ã‚¤ãƒ™ãƒ³ãƒˆç™»éŒ²
     public UnityEvent onSlashEvent; 
-    // ƒIƒuƒWƒFƒNƒg”j‰ó‚ÉŒÄ‚Ño‚·ƒCƒxƒ“ƒg“o˜^
+    // ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆç ´å£Šæ™‚ã«å‘¼ã³å‡ºã™ã‚¤ãƒ™ãƒ³ãƒˆç™»éŒ²
     public UnityEvent onBreakEvent;
 
+    public void SetNumberOfCanSlash(int vlaue)
+    {
+        _numberOfCanSlash = vlaue;
+    }
+
     /// <summary>
-    /// Ø’fƒNƒ‰ƒX‚ÌŒÄ‚Ño‚µ‚É‚Í‚¶‚ß‚ÉŒÄ‚Ño‚³‚êAActSubdivide‚ÉØ’f‚³‚¹‚é
+    /// åˆ‡æ–­ã‚¯ãƒ©ã‚¹ã®å‘¼ã³å‡ºã—æ™‚ã«ã¯ã˜ã‚ã«å‘¼ã³å‡ºã•ã‚Œã€ActSubdivideã«åˆ‡æ–­ã•ã›ã‚‹
     /// </summary>
-    /// <param name="breaker">UŒ‚‚µ‚½‘¤‚Ìî•ñ</param>
+    /// <param name="breaker">æ”»æ’ƒã—ãŸå´ã®æƒ…å ±</param>
     /// <returns></returns>
     public void CallSlash(Breaker breaker)
     {
-        /*if (_numberOfCanSlash <= 0)
+        if (_numberOfCanSlash <= 0)
         {
             Destroy(this.gameObject);
-            // ”j‰ó‚ÌƒCƒxƒ“ƒg‚ğŒÄ‚Ño‚·
+            // ç ´å£Šæ™‚ã®ã‚¤ãƒ™ãƒ³ãƒˆã‚’å‘¼ã³å‡ºã™
             onBreakEvent?.Invoke();
         }
         else
         {
-            // ¶¬‚µ‚½ƒIƒuƒWƒFƒNƒg‚ÆŠ±Â‚µ‚È‚¢‚æ‚¤‚ÉCollider‚ğ–³Œø‰»
+            // ç”Ÿæˆã—ãŸã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã¨å¹²æ¸‰ã—ãªã„ã‚ˆã†ã«Colliderã‚’ç„¡åŠ¹åŒ–
             this.gameObject.GetComponent<Collider>().enabled = false;
-            // (Mesh mesh1, Mesh mesh2) = ActSubdivide.Subdivide(this.gameObject, breaker.GetCutter());
-            // Ø’f‚³‚ê‚½Œã‚ÌƒIƒuƒWƒFƒNƒg‚ğ¶¬‚·‚é
-            // CreateDividedObject(transform.position, mesh1);
-            // CreateDividedObject(transform.position, mesh2); 
-            
+
+            Material[] materials = this.gameObject.GetComponent<MeshRenderer>().sharedMaterials;
+            Material[] newMaterials;
+            // åˆ‡æ–­å‰ã®ãƒãƒ†ãƒªã‚¢ãƒ«ãŒåˆ‡æ–­é¢ç”¨ã®ãƒãƒ†ãƒªã‚¢ãƒ«ã‚’æŒã£ã¦ã„ãªã‘ã‚Œã°ï¼Œãƒãƒ†ãƒªã‚¢ãƒ«ã‚’å‰²ã‚Šå½“ã¦ã‚‹
+            Material lastMaterial = materials[materials.Length - 1];
+            bool canAddNewMaterial = lastMaterial.name == _cutSurfaceMaterial?.name;
+            if (canAddNewMaterial)
+            {
+                newMaterials = new Material[materials.Length + 1];
+                materials.CopyTo(newMaterials, 0);
+                newMaterials[materials.Length] = _cutSurfaceMaterial;
+            }
+            else
+            {
+                newMaterials = materials;
+            }
+
+            // å‚ç…§ã‚’å–å¾—
+            Transform transform = this.gameObject.transform;
+            Mesh mesh = this.gameObject.GetComponent<MeshFilter>().mesh;
+            // åˆ‡æ–­ã—ãŸã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã®ãƒ¡ãƒƒã‚·ãƒ¥ã‚’è¨ˆç®—ã™ã‚‹ã€‚
+            (Mesh rightMesh, Mesh leftMesh) = ActSubdivide.Subdivide(mesh, transform, breaker.GetCutter(), canAddNewMaterial);
+
+            // å¤±æ•—
+            if (rightMesh == null || leftMesh == null)ã€€return;
+
+            // åˆ‡æ–­ã•ã‚ŒãŸå¾Œã®ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã‚’ç”Ÿæˆã™ã‚‹
+            CreateCutObject(transform, rightMesh, newMaterials);
+            CreateCutObject(transform, leftMesh, newMaterials); 
+
             Destroy(this.gameObject);
-            // Ø’f‚ÌƒCƒxƒ“ƒg‚ğŒÄ‚Ño‚·
+            // åˆ‡æ–­æ™‚ã®ã‚¤ãƒ™ãƒ³ãƒˆã‚’å‘¼ã³å‡ºã™
             onSlashEvent?.Invoke();
-        }*/
+        }
     }
 
     /// <summary>
-    /// Ø’f‚³‚ê‚½Œã‚ÌƒIƒuƒWƒFƒNƒg‚ğ¶¬‚·‚é
+    /// åˆ‡æ–­ã•ã‚ŒãŸå¾Œã®ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã‚’ç”Ÿæˆã™ã‚‹
     /// </summary>
-    /// <param name="originPosition">Œ³ƒIƒuƒWƒFƒNƒg‚ÌÀ•W</param>
-    /// <param name="newMesh">ì¬‚µ‚½ƒƒbƒVƒ…</param>
+    /// <param name="originTransform">å…ƒã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã®Transform</param>
+    /// <param name="newMesh">ä½œæˆã—ãŸãƒ¡ãƒƒã‚·ãƒ¥</param>
+    /// <param name="newMaterials">å‰²ã‚Šå½“ã¦ã‚‹ãƒãƒ†ãƒªã‚¢ãƒ«</param>
     /// <returns></returns>
-    public void CreateDividedObject(Vector3 originPosition, Mesh newMesh)
+    public void CreateCutObject(Transform originTransform, Mesh newMesh, Material[] newMaterials)
     {
-        GameObject dividedObject = Instantiate(_dividedObjectPrefab, originPosition, Quaternion.identity);
-        Mesh mesh = dividedObject.GetComponent<Mesh>();
-        // ‚±‚±‚Åì¬‚µ‚½ƒƒbƒVƒ…‚ğ‘ã“ü
-        // À•W‚ğ’²®‚µ‚½‚èetc
+        GameObject polygonInfo_subject = Instantiate(_cutObjectPrefab, originTransform.position, originTransform.rotation, null);
+        // Meshã®è¨­å®š
+        polygonInfo_subject.GetComponent<MeshFilter>().mesh = newMesh;
+        // ãƒãƒ†ãƒªã‚¢ãƒ«ã®è¨­å®š
+        polygonInfo_subject.GetComponent<MeshRenderer>().sharedMaterials = newMaterials;
+        // MeshColliderã®è¨­å®š
+        MeshCollider meshCollider = polygonInfo_subject.GetComponent<MeshCollider>();
+        if(meshCollider)
+        {
+            polygonInfo_subject.GetComponent<MeshCollider>().sharedMesh = newMesh;
+        }
+        polygonInfo_subject.GetComponent<Slash>().SetNumberOfCanSlash(_numberOfCanSlash-1);
     }
 }
