@@ -22,10 +22,12 @@ public class EquipWeapons : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+#if UNITY_EDITOR
         if (Input.GetMouseButtonDown(0))
         {
             EquipWeapon();
         }
+#endif
     }
 
     public void EquipWeapon()
@@ -50,10 +52,6 @@ public class EquipWeapons : MonoBehaviour
 
             // 武器の指定
             equipWeapon = weaponCollider.gameObject;
-
-            // 座標の調整
-            equipWeapon.gameObject.transform.position = this.gameObject.transform.position;
-            equipWeapon.gameObject.transform.rotation = this.gameObject.transform.rotation;
 
             // オブジェクトの動きの依存対象の設定（連結の実行）
             FixedJoint fixedJoint = this.gameObject.AddComponent<FixedJoint>();
