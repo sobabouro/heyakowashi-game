@@ -4052,7 +4052,19 @@ MonoBehaviour:
   _addImpulse: 0.5
   onBreakEvent:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 9209773299084110659}
+        m_TargetAssemblyTypeName: PlaySoundTargetPosition, Assembly-CSharp
+        m_MethodName: PlaySoundAtPosition
+        m_Mode: 2
+        m_Arguments:
+          m_ObjectArgument: {fileID: 8300000, guid: f77fd93b551749c4194dfaec6cf7ca6e, type: 3}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.AudioClip, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!114 &6470194113002675733
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4187,6 +4199,7 @@ GameObject:
   - component: {fileID: 6470194113002675732}
   - component: {fileID: 9209773299084110656}
   - component: {fileID: 9209773299084110657}
+  - component: {fileID: 9209773299084110659}
   m_Layer: 0
   m_Name: BreakableCube
   m_TagString: BreakableObject
@@ -4723,3 +4736,17 @@ MeshCollider:
   m_Convex: 1
   m_CookingOptions: 30
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!114 &9209773299084110659
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6470194113002675742}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0fd6a10fa2f521f4b910e6149c806048, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  position: {x: 0, y: 0, z: 0}
+  targetPositionFromObject: {fileID: 6470194113002675742}
