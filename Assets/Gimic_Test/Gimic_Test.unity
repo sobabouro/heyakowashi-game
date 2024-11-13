@@ -4058,7 +4058,7 @@ MonoBehaviour:
         m_MethodName: PlaySoundAtPosition
         m_Mode: 2
         m_Arguments:
-          m_ObjectArgument: {fileID: 8300000, guid: f77fd93b551749c4194dfaec6cf7ca6e, type: 3}
+          m_ObjectArgument: {fileID: 8300000, guid: 02045d8c0f1c200478c0b35f99d5f060, type: 3}
           m_ObjectArgumentAssemblyTypeName: UnityEngine.AudioClip, UnityEngine
           m_IntArgument: 0
           m_FloatArgument: 0
@@ -4694,10 +4694,34 @@ MonoBehaviour:
   canConnect: 1
   onBreakEvent:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 9209773299084110659}
+        m_TargetAssemblyTypeName: PlaySoundTargetPosition, Assembly-CSharp
+        m_MethodName: PlaySoundAtPosition
+        m_Mode: 2
+        m_Arguments:
+          m_ObjectArgument: {fileID: 8300000, guid: 5328f5fef4eaf4348adaeb19ab831226, type: 3}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.AudioClip, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
   onConnectEvent:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 9209773299084110659}
+        m_TargetAssemblyTypeName: PlaySoundTargetPosition, Assembly-CSharp
+        m_MethodName: PlaySoundAtPosition
+        m_Mode: 2
+        m_Arguments:
+          m_ObjectArgument: {fileID: 8300000, guid: 17a082c780822f54b98daff7aa122efe, type: 3}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.AudioClip, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
   onDisconnectEvent:
     m_PersistentCalls:
       m_Calls: []
@@ -4718,10 +4742,34 @@ MonoBehaviour:
   _cutObjectPrefab: {fileID: 0}
   onSlashEvent:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 9209773299084110659}
+        m_TargetAssemblyTypeName: PlaySoundTargetPosition, Assembly-CSharp
+        m_MethodName: PlaySoundAtPosition
+        m_Mode: 2
+        m_Arguments:
+          m_ObjectArgument: {fileID: 8300000, guid: 345421c3a88a4504680c981ae515f169, type: 3}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.AudioClip, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
   onBreakEvent:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 9209773299084110659}
+        m_TargetAssemblyTypeName: PlaySoundTargetPosition, Assembly-CSharp
+        m_MethodName: PlaySoundAtPosition
+        m_Mode: 2
+        m_Arguments:
+          m_ObjectArgument: {fileID: 8300000, guid: 5328f5fef4eaf4348adaeb19ab831226, type: 3}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.AudioClip, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!64 &9209773299084110658
 MeshCollider:
   m_ObjectHideFlags: 0
