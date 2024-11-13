@@ -7,14 +7,17 @@ public class Effect : MonoBehaviour
     [SerializeField, Tooltip("発生させるエフェクト(パーティクル)")]
     private ParticleSystem particle;
 
+    [SerializeField, Tooltip("エフェクトを発生させる対象のオブジェクトリスト")]
+    private List<GameObject> targetObjects; // インスペクターで指定可能なオブジェクトリスト
+
     /// <summary>
     /// 衝突した時
     /// </summary>
     /// <param name="collision"></param>
     private void OnCollisionEnter(Collision collision)
     {
-        // 当たった相手が"BreakableObject"タグを持っていたら
-        if (collision.gameObject.tag == "BreakableObject")
+        // 衝突したオブジェクトが指定リストに含まれている場合
+        if (targetObjects.Contains(collision.gameObject))
         {
             // 衝突地点を取得
             ContactPoint contact = collision.contacts[0];
@@ -36,4 +39,5 @@ public class Effect : MonoBehaviour
             Destroy(newParticle.gameObject, newParticle.main.duration);
         }
     }
+
 }

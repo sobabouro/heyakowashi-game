@@ -2865,6 +2865,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   particle: {fileID: 6417061726409993827, guid: 0af64c210399df24ab52cf6799b7117e, type: 3}
+  targetObjects:
+  - {fileID: 6470194113214061647}
 --- !u!1001 &1035396528
 PrefabInstance:
   m_ObjectHideFlags: 0
