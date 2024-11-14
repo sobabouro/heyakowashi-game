@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Events;
 
 // breakable.cs で定義する
 // public enum Type { plane, slash, crash, pierce }
@@ -18,6 +19,8 @@ public class Breaker : MonoBehaviour
     private Vector3 _prePosition;  // 1フレーム前の座標;
     private Vector3 _nowPosition;  // 現在の座標;
     private Plane _cutter;         // 切断する平面;
+
+    public UnityEvent onAttackEvent;
 
     // アクセサ
     public Type Type { get { return _type; } }
@@ -83,6 +86,9 @@ public class Breaker : MonoBehaviour
         // 衝突相手の速度を取得
         Rigidbody otherRigitbody = collision.gameObject.GetComponent<Rigidbody>();
         int finalATK = CalcATK(otherRigitbody.velocity);
+
+        // 攻撃時のイベント発生
+        onAttackEvent?.Invoke();
 
         // 相手に攻撃
         breakable.ReciveAttack(finalATK, this);
