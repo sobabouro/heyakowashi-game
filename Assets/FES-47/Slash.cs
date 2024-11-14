@@ -7,19 +7,24 @@ public class Slash : MonoBehaviour
 {
     [SerializeField, Tooltip("残り切断可能回数")]
     private int _numberOfCanSlash = 2;
-    [SerializeField, Tooltip("切断面用のマテリアル")]
-    private Material _cutSurfaceMaterial; 
     [SerializeField, Tooltip("切断された後のオブジェクト")]
     private GameObject _cutObjectPrefab;
+    [SerializeField, Tooltip("切断面用のマテリアル")]
+    private Material _cutSurfaceMaterial; 
 
     // オブジェクト切断時に呼び出すイベント登録
     public UnityEvent onSlashEvent; 
     // オブジェクト破壊時に呼び出すイベント登録
     public UnityEvent onBreakEvent;
 
+    // アクセサ
     public void SetNumberOfCanSlash(int vlaue)
     {
         _numberOfCanSlash = vlaue;
+    }
+    public void SetCutObjectPrefab(GameObject prefab)
+    {
+        _cutObjectPrefab = prefab;
     }
 
     /// <summary>
@@ -34,45 +39,56 @@ public class Slash : MonoBehaviour
             Destroy(this.gameObject);
             // 破壊時のイベントを呼び出す
             onBreakEvent?.Invoke();
+            return;
+        }
+        // 切断された後のオブジェクトに割り当てるマテリアルの作成
+        Material[] materials = this.gameObject.GetComponent<MeshRenderer>().sharedMaterials;
+        Material[] newMaterials;
+        // 断面のマテリアルを持っていない場合、追加する
+        bool canAddCutSurfaceMaterial = false;
+        if (_cutSurfaceMaterial != null)
+        {
+            if(materials[materials.Length-1].name != _cutSurfaceMaterial.name)
+            {
+                canAddCutSurfaceMaterial = true;
+            }
+        }
+        if (canAddCutSurfaceMaterial)
+        {
+            newMaterials = new Material[materials.Length + 1];
+            materials.CopyTo(newMaterials, 0);
+            newMaterials[materials.Length] = _cutSurfaceMaterial;
         }
         else
         {
-            // 生成したオブジェクトと干渉しないようにColliderを無効化
-            this.gameObject.GetComponent<Collider>().enabled = false;
-
-            Material[] materials = this.gameObject.GetComponent<MeshRenderer>().sharedMaterials;
-            Material[] newMaterials;
-            // 切断前のマテリアルが切断面用のマテリアルを持っていなければ，マテリアルを割り当てる
-            Material lastMaterial = materials[materials.Length - 1];
-            bool canAddNewMaterial = lastMaterial.name == _cutSurfaceMaterial?.name;
-            if (canAddNewMaterial)
-            {
-                newMaterials = new Material[materials.Length + 1];
-                materials.CopyTo(newMaterials, 0);
-                newMaterials[materials.Length] = _cutSurfaceMaterial;
-            }
-            else
-            {
-                newMaterials = materials;
-            }
-
-            // 参照を取得
-            Transform transform = this.gameObject.transform;
-            Mesh mesh = this.gameObject.GetComponent<MeshFilter>().mesh;
-            // 切断したオブジェクトのメッシュを計算する。
-            (Mesh rightMesh, Mesh leftMesh) = ActSubdivide.Subdivide(mesh, transform, breaker.GetCutter(), canAddNewMaterial);
-
-            // 失敗
-            if (rightMesh == null || leftMesh == null)　return;
-
-            // 切断された後のオブジェクトを生成する
-            CreateCutObject(transform, rightMesh, newMaterials);
-            CreateCutObject(transform, leftMesh, newMaterials); 
-
-            Destroy(this.gameObject);
-            // 切断時のイベントを呼び出す
-            onSlashEvent?.Invoke();
+            newMaterials = materials;
         }
+
+        // メッシュを計算に必要な参照を取得
+        Transform transform = this.gameObject.transform;
+        Mesh mesh = this.gameObject.GetComponent<MeshFilter>().mesh;
+        // 切断された後のオブジェクトに割り当てるメッシュを計算する。
+        (Mesh rightMesh, Mesh leftMesh) = ActSubdivide.Subdivide(mesh, transform, breaker.GetCutter(), canAddCutSurfaceMaterial);
+
+        // 失敗
+        if (rightMesh == null || leftMesh == null)
+        {
+            Debug.Log("メッシュの計算ができませんでした。");
+            return;
+        }
+
+        // 生成したオブジェクトと干渉しないようにColliderを無効化
+        this.gameObject.GetComponent<Collider>().enabled = false;
+
+        // 切断された後のオブジェクトを生成する
+        CreateCutObject(transform, rightMesh, newMaterials);
+        CreateCutObject(transform, leftMesh, newMaterials);
+        // 切られた元のオブジェクトを破棄する
+        Destroy(this.gameObject);
+        
+        // 切断時のイベントを呼び出す
+        onSlashEvent?.Invoke();
+
     }
 
     /// <summary>
@@ -93,8 +109,11 @@ public class Slash : MonoBehaviour
         MeshCollider meshCollider = polygonInfo_subject.GetComponent<MeshCollider>();
         if(meshCollider)
         {
-            polygonInfo_subject.GetComponent<MeshCollider>().sharedMesh = newMesh;
+            meshCollider.sharedMesh = newMesh;
         }
-        polygonInfo_subject.GetComponent<Slash>().SetNumberOfCanSlash(_numberOfCanSlash-1);
+        // Slashの再設定
+        Slash slash = polygonInfo_subject.GetComponent<Slash>();
+        slash?.SetNumberOfCanSlash(_numberOfCanSlash-1);
+        slash?.SetCutObjectPrefab(_cutObjectPrefab);
     }
 }
