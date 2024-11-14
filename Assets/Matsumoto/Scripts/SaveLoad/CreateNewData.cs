@@ -5,14 +5,21 @@ using UnityEngine;
 public class CreateNewData : MonoBehaviour
 {
     private SaveData saveData = new SaveData();
-
-    void Start()
+    [SerializeField]
+    public bool debugFlug;
+    void Awake()
     {
-        // Debug用データ
-        CreateDebugSaveData();
-
-        // 正規実行用データ
-        // CreateSaveData();
+        if (debugFlug)
+        {
+            Debug.Log("Debug開始!");
+            // Debug用データ
+            CreateDebugSaveData();
+        }
+        else
+        {
+            // 正規実行用データ
+            CreateSaveData();
+        }
     }
 
     public SaveData GetSaveData()
@@ -44,5 +51,13 @@ public class CreateNewData : MonoBehaviour
             JsonUtility.FromJsonOverwrite(data, saveData);
             Debug.Log(saveData.GetJsonData());
         }
+        else
+        {
+            ScoreData scoreData_empty = new ScoreData(0, "");
+            List<ScoreData> scoreDataList = new List<ScoreData>();
+            scoreDataList.Add(scoreData_empty);
+            saveData.SetScoreDataList(scoreDataList);
+        }
+
     }
 }

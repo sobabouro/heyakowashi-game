@@ -27,15 +27,22 @@ public class ResultView_Test : MonoBehaviour
     [SerializeField]
     private CreateNewData createNewData;
 
-    private List<ScoreData> scoreDataList;
+    // グレードを表示するオブジェクト
+    [SerializeField]
+    private Grade grade;
+
+    private List<ScoreData> scoreDataList = new List<ScoreData>();
 
     private ScoreData scoreData;
 
     private int playerRankingIndex;
 
+    [SerializeField]
+    private bool deleateDataFlug = false;
+
     void Start()
     {
-        DeleteData();
+        if(deleateDataFlug)  DeleteData();
         playerScore.SetText("");
         playerComment.SetText("");
         InitializeScoreData();
@@ -52,7 +59,7 @@ public class ResultView_Test : MonoBehaviour
     private void ShowScore()
     {
         playerScore.SetText(scoreData.GetScore().ToString());
-        
+        grade.ShowGrade(scoreData.GetScore());
     }
 
     // 現在保存しているのJSONデータを表示する
@@ -73,6 +80,7 @@ public class ResultView_Test : MonoBehaviour
     // 今回のプレイのuserCommentを設定する
     public void SetUserComment(string userComment)
     {
+        if (userComment == null) userComment = "";
         playerComment.SetText(userComment);
         scoreData.SetUserComment(userComment);
         scoreDataList[playerRankingIndex] = scoreData;
@@ -96,6 +104,7 @@ public class ResultView_Test : MonoBehaviour
     {
         Debug.Log("SaveDataDeleate!");
         PlayerPrefs.DeleteKey("PlayerData");
+        createNewData.GetSaveData().SetScoreDataList(new List<ScoreData>());
     }
 
     // ScoreDataの初期化
@@ -123,8 +132,10 @@ public class ResultView_Test : MonoBehaviour
     private void ShowRanking3Score()
     {
         SortScoreDataList();
-        for (int i = 0; i < 3; i++)
+        Debug.Log(scoreDataList[0].GetScore());
+        for (int i = 0; i < 3 && i < scoreDataList.Count ; i++)
         {
+            Debug.Log("Ranking" + (i+1) + " : " + scoreDataList[i].GetScore());
             rankingScoreList[i].SetText(scoreDataList[i].GetScore().ToString());
         }
     }

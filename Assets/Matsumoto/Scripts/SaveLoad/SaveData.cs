@@ -7,7 +7,7 @@ using System;
 public class SaveData : object
 {
     [SerializeField]
-    private List<ScoreData> scoreDataList = new List<ScoreData>();
+    private List<ScoreData> scoreDataList;
 
     public void SetScoreDataList(List<ScoreData> scoreDataList)
     {
