@@ -47,7 +47,7 @@ public class Breakable : MonoBehaviour
         _resists.Add(Type.pierce, _pierceResist);
         _resists.Add(Type.plane, 0);
         // 参照取得
-        //_slash = GetComponent<Slash>();
+        _slash = GetComponent<Slash>();
         _crash = GetComponent<Crash>();
         _pierce = GetComponent<Pierce>();
         // パラメータ初期化
@@ -130,7 +130,7 @@ public class Breakable : MonoBehaviour
     /// <param name="breaker">`攻撃した側の情報</param>
     private void Break(Breaker breaker)
     {
-        Debug.Log("Break");
+        Debug.Log($"Break by {breaker.Type}");
         switch (breaker.Type)
         {
             case Type.slash:

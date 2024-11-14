@@ -75,13 +75,14 @@ public class Breaker : MonoBehaviour
         Breakable breakable = collision.gameObject.GetComponent<Breakable>();
         
         if (breakable == null) return;
+        if (collision.contactCount == 0)
+        {
+            Debug.Log("collision.contactCount == 0");
+            return;
+        }
 
-        // 衝突点のワールド座標を取得
-        Vector3 collisionPositionWorld = collision.contacts[0].point;
-        // 衝突相手のローカル座標に変換
-        Vector3 collisionPositionLocal = collision.transform.InverseTransformPoint(collisionPositionWorld);
-        // 断面を相手のローカル座標で設定
-        CalcCutterPlane(collisionPositionLocal);
+        // 断面をワールド座標で設定
+        CalcCutterPlane(collision.contacts[0].point);
 
         // 衝突相手の速度を取得
         Rigidbody otherRigitbody = collision.gameObject.GetComponent<Rigidbody>();
@@ -93,17 +94,21 @@ public class Breaker : MonoBehaviour
         // 相手に攻撃
         breakable.ReciveAttack(finalATK, this);
 
-        Debug.Log($"Attack!: {this.gameObject.name} to {breakable.gameObject.name}, finalATK: {finalATK}, velocity: {otherRigitbody.velocity}, {_rigidbody.velocity}");
+        // Debug.Log($"Attack!: {this.gameObject.name} to {breakable.gameObject.name}, finalATK: {finalATK}, velocity: {otherRigitbody.velocity}, {_rigidbody.velocity}");
     }
 
     /// <summary>
     /// カッター（切断する平面）を作成する
     /// </summary>
-    /// <param name="point">平面の座標</param>
-    private void CalcCutterPlane(Vector3 point)
+    /// <param name="worldPoint">平面の座標</param>
+    private void CalcCutterPlane(Vector3 worldPoint)
     {
-        // 断面を相手のローカル座標で設定
-        _cutter = new Plane(Vector3.Cross(transform.forward.normalized, _prePosition - _nowPosition).normalized, point);
+        // カッターの法線ベクトルをワールド空間で計算
+        Vector3 worldNormal = Vector3.Cross(transform.forward.normalized, _prePosition - _nowPosition).normalized;
+        // 平面の距離を計算：平面の法線ベクトルからワールド空間の任意の点への距離
+        float worldDistance = Vector3.Dot(worldNormal, worldPoint);
+        // 断面を相手のワールド座標で設定
+        _cutter = new Plane(worldNormal, worldDistance);
     }
 
 }
