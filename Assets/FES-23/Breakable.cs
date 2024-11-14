@@ -136,20 +136,21 @@ public class Breakable : MonoBehaviour
             case Type.slash:
                 // Slashクラスを呼び出す
                 _slash.CallSlash(breaker);
+                ScoreController.instance.AddScore(_score);
                 break;
             case Type.crash:
                 // Crashクラスを呼び出す
+                ScoreController.instance.AddScore(_score);
                 _crash.CallCrash();
                 break;
             case Type.pierce:
                 // Pierceクラスを呼び出す
+                ScoreController.instance.AddScore(_score);
                 _pierce.CallPierce(breaker, this);
                 break;
             default:
                 break;
         }
-
-        ScoreController.instance.AddScore(_score);
 
         if (_nowDurability <= 0)
         {

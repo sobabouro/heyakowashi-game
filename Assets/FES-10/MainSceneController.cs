@@ -66,6 +66,7 @@ public class MainSceneController : MonoBehaviour
     {
         CollisionEvent.canEventCall = false;
         scoreController.FinishScore();
+        timeController.StopTimer();
         Debug.Log("FinishGame");
 
         if(!_isDead) onFinishEvent?.Invoke();
