@@ -21,7 +21,7 @@ public class Aura : MonoBehaviour
 
         this.gameObject.GetComponent<Pierce>().onBreakEvent.AddListener(Azeluze);
         this.gameObject.GetComponent<Crash>().onBreakEvent.AddListener(Azeluze);
-        // this.gameObject.GetComponent<ActSubdivide>().onBreakEvent.AddListener(Azeluze);
+        this.gameObject.GetComponent<Slash>().onBreakEvent.AddListener(Azeluze);
     }
 
     // Update is called once per frame

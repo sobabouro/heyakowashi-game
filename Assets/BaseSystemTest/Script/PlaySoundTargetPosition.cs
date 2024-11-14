@@ -13,6 +13,8 @@ public class PlaySoundTargetPosition : MonoBehaviour
     // 特定の位置でオーディオクリップを再生する
     public void PlaySoundAtPosition(AudioClip audioClip)
     {
+        if (audioClip == null) return;
+
         if (targetPositionFromObject != null) position = targetPositionFromObject.transform.position;
         AudioSource.PlayClipAtPoint(audioClip, position);
     }
