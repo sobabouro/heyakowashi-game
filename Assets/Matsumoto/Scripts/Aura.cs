@@ -41,6 +41,7 @@ public class Aura : MonoBehaviour
     private async void MoveResult()
     {
         await Task.Delay(waitForSceneMoveSecond);
+        MainSceneController.instance._isDead = true;
         MainSceneController.instance.FinishGame();
     }
 }
