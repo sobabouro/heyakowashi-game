@@ -6,68 +6,6 @@ using static UnityEngine.GraphicsBuffer;
 public class ActSubdivide4 {
     // キャスト時の丸め誤差をどこまで許容するか
     private static ConversionMode mode = ConversionMode.Mode1;
-    // メインメソッド
-    public static void Subdivide(
-        GameObject targetGameObject,
-        Plane cutter,
-        Material cutSurfaceMaterial = null
-    )
-    {
-        Mesh mesh = targetGameObject.GetComponent<MeshFilter>().mesh;
-        Transform transform = targetGameObject.transform;
-        bool addNewMaterial;
-
-        MeshRenderer renderer = targetGameObject.GetComponent<MeshRenderer>();
-
-        Material[] mats = renderer.sharedMaterials;
-        // 切断前のマテリアルが切断面用マテリアルでなければ，マテリアルを割り当てる
-        if (cutSurfaceMaterial != null)
-        {
-            if (mats[mats.Length - 1]?.name == cutSurfaceMaterial.name)
-            {
-                addNewMaterial = false;
-            }
-            else
-            {
-                addNewMaterial = true;
-            }
-        }
-        else
-        {
-            addNewMaterial = false;
-        }
-        // メインメソッド実行
-        (Mesh copyMesh, Mesh originMesh) = Subdivide(mesh, transform, cutter, addNewMaterial);
-
-        if (originMesh == null || copyMesh == null)
-        {
-            return;
-        }
-        // 必要であれば切断面用マテリアルを追加する
-        if (addNewMaterial)
-        {
-            int matLength = mats.Length;
-            Material[] newMats = new Material[matLength + 1];
-            mats.CopyTo(newMats, 0);
-            newMats[matLength] = cutSurfaceMaterial;
-
-            renderer.sharedMaterials = newMats;
-        }
-
-        targetGameObject.GetComponent<MeshFilter>().mesh = originMesh;
-        Transform originTransform = targetGameObject.transform;
-        GameObject polygonInfo_subject = MonoBehaviour.Instantiate(targetGameObject, originTransform.position, originTransform.rotation, originTransform.parent);
-        polygonInfo_subject.transform.parent = null;
-        polygonInfo_subject.GetComponent<MeshFilter>().mesh = copyMesh;
-        polygonInfo_subject.GetComponent<MeshRenderer>().sharedMaterials = targetGameObject.GetComponent<MeshRenderer>().sharedMaterials;
-
-        if (targetGameObject.GetComponent<MeshCollider>())
-        {
-            targetGameObject.GetComponent<MeshCollider>().sharedMesh = originMesh;
-            polygonInfo_subject.GetComponent<MeshCollider>().sharedMesh = copyMesh;
-        }
-        return;
-    }
 
     // メインメソッド
     public static (
@@ -837,7 +775,6 @@ public class ActSubdivide4 {
             Vector3 vertex_away_position
         )
         {
-            Debug.Log($"SurfaceGeometry.Add {vertex_toward_position} -> {vertex_away_position}");
             // 新しい連結辺を生成する
 
             Node<Vector3> toward_node;
@@ -910,16 +847,6 @@ public class ActSubdivide4 {
                     clockwiseDB.Add(vertex_away_position, newRoop);
                     counterclockwiseDB.Add(vertex_toward_position, newRoop);
                 }
-            }
-
-            foreach (var kvp in clockwiseDB)
-            {
-                Debug.Log($"clockwiseDB {kvp.Key}: {kvp.Value.ToString()}");
-            }
-
-            foreach (var kvp in counterclockwiseDB)
-            {
-                Debug.Log($"counterclockwiseDB {kvp.Key}: {kvp.Value.ToString()}");
             }
         }
 
@@ -1019,7 +946,7 @@ public class ActSubdivide4 {
 
                     if (count2 > 1000)
                     {
-                        Debug.LogError("Something is wrong? xx");
+                        Debug.LogError("Something is wrong?");
                         break;
                     }
                     count2++;
