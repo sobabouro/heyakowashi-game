@@ -16,4 +16,5 @@ public class PlaySoundTargetPosition : MonoBehaviour
         if (targetPositionFromObject != null) position = targetPositionFromObject.transform.position;
         AudioSource.PlayClipAtPoint(audioClip, position);
     }
+
 }

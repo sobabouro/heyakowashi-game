@@ -3835,7 +3835,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &2093383953
 RectTransform:
   m_ObjectHideFlags: 0
@@ -3900,7 +3900,7 @@ MonoBehaviour:
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
-    rgba: 4281466767
+    rgba: 3276687
   m_fontColor: {r: 0.5608226, g: 1, b: 0.19339621, a: 0}
   m_enableVertexGradient: 0
   m_colorMode: 3

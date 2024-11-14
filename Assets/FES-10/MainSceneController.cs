@@ -13,7 +13,7 @@ public class MainSceneController : MonoBehaviour
     [SerializeField] private float _timeLimit = 120;
 
     public static MainSceneController instance;
-    public bool _isDead = false;
+    private bool _isDead = false;
 
     // 終了時演出で呼び出すイベント
     [SerializeField]
@@ -74,12 +74,20 @@ public class MainSceneController : MonoBehaviour
     }
 
     /// <summary>
-    /// ゲーム終了時演出
+    /// ゲーム終了時シーン遷移
     /// </summary>
     private IEnumerator MoveResult()
     {
         Debug.Log("MoveResult");
         yield return new WaitForSeconds(_waitFOrMoveScene);
         sceneController.ChangeToTargetScene("Result");
+    }
+
+    /// <summary>
+    /// 死亡時フラグ設定
+    /// </summary>
+    public void SetIsDead(bool isDead)
+    {
+        this._isDead = isDead;
     }
 }
