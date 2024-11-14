@@ -298,6 +298,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _baseATK: 10
   _type: 1
+  onAttackEvent:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!114 &218836129
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1032,6 +1035,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _baseATK: 10
   _type: 2
+  onAttackEvent:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!114 &496327990
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4452,6 +4458,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _baseATK: 10
   _type: 2
+  onAttackEvent:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!54 &6470194113002675735
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -4661,6 +4670,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _baseATK: 10
   _type: 3
+  onAttackEvent:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!114 &6470194113214061639
 MonoBehaviour:
   m_ObjectHideFlags: 0
