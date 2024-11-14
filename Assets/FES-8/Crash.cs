@@ -56,7 +56,7 @@ public class Crash : MonoBehaviour
 
         if (_brokenObjectPrefab.CompareTag("BreakableObject"))
         {
-            GameObject createObject = Instantiate(_brokenObjectPrefab, this.gameObject.transform.position + parentTransform.localPosition, this.gameObject.transform.rotation * parentTransform.localRotation);
+            GameObject createObject = Instantiate(_brokenObjectPrefab, this.gameObject.transform.position, this.gameObject.transform.rotation);
 
             Rigidbody rigidbody = createObject.GetComponent<Rigidbody>();
 
