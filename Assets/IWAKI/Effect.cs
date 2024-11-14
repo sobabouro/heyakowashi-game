@@ -4,6 +4,9 @@ using UnityEngine;
 
 public class Effect : MonoBehaviour
 {
+    //<summary>元となったプログラム
+    //</summary>
+
     //[SerializeField, Tooltip("発生させるエフェクト(パーティクル)")]
     //private ParticleSystem particle;
 
@@ -51,52 +54,70 @@ public class Effect : MonoBehaviour
     private List<WeaponEffect> weaponEffects = new List<WeaponEffect>();
 
     [SerializeField, Tooltip("エフェクトの出現位置をずらすオフセット")]
-    private Vector3 offsetPosition;
+    private Vector3 offsetPosition; // インスペクターで指定できるオフセット
 
-    // Dictionary に変換して検索を高速化
-    private Dictionary<GameObject, ParticleSystem> effectDictionary;
+    private ParticleSystem overrideParticle; // UnityEventで設定するパーティクルプレハブ
 
-    private void Awake()
+    /// <summary>
+    /// UnityEvent経由でパーティクルプレハブを選択するメソッド
+    /// </summary>
+    /// <param name="particlePrefab">選択するパーティクルプレハブ</param>
+    public void SetParticle(GameObject particlePrefab)
     {
-        // weaponEffectsリストからDictionaryを初期化
-        effectDictionary = new Dictionary<GameObject, ParticleSystem>();
+        if (particlePrefab != null)
+        {
+            overrideParticle = particlePrefab.GetComponent<ParticleSystem>();
+        }
+    }
+
+    /// <summary>
+    /// 衝突した時にエフェクトを発生させる
+    /// </summary>
+    /// <param name="collision"></param>
+    private void OnCollisionEnter(Collision collision)
+    {
+        // インスペクターで設定された武器ごとのパーティクルを検索
         foreach (var weaponEffect in weaponEffects)
         {
-            if (weaponEffect.weapon != null && weaponEffect.particle != null)
+            if (weaponEffect.weapon == collision.gameObject)
             {
-                effectDictionary[weaponEffect.weapon] = weaponEffect.particle;
+                // 衝突位置と回転を取得
+                ContactPoint contact = collision.contacts[0];
+                Vector3 hitPosition = contact.point + offsetPosition;
+                Quaternion hitRotation = Quaternion.LookRotation(contact.normal);
+
+                // 優先度: UnityEventで設定されたパーティクル
+                if (overrideParticle != null)
+                {
+                    InstantiateAndPlayParticle(overrideParticle, hitPosition, hitRotation);
+                }
+                else
+                {
+                    InstantiateAndPlayParticle(weaponEffect.particle, hitPosition, hitRotation);
+                }
+                return;
             }
         }
     }
 
     /// <summary>
-    /// エフェクトを発生させるメソッド（UnityEventで使用）
+    /// 指定されたパーティクルをインスタンス化して再生する
     /// </summary>
-    /// <param name="useHitPosition">trueなら衝突位置、falseならオブジェクトの中心からエフェクトを発生させる</param>
-    public void TriggerEffect(bool useHitPosition)
+    /// <param name="particle">発生させるパーティクル</param>
+    /// <param name="position">エフェクトの位置</param>
+    /// <param name="rotation">エフェクトの回転</param>
+    private void InstantiateAndPlayParticle(ParticleSystem particle, Vector3 position, Quaternion rotation)
     {
-        // 衝突した武器に対応するエフェクトが設定されているか確認
-        foreach (var entry in effectDictionary)
+        if (particle != null)
         {
-            // エフェクトを発生させる条件を満たす武器があれば
-            if (entry.Key.activeInHierarchy) // 特定の武器がアクティブであるかを判定
-            {
-                Vector3 effectPosition = useHitPosition ? entry.Key.transform.position + offsetPosition : transform.position + offsetPosition;
-                Quaternion effectRotation = Quaternion.identity; // 任意の回転
+            ParticleSystem newParticle = Instantiate(particle);
+            newParticle.transform.position = position;
+            newParticle.transform.rotation = rotation;
+            newParticle.transform.SetParent(this.transform);
+            newParticle.Play();
 
-                // パーティクルシステムのインスタンスを生成
-                ParticleSystem newParticle = Instantiate(entry.Value);
-                newParticle.transform.position = effectPosition;
-                newParticle.transform.rotation = effectRotation;
-                newParticle.transform.SetParent(this.transform);
-                newParticle.Play();
-
-                // 一定時間後に削除
-                Destroy(newParticle.gameObject, newParticle.main.duration);
-
-                // エフェクトを発生させたら終了
-                break;
-            }
+            // 一定時間後に削除
+            Destroy(newParticle.gameObject, newParticle.main.duration);
         }
     }
 
