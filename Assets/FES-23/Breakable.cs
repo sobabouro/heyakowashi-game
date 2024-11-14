@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq.Expressions;
 using UnityEngine;
+using UnityEngine.Events;
 
 public enum Type { plane, slash, crash, pierce }
 
@@ -24,6 +25,8 @@ public class Breakable : MonoBehaviour
     private int _nowDurability = 0;          // 現在の耐久値
     private float _nowDamageInterval = 0;    // インターバル値
     private bool _inDamageInterval = false;  // 現在インターバル中？
+
+    public UnityEvent onDamageEvent;    // ダメージ発生時に呼び出すイベント
 
     // アクセサ
     public void SetDurability(int durability)
@@ -93,6 +96,8 @@ public class Breakable : MonoBehaviour
         // インターバル中ならスキップ
         if (_inDamageInterval) return false;
         _inDamageInterval = true;
+
+        onDamageEvent?.Invoke();
 
         // ダメージ計算
         int damage = CalcDamage(receivedATK, breaker.Type);
