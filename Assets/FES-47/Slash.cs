@@ -68,7 +68,7 @@ public class Slash : MonoBehaviour
         Transform transform = this.gameObject.transform;
         Mesh mesh = this.gameObject.GetComponent<MeshFilter>().mesh;
         // 切断された後のオブジェクトに割り当てるメッシュを計算する。
-        (Mesh rightMesh, Mesh leftMesh) = ActSubdivide.Subdivide(mesh, transform, breaker.GetCutter(), canAddCutSurfaceMaterial);
+        (Mesh rightMesh, Mesh leftMesh) = ActSubdivide4.Subdivide(mesh, transform, breaker.GetCutter(), canAddCutSurfaceMaterial);
 
         // 失敗
         if (rightMesh == null || leftMesh == null)
