@@ -212,6 +212,9 @@ MonoBehaviour:
   onConnectEvent:
     m_PersistentCalls:
       m_Calls: []
+  onDisconnectEvent:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!114 &218836125
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -224,12 +227,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b6507cc4ac2e9274f9535b6a6a031042, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _canCallBrokenObject: 0
+  _canCreateBrokenObject: 0
   _brokenObjectPrefab: {fileID: 0}
+  _addImpulse: 1
   onBreakEvent:
     m_PersistentCalls:
       m_Calls: []
-  _addImpulse: 1
 --- !u!114 &218836126
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -295,6 +298,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _baseATK: 10
   _type: 1
+  onAttackEvent:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!114 &218836129
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -631,8 +637,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 68c98c563007a79428cf505f09508a3e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  numberOfCanSlash: 0
-  surfaceMat: {fileID: 0}
+  _numberOfCanSlash: 2
+  _cutSurfaceMaterial: {fileID: 0}
+  _cutObjectPrefab: {fileID: 0}
   onSlashEvent:
     m_PersistentCalls:
       m_Calls: []
@@ -957,6 +964,9 @@ MonoBehaviour:
   onConnectEvent:
     m_PersistentCalls:
       m_Calls: []
+  onDisconnectEvent:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!114 &491342570
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -969,12 +979,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b6507cc4ac2e9274f9535b6a6a031042, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _canCallBrokenObject: 1
+  _canCreateBrokenObject: 0
   _brokenObjectPrefab: {fileID: 3790433785709486936, guid: a65009bd30c2c77438a612037af98e07, type: 3}
+  _addImpulse: 0.5
   onBreakEvent:
     m_PersistentCalls:
       m_Calls: []
-  _addImpulse: 0.5
 --- !u!114 &491342571
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1283,6 +1293,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _baseATK: 10
   _type: 2
+  onAttackEvent:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!54 &491342576
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -1361,8 +1374,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 68c98c563007a79428cf505f09508a3e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  numberOfCanSlash: 2
-  surfaceMat: {fileID: 0}
+  _numberOfCanSlash: 2
+  _cutSurfaceMaterial: {fileID: 0}
+  _cutObjectPrefab: {fileID: 0}
   onSlashEvent:
     m_PersistentCalls:
       m_Calls: []
@@ -1432,6 +1446,9 @@ MonoBehaviour:
   onConnectEvent:
     m_PersistentCalls:
       m_Calls: []
+  onDisconnectEvent:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!114 &496327986
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1444,12 +1461,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b6507cc4ac2e9274f9535b6a6a031042, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _canCallBrokenObject: 0
+  _canCreateBrokenObject: 0
   _brokenObjectPrefab: {fileID: 0}
+  _addImpulse: 1
   onBreakEvent:
     m_PersistentCalls:
       m_Calls: []
-  _addImpulse: 1
 --- !u!114 &496327987
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1515,6 +1532,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _baseATK: 10
   _type: 2
+  onAttackEvent:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!114 &496327990
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1851,8 +1871,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 68c98c563007a79428cf505f09508a3e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  numberOfCanSlash: 0
-  surfaceMat: {fileID: 0}
+  _numberOfCanSlash: 2
+  _cutSurfaceMaterial: {fileID: 0}
+  _cutObjectPrefab: {fileID: 0}
   onSlashEvent:
     m_PersistentCalls:
       m_Calls: []
@@ -2397,6 +2418,9 @@ MonoBehaviour:
   onConnectEvent:
     m_PersistentCalls:
       m_Calls: []
+  onDisconnectEvent:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!114 &931564791
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2409,12 +2433,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b6507cc4ac2e9274f9535b6a6a031042, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _canCallBrokenObject: 1
+  _canCreateBrokenObject: 0
   _brokenObjectPrefab: {fileID: 3790433785709486936, guid: a65009bd30c2c77438a612037af98e07, type: 3}
+  _addImpulse: 0.5
   onBreakEvent:
     m_PersistentCalls:
       m_Calls: []
-  _addImpulse: 0.5
 --- !u!114 &931564792
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2723,6 +2747,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _baseATK: 10
   _type: 2
+  onAttackEvent:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!54 &931564797
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -2801,8 +2828,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 68c98c563007a79428cf505f09508a3e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  numberOfCanSlash: 2
-  surfaceMat: {fileID: 0}
+  _numberOfCanSlash: 2
+  _cutSurfaceMaterial: {fileID: 0}
+  _cutObjectPrefab: {fileID: 0}
   onSlashEvent:
     m_PersistentCalls:
       m_Calls: []
@@ -2949,6 +2977,9 @@ MonoBehaviour:
   onConnectEvent:
     m_PersistentCalls:
       m_Calls: []
+  onDisconnectEvent:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!114 &1093730163
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2961,12 +2992,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b6507cc4ac2e9274f9535b6a6a031042, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _canCallBrokenObject: 1
+  _canCreateBrokenObject: 0
   _brokenObjectPrefab: {fileID: 3790433785709486936, guid: a65009bd30c2c77438a612037af98e07, type: 3}
+  _addImpulse: 0.5
   onBreakEvent:
     m_PersistentCalls:
       m_Calls: []
-  _addImpulse: 0.5
 --- !u!114 &1093730164
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3275,6 +3306,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _baseATK: 10
   _type: 2
+  onAttackEvent:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!54 &1093730169
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -3353,8 +3387,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 68c98c563007a79428cf505f09508a3e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  numberOfCanSlash: 2
-  surfaceMat: {fileID: 0}
+  _numberOfCanSlash: 2
+  _cutSurfaceMaterial: {fileID: 0}
+  _cutObjectPrefab: {fileID: 0}
   onSlashEvent:
     m_PersistentCalls:
       m_Calls: []
@@ -3606,12 +3641,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b6507cc4ac2e9274f9535b6a6a031042, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _canCallBrokenObject: 0
+  _canCreateBrokenObject: 0
   _brokenObjectPrefab: {fileID: 0}
+  _addImpulse: 1
   onBreakEvent:
     m_PersistentCalls:
       m_Calls: []
-  _addImpulse: 1
 --- !u!114 &1277901434
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3631,6 +3666,9 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   onConnectEvent:
+    m_PersistentCalls:
+      m_Calls: []
+  onDisconnectEvent:
     m_PersistentCalls:
       m_Calls: []
 --- !u!114 &1277901435
@@ -5101,6 +5139,9 @@ MonoBehaviour:
   onConnectEvent:
     m_PersistentCalls:
       m_Calls: []
+  onDisconnectEvent:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!1001 &1890316703800068803
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -5446,12 +5487,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b6507cc4ac2e9274f9535b6a6a031042, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _canCallBrokenObject: 1
+  _canCreateBrokenObject: 0
   _brokenObjectPrefab: {fileID: 3790433785709486936, guid: a65009bd30c2c77438a612037af98e07, type: 3}
+  _addImpulse: 0.5
   onBreakEvent:
     m_PersistentCalls:
       m_Calls: []
-  _addImpulse: 0.5
 --- !u!114 &6470194113002675733
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5499,6 +5540,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _baseATK: 10
   _type: 2
+  onAttackEvent:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!54 &6470194113002675735
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -5605,12 +5649,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b6507cc4ac2e9274f9535b6a6a031042, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _canCallBrokenObject: 0
+  _canCreateBrokenObject: 0
   _brokenObjectPrefab: {fileID: 0}
+  _addImpulse: 1
   onBreakEvent:
     m_PersistentCalls:
       m_Calls: []
-  _addImpulse: 1
 --- !u!114 &6470194113214061633
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5707,6 +5751,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _baseATK: 10
   _type: 3
+  onAttackEvent:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!114 &6470194113214061639
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -6040,8 +6087,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 68c98c563007a79428cf505f09508a3e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  numberOfCanSlash: 0
-  surfaceMat: {fileID: 0}
+  _numberOfCanSlash: 2
+  _cutSurfaceMaterial: {fileID: 0}
+  _cutObjectPrefab: {fileID: 0}
   onSlashEvent:
     m_PersistentCalls:
       m_Calls: []
@@ -6083,6 +6131,9 @@ MonoBehaviour:
   onConnectEvent:
     m_PersistentCalls:
       m_Calls: []
+  onDisconnectEvent:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!114 &9209773299084110657
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -6095,8 +6146,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 68c98c563007a79428cf505f09508a3e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  numberOfCanSlash: 2
-  surfaceMat: {fileID: 0}
+  _numberOfCanSlash: 2
+  _cutSurfaceMaterial: {fileID: 0}
+  _cutObjectPrefab: {fileID: 0}
   onSlashEvent:
     m_PersistentCalls:
       m_Calls: []
