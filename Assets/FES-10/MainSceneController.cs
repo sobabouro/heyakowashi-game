@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.Events;
 
 public class MainSceneController : MonoBehaviour
 {
@@ -12,6 +13,13 @@ public class MainSceneController : MonoBehaviour
     [SerializeField] private float _timeLimit = 120;
 
     public static MainSceneController instance;
+    private bool _isDead = false;
+
+    // 終了時演出で呼び出すイベント
+    [SerializeField]
+    private UnityEvent onFinishEvent;
+    // リザルトに飛ぶまでの猶予時間
+    private float _waitFOrMoveScene = 3;
 
     private void Awake()
     {
@@ -56,10 +64,31 @@ public class MainSceneController : MonoBehaviour
     /// </summary>
     public void FinishGame()
     {
+        CollisionEvent.canEventCall = false;
         scoreController.FinishScore();
+        timeController.StopTimer();
         Debug.Log("FinishGame");
 
+        if(!_isDead) onFinishEvent?.Invoke();
+
+        StartCoroutine("MoveResult");
+    }
+
+    /// <summary>
+    /// ゲーム終了時シーン遷移
+    /// </summary>
+    private IEnumerator MoveResult()
+    {
+        Debug.Log("MoveResult");
+        yield return new WaitForSeconds(_waitFOrMoveScene);
         sceneController.ChangeToTargetScene("Result");
     }
 
+    /// <summary>
+    /// 死亡時フラグ設定
+    /// </summary>
+    public void SetIsDead(bool isDead)
+    {
+        this._isDead = isDead;
+    }
 }
