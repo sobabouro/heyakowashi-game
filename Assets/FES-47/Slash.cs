@@ -93,13 +93,17 @@ public class Slash : MonoBehaviour
             Debug.Log("メッシュの計算ができませんでした。");
             return;
         }
-
         // 生成したオブジェクトと干渉しないようにColliderを無効化
         this.gameObject.GetComponent<Collider>().enabled = false;
-
         // 切断された後のオブジェクトを生成する
-        CreateCutObject(transform, rightMesh, newMaterials);
-        CreateCutObject(transform, leftMesh, newMaterials);
+        if (rightMesh != null)
+        {
+            CreateCutObject(transform, rightMesh, newMaterials);
+        }
+        if (leftMesh != null)
+        {
+            CreateCutObject(transform, leftMesh, newMaterials);
+        }
         // 切られた元のオブジェクトを破棄する
         Destroy(this.gameObject);
         
