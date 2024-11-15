@@ -73,4 +73,9 @@ public class EquipWeapons : MonoBehaviour
         weaponCollider = null;
     }
 
+    public bool GetIsEquipWeapon()
+    {
+        return isEquipWeapon;
+    }
+
 }
