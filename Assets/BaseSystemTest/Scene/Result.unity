@@ -1023,11 +1023,11 @@ MonoBehaviour:
   dColor: {r: 0.36862746, g: 0.48235294, b: 0.39607844, a: 1}
   cRankBorder: 200
   cColor: {r: 0.047058824, g: 0.84313726, b: 0.14509805, a: 1}
-  bRankBorder: 300
+  bRankBorder: 350
   bColor: {r: 0.2901961, g: 0.5529412, b: 0.94509804, a: 1}
-  aRankBorder: 400
+  aRankBorder: 550
   aColor: {r: 0.94509804, g: 0.2901961, b: 0.39215687, a: 1}
-  sRankBorder: 500
+  sRankBorder: 700
   sColor: {r: 0.6901961, g: 0.6509804, b: 0, a: 1}
 --- !u!1 &1607930326
 GameObject:
