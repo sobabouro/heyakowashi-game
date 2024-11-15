@@ -370,7 +370,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _numberOfCanSlash: 1
-  _cutObjectPrefab: {fileID: 0}
+  _cutObjectPrefab: {fileID: 8863050549836897116, guid: 26a2934cd0bccea4984057bf26a22a98, type: 3}
   _cutSurfaceMaterial: {fileID: 0}
   onSlashEvent:
     m_PersistentCalls:
@@ -470,7 +470,19 @@ MonoBehaviour:
         m_CallState: 2
   onConnectEvent:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 1167776051}
+        m_TargetAssemblyTypeName: PlaySoundTargetPosition, Assembly-CSharp
+        m_MethodName: PlaySoundAtPosition
+        m_Mode: 2
+        m_Arguments:
+          m_ObjectArgument: {fileID: 8300000, guid: 05b6ee544ab51ed419630357412a8e16, type: 3}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.AudioClip, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
   onDisconnectEvent:
     m_PersistentCalls:
       m_Calls: []
@@ -528,11 +540,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 653514ead52426a47a2b2958f5121436, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _score: 100
   _maxDurability: 100
+  _nowDurability: 0
   _slashResist: 0
   _crashResist: 0
   _pierceResist: 0
-  _score: 100
   _maxDamageInterval: 0.5
   onDamageEvent:
     m_PersistentCalls:
@@ -562,7 +575,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _baseATK: 6
-  _type: 2
+  _velocity_coefficient: 1
+  _minimumSpeedNeededForDamage: 3
+  _canPierce: 0
+  _pierceDirection: {x: 0, y: 0, z: 0}
+  _matchDegreeOfOrientation: 0.866
+  _canSlash: 0
   onAttackEvent:
     m_PersistentCalls:
       m_Calls: []
@@ -599,3 +617,22 @@ MonoBehaviour:
   collisionEvnetExit:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &2341763292341991811
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5971546373860006247}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3ab3922d12b6e01419f34e10c1ccfc78, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  weaponEffects:
+  - weapon: {fileID: 0}
+    particle: {fileID: 1087281089807980510, guid: 82cb3723b6bd2cf47a19fe066e5a09dc, type: 3}
+  - weapon: {fileID: 0}
+    particle: {fileID: 1087281089807980510, guid: 82cb3723b6bd2cf47a19fe066e5a09dc, type: 3}
+  destroyParticle: {fileID: 535877469288121981, guid: 742d967ceaf44324fab535df646e0820, type: 3}
+  offsetPosition: {x: 0, y: 0, z: 0}

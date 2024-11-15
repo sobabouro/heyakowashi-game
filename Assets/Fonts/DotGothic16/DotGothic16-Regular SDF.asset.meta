@@ -1,5 +1,9 @@
 fileFormatVersion: 2
+<<<<<<< HEAD
 guid: 86deab7095b37584cbe5b3c370266287
+=======
+guid: 1676f501107c35b4aa67abc526a822b7
+>>>>>>> origin/オブジェクトの制作
 NativeFormatImporter:
   externalObjects: {}
   mainObjectFileID: 0
