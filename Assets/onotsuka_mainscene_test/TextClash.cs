@@ -1,16 +1,15 @@
 using UnityEngine;
 
 public class TextClash : MonoBehaviour {
-	[SerializeField, Tooltip("再生するアニメーションを持つ Animator")]
-	private Animator animator;
-
-	[SerializeField, Tooltip("アニメーションのトリガー名")]
-	private string animationTriggerName = "PlayAnimation";
-
+	// このスクリプトがアタッチされているオブジェクトが他のオブジェクトと衝突したときに呼び出される
+	[SerializeField]
+	private GameObject mainObject;
+	[SerializeField]
+	private GameObject otherObject;
 	private void OnCollisionEnter(Collision collision) {
-		// 衝突時にアニメーションを再生
-		if (animator != null) {
-			animator.SetTrigger(animationTriggerName);
-		}
+
+		// 両方のオブジェクトのアクティブ状態を反転
+		mainObject.SetActive(!gameObject.activeSelf); // 自分自身のアクティブ状態を反転
+		otherObject.SetActive(!otherObject.activeSelf);
 	}
 }
