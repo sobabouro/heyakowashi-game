@@ -6,7 +6,7 @@ using UnityEngine.Events;
 public class Slash : MonoBehaviour
 {
     [SerializeField, Tooltip("残り切断可能回数")]
-    private int _numberOfCanSlash = 2;
+    private int _numberOfCanSlash = 0;
     [SerializeField, Tooltip("切断された後のオブジェクト")]
     private GameObject _cutObjectPrefab;
     [SerializeField, Tooltip("切断面用のマテリアル")]

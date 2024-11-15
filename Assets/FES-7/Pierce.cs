@@ -18,7 +18,7 @@ public class Pierce : MonoBehaviour
     // 刺突結合している時の結合相手のオブジェクト
     private List<Collider> connectObjectCollider_List = new List<Collider>();
     // 結合座標計算使う係数の大きさ
-    private float frame = 2;
+    private float frame = 1;
 
     // オブジェクト破壊時に呼び出すイベント登録
     public UnityEvent onBreakEvent;
