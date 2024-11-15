@@ -74,8 +74,8 @@ public class Breaker : MonoBehaviour
 
         if (breakable == null) return;
 
-        // 衝突相手の速度を取得
-        Vector3 relative_velocity = collision.relativeVelocity;
+        // 衝突の速度を取得
+        Vector3 relative_velocity = -collision.relativeVelocity;
         float relative_velocity_magnitude = relative_velocity.magnitude;
         // 最低速度未満ならダメージは発生しない
         if (relative_velocity_magnitude < _minimumSpeedNeededForDamage) return;
@@ -88,7 +88,8 @@ public class Breaker : MonoBehaviour
         _moveDirection = relative_velocity.normalized;
 
         // 衝突位置を取得
-        if (collision.contactCount > 0) {
+        if (collision.contactCount > 0)
+        {
             _contactPoint = collision.contacts[0].point;
         } else {
             // クソみたいなバグ
@@ -106,7 +107,7 @@ public class Breaker : MonoBehaviour
         if (_canPierce)
         {
             // ローカル座標系での移動方向
-            Vector3 local_moveDirection = transform.InverseTransformPoint(_moveDirection);
+            Vector3 local_moveDirection = transform.rotation * _moveDirection;
             // 突属性の向きと30度以内の方向なら突属性
             if (Mathf.Abs(Vector3.Dot(_pierceDirection, local_moveDirection)) > _matchDegreeOfOrientation)
             {
