@@ -91,6 +91,7 @@ public class Slash : MonoBehaviour
         if (rightMesh == null || leftMesh == null)
         {
             Debug.Log("メッシュの計算ができませんでした。");
+            onBreakEvent?.Invoke();
             return;
         }
         // 生成したオブジェクトと干渉しないようにColliderを無効化
@@ -122,6 +123,8 @@ public class Slash : MonoBehaviour
     public void CreateCutObject(Transform originTransform, Mesh newMesh, Material[] newMaterials)
     {
         GameObject polygonInfo_subject = Instantiate(_cutObjectPrefab, originTransform.position, originTransform.rotation, null);
+        // Scaleの設定
+        polygonInfo_subject.transform.localScale = originTransform.localScale;
         // Meshの設定
         polygonInfo_subject.GetComponent<MeshFilter>().mesh = newMesh;
         // マテリアルの設定

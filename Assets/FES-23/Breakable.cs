@@ -22,7 +22,7 @@ public class Breakable : MonoBehaviour
     [SerializeField, Tooltip("貫通耐性")] private int _pierceResist;  // 貫通耐性
 
     [Header("ダメージを受けるインターバル")]
-    [SerializeField, Tooltip("インターバル")] private float _maxDamageInterval; // インターバル
+    [SerializeField, Tooltip("インターバル")] private float _maxDamageInterval = 0.5f; // インターバル
 
 
     [Header("イベント登録")]
