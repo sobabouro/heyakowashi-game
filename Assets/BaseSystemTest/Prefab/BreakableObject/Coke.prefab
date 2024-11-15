@@ -22,6 +22,7 @@ GameObject:
   - component: {fileID: 7751866694578037406}
   - component: {fileID: 7751866694578037407}
   - component: {fileID: 7751866694578037378}
+  - component: {fileID: 4831630346680582121}
   m_Layer: 0
   m_Name: Coke
   m_TagString: BreakableObject
@@ -116,7 +117,7 @@ Rigidbody:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7751866694578037404}
   serializedVersion: 2
-  m_Mass: 1
+  m_Mass: 2
   m_Drag: 0
   m_AngularDrag: 0.05
   m_UseGravity: 1
@@ -136,8 +137,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 916c45e0acabc3f49b0909e2b4c050c0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _baseATK: 10
-  _type: 2
+  _baseATK: 5
+  _velocity_coefficient: 1
+  _minimumSpeedNeededForDamage: 3
+  _canPierce: 0
+  _pierceDirection: {x: 0, y: 0, z: 0}
+  _matchDegreeOfOrientation: 0.866
+  _canSlash: 0
   onAttackEvent:
     m_PersistentCalls:
       m_Calls: []
@@ -153,15 +159,28 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 653514ead52426a47a2b2958f5121436, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _maxDurability: 100
+  _score: 40
+  _maxDurability: 40
+  _nowDurability: 0
   _slashResist: 0
   _crashResist: 0
   _pierceResist: 0
-  _score: 100
-  _maxDamageInterval: 0.1
+  _maxDamageInterval: 0.5
   onDamageEvent:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 4831630346680582121}
+        m_TargetAssemblyTypeName: PlaySoundTargetPosition, Assembly-CSharp
+        m_MethodName: PlaySoundAtPosition
+        m_Mode: 2
+        m_Arguments:
+          m_ObjectArgument: {fileID: 8300000, guid: 1a57a70aa2edc0c439ef1c1907eddc80, type: 3}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.AudioClip, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!114 &7751866694578037402
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -450,8 +469,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b6507cc4ac2e9274f9535b6a6a031042, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _canCreateBrokenObject: 1
-  _brokenObjectPrefab: {fileID: 3790433785709486936, guid: a65009bd30c2c77438a612037af98e07, type: 3}
+  _canCreateBrokenObject: 0
+  _brokenObjectPrefab: {fileID: 0}
   _addImpulse: 0.5
   onBreakEvent:
     m_PersistentCalls:
@@ -468,8 +487,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0cbee23cb4e3b094887d5156658febe6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  durabilityRecoveryAmount: 50
-  scoreRecoveryAmount: 10
+  durabilityRecoveryAmount: 10
+  scoreRecoveryAmount: 5
   canConnect: 1
   onBreakEvent:
     m_PersistentCalls:
@@ -492,9 +511,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 68c98c563007a79428cf505f09508a3e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _numberOfCanSlash: 2
+  _numberOfCanSlash: 1
+  _cutObjectPrefab: {fileID: 8863050549836897116, guid: 26a2934cd0bccea4984057bf26a22a98, type: 3}
   _cutSurfaceMaterial: {fileID: 0}
-  _cutObjectPrefab: {fileID: 0}
   onSlashEvent:
     m_PersistentCalls:
       m_Calls: []
@@ -516,3 +535,17 @@ MonoBehaviour:
   weaponEffects: []
   destroyParticle: {fileID: 7984019531070502757, guid: 701d668af0d8166479b44ebc2e2446dd, type: 3}
   offsetPosition: {x: 0, y: 0, z: 0}
+--- !u!114 &4831630346680582121
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7751866694578037404}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0fd6a10fa2f521f4b910e6149c806048, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  position: {x: 0, y: 0, z: 0}
+  targetPositionFromObject: {fileID: 7751866694578037404}
