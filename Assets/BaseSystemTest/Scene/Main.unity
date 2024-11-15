@@ -719,6 +719,10 @@ PrefabInstance:
     m_TransformParent: {fileID: 1035396529}
     m_Modifications:
     - target: {fileID: 574815726060066804, guid: 61502256e6d09bf4da80e67c257719db, type: 3}
+      propertyPath: ip
+      value: 192.168.20.25
+      objectReference: {fileID: 0}
+    - target: {fileID: 574815726060066804, guid: 61502256e6d09bf4da80e67c257719db, type: 3}
       propertyPath: PressedDownButtonEvents.m_PersistentCalls.m_Calls.Array.size
       value: 1
       objectReference: {fileID: 0}
@@ -826,13 +830,17 @@ PrefabInstance:
       propertyPath: m_Enabled
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 3390051295538696355, guid: 61502256e6d09bf4da80e67c257719db, type: 3}
+      propertyPath: ip
+      value: 192.168.20.25
+      objectReference: {fileID: 0}
     - target: {fileID: 5426060844419805523, guid: 61502256e6d09bf4da80e67c257719db, type: 3}
       propertyPath: m_Name
       value: Sphere_kata
       objectReference: {fileID: 0}
     - target: {fileID: 5426060844419805523, guid: 61502256e6d09bf4da80e67c257719db, type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 5700311412893372757, guid: 61502256e6d09bf4da80e67c257719db, type: 3}
       propertyPath: m_LocalScale.x
@@ -889,6 +897,10 @@ PrefabInstance:
     - target: {fileID: 7758308068944008225, guid: 61502256e6d09bf4da80e67c257719db, type: 3}
       propertyPath: m_Enabled
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8172695666989447224, guid: 61502256e6d09bf4da80e67c257719db, type: 3}
+      propertyPath: ip
+      value: 192.168.20.25
       objectReference: {fileID: 0}
     - target: {fileID: 8308088726884120356, guid: 61502256e6d09bf4da80e67c257719db, type: 3}
       propertyPath: m_Enabled
@@ -3369,6 +3381,10 @@ PrefabInstance:
   m_Modification:
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 1688005702821267171, guid: 26b74d9469966fb4fb24a38d193c5bae, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 3995664782079496805, guid: 26b74d9469966fb4fb24a38d193c5bae, type: 3}
       propertyPath: m_RootOrder
       value: 5

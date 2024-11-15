@@ -727,6 +727,10 @@ PrefabInstance:
     m_TransformParent: {fileID: 1553861527}
     m_Modifications:
     - target: {fileID: 574815726060066804, guid: 61502256e6d09bf4da80e67c257719db, type: 3}
+      propertyPath: ip
+      value: 192.168.20.25
+      objectReference: {fileID: 0}
+    - target: {fileID: 574815726060066804, guid: 61502256e6d09bf4da80e67c257719db, type: 3}
       propertyPath: cameraTransform
       value: 
       objectReference: {fileID: 1553861527}
@@ -747,12 +751,20 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3390051295538696355, guid: 61502256e6d09bf4da80e67c257719db, type: 3}
+      propertyPath: ip
+      value: 192.168.20.25
+      objectReference: {fileID: 0}
+    - target: {fileID: 3390051295538696355, guid: 61502256e6d09bf4da80e67c257719db, type: 3}
       propertyPath: cameraTransform
       value: 
       objectReference: {fileID: 1553861527}
     - target: {fileID: 5426060844419805523, guid: 61502256e6d09bf4da80e67c257719db, type: 3}
       propertyPath: m_Name
       value: Sphere_kata
+      objectReference: {fileID: 0}
+    - target: {fileID: 8172695666989447224, guid: 61502256e6d09bf4da80e67c257719db, type: 3}
+      propertyPath: ip
+      value: 192.168.20.25
       objectReference: {fileID: 0}
     - target: {fileID: 8172695666989447224, guid: 61502256e6d09bf4da80e67c257719db, type: 3}
       propertyPath: cameraTransform
