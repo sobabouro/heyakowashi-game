@@ -15,6 +15,9 @@ public class MainSceneController : MonoBehaviour
     public static MainSceneController instance;
     private bool _isDead = false;
 
+    // 開始時演出で呼び出すイベント
+    [SerializeField]
+    private UnityEvent onStartEvent;
     // 終了時演出で呼び出すイベント
     [SerializeField]
     private UnityEvent onFinishEvent;
@@ -54,6 +57,7 @@ public class MainSceneController : MonoBehaviour
     /// </summary>
     public void StartGame()
     {
+        onStartEvent?.Invoke();
         timeController.SetTimeLimit(_timeLimit);
         timeController.StartTimer();
         CollisionEvent.canEventCall = true;
