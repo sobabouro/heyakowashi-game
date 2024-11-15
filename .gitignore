@@ -76,5 +76,9 @@ crashlytics-build.properties
 /[Aa]ssets/[Ff]onts/DotGothic16/DotGothic16-Regular SDF.asset
 /[Aa]ssets/[Ff]onts/Rampart_One/RampartOne-Regular SDF.asset
 /[Aa]ssets/[Ff]onts/Zen_Maru_Gothic/ZenMaruGothic-Regular SDF.asset
+/[Aa]ssets/[Ff]onts/BIZ_UDPGothic/BIZUDPGothic-Regular.asset.meta
+/[Aa]ssets/[Ff]onts/DotGothic16/DotGothic16-Regular SDF.asset.meta
+/[Aa]ssets/[Ff]onts/Rampart_One/RampartOne-Regular SDF.asset.meta
+/[Aa]ssets/[Ff]onts/Zen_Maru_Gothic/ZenMaruGothic-Regular SDF.asset.meta
 
 .fake
