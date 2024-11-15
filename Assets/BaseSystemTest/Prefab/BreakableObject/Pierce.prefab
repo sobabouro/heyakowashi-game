@@ -21,6 +21,7 @@ GameObject:
   - component: {fileID: 953650933683735400}
   - component: {fileID: 5160186499438749654}
   - component: {fileID: 953650933683735419}
+  - component: {fileID: 1100283438495172092}
   m_Layer: 0
   m_Name: Pierce
   m_TagString: BreakableObject
@@ -518,3 +519,19 @@ MonoBehaviour:
   onBreakEvent:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &1100283438495172092
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 953650933683735399}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 13aeeb2e638c02f4c8089b5cdfd61317, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  messageText: {fileID: 0}
+  equipWeapons: {fileID: 0}
+  holdingMessage: You are holding a weapon!
+  defaultMessage: No weapon equipped.
