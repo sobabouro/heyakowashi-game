@@ -91,7 +91,7 @@ public class ActSubdivide4 {
         }
         if (rightHut < 4 || leftHut < 4) {
             Debug.LogError($"頂点数が少なすぎます: {rightHut}, {leftHut}");
-            return (null, null);
+            return (targetMesh, null);
         }
 
         // サブメッシュの数だけループ

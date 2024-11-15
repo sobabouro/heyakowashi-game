@@ -11,20 +11,26 @@ public class Breaker : MonoBehaviour
 {
     // 固有ステータス
     [SerializeField, Tooltip("基礎攻撃力")] private int _baseATK; // 基礎攻撃力
-    [SerializeField, Tooltip("属性")] private Type _type;         // 属性
+    [SerializeField, Tooltip("速度係数")] private float _velocity_coefficient = 0.1f; // 攻撃力に影響する速度の割合
+    [SerializeField, Tooltip("ダメージが発生するために必要な最低限の速度")]
+    private float _minimumSpeedNeededForDamage = 10; // ダメージが発生するために必要な最低限の速度
+    [Header("突属性")]
+    [SerializeField, Tooltip("突属性を持つ？")] private bool _canPierce; // 突属性を持つ？
+    [SerializeField, Tooltip("突属性の向き")] private Vector3 _pierceDirection; // 突属性の向き
+    [SerializeField, Tooltip("突属性の向きの一致度（内積）")] private float _matchDegreeOfOrientation = 0.866f; // 突属性の向きの一致度（内積）
+    [Header("斬属性")]
+    [SerializeField, Tooltip("斬属性を持つ？")] private bool _canSlash; // 斬属性を持つ？
 
-    // 計算用
-    private float _velocity_threshold = 10; // ダメージが発生するために必要な最低限の速度
-    private Rigidbody _rigidbody;          // 速度を取得するためのRigidbody
-    // 移動方向を取得するための
-    private Vector3 _moveDirection;  // 衝突時の移動方向;
-    private Plane _cutter;         // 切断する平面;
-
+    [Header("イベント登録")]
     public UnityEvent onAttackEvent;
 
-    // アクセサ
-    public Type Type { get { return _type; } }
+    // 計算用
+    private Rigidbody _rigidbody;    // 速度を取得するためのRigidbody
+    private Vector3 _moveDirection;  // 移動方向
+    private Vector3 _contactPoint;  // 衝突座標
 
+
+    // アクセサ
     public void SetRigidbody(Rigidbody rigidbody)
     {
         _rigidbody = rigidbody;
@@ -33,13 +39,14 @@ public class Breaker : MonoBehaviour
     {
         return _rigidbody;
     }
-    public Plane GetCutter()
-    {
-        return _cutter;
-    }
+
     public Vector3 GetMoveDirection()
     {
         return _moveDirection;
+    }
+    public Vector3 GetContactPoint()
+    {
+        return _contactPoint;
     }
 
     private void Start()
@@ -51,9 +58,9 @@ public class Breaker : MonoBehaviour
     /// 最終攻撃職を計算する。
     /// </summary>
     /// <param name="other_velocity">衝突相手の速度</param>
-    private int CalcATK(float relative_vVelocity)
+    private int CalcATK(float relative_velocity)
     {
-        int finalATK = (int)(_baseATK * relative_vVelocity * 0.1);
+        int finalATK = (int)(_baseATK * relative_velocity * _velocity_coefficient);
         return finalATK;
     }
 
@@ -66,47 +73,52 @@ public class Breaker : MonoBehaviour
         Breakable breakable = collision.gameObject.GetComponent<Breakable>();
 
         if (breakable == null) return;
-        if (collision.contactCount == 0)
-        {
-            Debug.Log("collision.contactCount == 0");
-            return;
-        }
-        float relative_vVelocity = collision.relativeVelocity.magnitude;
-        if (relative_vVelocity < _velocity_threshold) return;
+
+        // 衝突の速度を取得
+        Vector3 relative_velocity = -collision.relativeVelocity;
+        float relative_velocity_magnitude = relative_velocity.magnitude;
+        // 最低速度未満ならダメージは発生しない
+        if (relative_velocity_magnitude < _minimumSpeedNeededForDamage) return;
+
+        // 攻撃時のイベント発生
+        onAttackEvent?.Invoke();
+        int finalATK = CalcATK(relative_velocity_magnitude);
 
         // 衝突時の移動方向を保存
-        _moveDirection = collision.relativeVelocity.normalized;
-        // 断面をワールド座標で設定
-        _cutter = CalcCutterPlane(collision.contacts[0].point);
+        _moveDirection = relative_velocity.normalized;
 
-        // 衝突相手の速度を取得
-        int finalATK = CalcATK(relative_vVelocity);
+        // 衝突位置を取得
+        if (collision.contactCount > 0)
+        {
+            _contactPoint = collision.contacts[0].point;
+        } else {
+            // クソみたいなバグ
+            _contactPoint = collision.collider.ClosestPoint(transform.position);
+        }
 
-        // 攻撃時のイベント発生
-        onAttackEvent?.Invoke();
-
-        // 攻撃時のイベント発生
-        onAttackEvent?.Invoke();
+        // 基本は壊属性
+        Type type = Type.crash;
+        // 斬属性なら斬属性優先
+        if (_canSlash)
+        {
+            type = Type.slash;
+        }
+        // 突属性なら突属性優先
+        if (_canPierce)
+        {
+            // ローカル座標系での移動方向
+            Vector3 local_moveDirection = transform.rotation * _moveDirection;
+            // 突属性の向きと30度以内の方向なら突属性
+            if (Mathf.Abs(Vector3.Dot(_pierceDirection, local_moveDirection)) > _matchDegreeOfOrientation)
+            {
+                type = Type.pierce;
+            }
+        }
 
         // 相手に攻撃
-        breakable.ReciveAttack(finalATK, this);
+        breakable.ReciveAttack(this, finalATK, type);
 
-        // Debug.Log($"Attack!: {this.gameObject.name} to {breakable.gameObject.name}, finalATK: {finalATK}, velocity: {otherRigitbody.velocity}, {_rigidbody.velocity}");
-    }
-
-    /// <summary>
-    /// カッター（切断する平面）を作成する
-    /// </summary>
-    /// <param name="worldPoint">平面の座標</param>
-    private Plane CalcCutterPlane(Vector3 worldPoint)
-    {
-        // カッターの法線ベクトルをワールド空間で計算
-        Vector3 worldNormal = Vector3.Cross(transform.forward.normalized, _moveDirection).normalized;
-        Debug.DrawRay(worldPoint, worldNormal, Color.green, 2, false);
-        // 平面の距離を計算：平面の法線ベクトルからワールド空間の任意の点への距離
-        float worldDistance = Vector3.Dot(worldNormal, worldPoint);
-        // 断面を相手のワールド座標で設定
-        return new Plane(worldNormal, worldDistance);
+        // Debug.Log($"Attack!: {this.gameObject.name} to {breakable.gameObject.name}, finalATK: {finalATK}, relative_velocity: {relative_velocity}");
     }
 
 }

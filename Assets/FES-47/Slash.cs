@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
+using UnityEngine.EventSystems;
 
 public class Slash : MonoBehaviour
 {
@@ -9,7 +10,7 @@ public class Slash : MonoBehaviour
     private int _numberOfCanSlash = 0;
     [SerializeField, Tooltip("切断された後のオブジェクト")]
     private GameObject _cutObjectPrefab;
-    [SerializeField, Tooltip("切断面用のマテリアル")]
+    [SerializeField, Tooltip("切断面用のマテリアル（任意）")]
     private Material _cutSurfaceMaterial; 
 
     // オブジェクト切断時に呼び出すイベント登録
@@ -25,6 +26,21 @@ public class Slash : MonoBehaviour
     public void SetCutObjectPrefab(GameObject prefab)
     {
         _cutObjectPrefab = prefab;
+    }
+
+    /// <summary>
+    /// カッター（切断する平面）を作成する
+    /// </summary>
+    /// <param name="worldPoint">平面の座標</param>
+    private Plane CalcCutterPlane(Vector3 worldPoint, Vector3 moveDirection)
+    {
+        // カッターの法線ベクトルをワールド空間で計算
+        Vector3 worldNormal = Vector3.Cross(transform.forward.normalized, moveDirection).normalized;
+        Debug.DrawRay(worldPoint, worldNormal, Color.green, 2, false);
+        // 平面の距離を計算：平面の法線ベクトルからワールド空間の任意の点への距離
+        float worldDistance = Vector3.Dot(worldNormal, worldPoint);
+        // 断面を相手のワールド座標で設定
+        return new Plane(worldNormal, worldDistance);
     }
 
     /// <summary>
@@ -67,8 +83,9 @@ public class Slash : MonoBehaviour
         // メッシュを計算に必要な参照を取得
         Transform transform = this.gameObject.transform;
         Mesh mesh = this.gameObject.GetComponent<MeshFilter>().mesh;
+        Plane cutter = CalcCutterPlane(breaker.GetContactPoint(), breaker.GetMoveDirection());
         // 切断された後のオブジェクトに割り当てるメッシュを計算する。
-        (Mesh rightMesh, Mesh leftMesh) = ActSubdivide4.Subdivide(mesh, transform, breaker.GetCutter(), canAddCutSurfaceMaterial);
+        (Mesh rightMesh, Mesh leftMesh) = ActSubdivide4.Subdivide(mesh, transform, cutter, canAddCutSurfaceMaterial);
 
         // 失敗
         if (rightMesh == null || leftMesh == null)
@@ -76,13 +93,17 @@ public class Slash : MonoBehaviour
             Debug.Log("メッシュの計算ができませんでした。");
             return;
         }
-
         // 生成したオブジェクトと干渉しないようにColliderを無効化
         this.gameObject.GetComponent<Collider>().enabled = false;
-
         // 切断された後のオブジェクトを生成する
-        CreateCutObject(transform, rightMesh, newMaterials);
-        CreateCutObject(transform, leftMesh, newMaterials);
+        if (rightMesh != null)
+        {
+            CreateCutObject(transform, rightMesh, newMaterials);
+        }
+        if (leftMesh != null)
+        {
+            CreateCutObject(transform, leftMesh, newMaterials);
+        }
         // 切られた元のオブジェクトを破棄する
         Destroy(this.gameObject);
         
