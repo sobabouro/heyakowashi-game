@@ -174,7 +174,7 @@ RectTransform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 3062425461602418158}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: -1.878}
+  m_LocalPosition: {x: 0, y: 0, z: -2.04}
   m_LocalScale: {x: 0.04, y: 0.04, z: 0.04}
   m_ConstrainProportionsScale: 1
   m_Children: []
@@ -206,7 +206,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: -991063790308560297, guid: e8dc428ea154cc844a201ef83fb6ec1f, type: 2}
+  - {fileID: 8925513803912850199, guid: 86deab7095b37584cbe5b3c370266287, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -250,8 +250,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: "\u7A81\u304F!!"
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: e8dc428ea154cc844a201ef83fb6ec1f, type: 2}
-  m_sharedMaterial: {fileID: -991063790308560297, guid: e8dc428ea154cc844a201ef83fb6ec1f, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: 86deab7095b37584cbe5b3c370266287, type: 2}
+  m_sharedMaterial: {fileID: 8925513803912850199, guid: 86deab7095b37584cbe5b3c370266287, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
