@@ -13,7 +13,7 @@ public class Breaker : MonoBehaviour
     [SerializeField, Tooltip("基礎攻撃力")] private int _baseATK; // 基礎攻撃力
     [SerializeField, Tooltip("速度係数")] private float _velocity_coefficient = 1; // 攻撃力に影響する速度の割合
     [SerializeField, Tooltip("ダメージが発生するために必要な最低限の速度")]
-    private float _minimumSpeedNeededForDamage = 3.0f; // ダメージが発生するために必要な最低限の速度
+    private float _minimumSpeedNeededForDamage = 1.0f; // ダメージが発生するために必要な最低限の速度
     [Header("突属性")]
     [SerializeField, Tooltip("突属性を持つ？")] private bool _canPierce; // 突属性を持つ？
     [SerializeField, Tooltip("突属性の向き")] private Vector3 _pierceDirection; // 突属性の向き
